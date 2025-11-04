@@ -45,26 +45,58 @@ Haskell record syntax automatically provides field accessors:
 
 ### Pattern Variants
 
-#### Leaf Pattern
+#### Leaf Pattern (Node)
 
-A pattern with no child elements (`elements == []`):
+A pattern with no child elements (`elements == []`) represents a node:
 
 ```haskell
 leafPattern :: Pattern String
 leafPattern = Pattern { value = "node1", elements = [] }
 ```
 
-#### Pattern with Children
+#### Relationship Pattern
 
-A pattern with one or more child elements:
+A pattern with exactly 2 child nodes represents a relationship:
 
 ```haskell
-parentPattern :: Pattern String
-parentPattern = Pattern 
-  { value = "parent"
-  , elements = [ leafPattern, anotherLeaf ]
+-- Node A
+nodeA :: Pattern String
+nodeA = Pattern { value = "A", elements = [] }
+
+-- Node B
+nodeB :: Pattern String
+nodeB = Pattern { value = "B", elements = [] }
+
+-- Relationship from A to B
+relationship :: Pattern String
+relationship = Pattern 
+  { value = "knows"
+  , elements = [nodeA, nodeB]
   }
 ```
+
+#### Graph Pattern (Subgraph)
+
+A pattern containing graph elements (nodes and relationships) represents a graph or subgraph:
+
+```haskell
+-- A graph containing nodes and relationships
+graphPattern :: Pattern String
+graphPattern = Pattern 
+  { value = "myGraph"
+  , elements = [ nodeA                    -- node
+               , nodeB                    -- node
+               , relationship             -- relationship
+               ]
+  }
+```
+
+This demonstrates how a Pattern can represent:
+- **Nodes**: Leaf patterns (empty `elements`)
+- **Relationships**: Patterns with 2 child node patterns
+- **Graphs**: Patterns whose `elements` contain a mix of node and relationship patterns
+
+The recursive structure allows graphs to contain subgraphs, which are themselves Patterns containing graph elements.
 
 ### Validation Rules
 
