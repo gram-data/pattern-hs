@@ -1,0 +1,8 @@
+-- Cabal project configuration
+-- Specifies GHC version and project-wide settings
+
+packages: .
+
+-- Require GHC 9.8.4 (matches available HLS binary)
+with-compiler: ghc-9.8.4
+
