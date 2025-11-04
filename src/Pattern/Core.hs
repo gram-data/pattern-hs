@@ -36,11 +36,26 @@
 --
 -- Pattern with children:
 --
--- >>> parent = Pattern { value = "parent", elements = [leaf] }
+-- >>> child1 = Pattern { value = "child1", elements = [] }
+-- >>> child2 = Pattern { value = "child2", elements = [] }
+-- >>> parent = Pattern { value = "parent", elements = [child1, child2] }
+-- >>> value parent
+-- "parent"
+-- >>> length (elements parent)
+-- 2
+-- >>> map value (elements parent)
+-- ["child1","child2"]
 --
--- Nested patterns:
+-- Nested patterns (arbitrary depth):
 --
--- >>> nested = Pattern { value = "root", elements = [Pattern { value = "level1", elements = [Pattern { value = "level2", elements = [] }] }] }
+-- >>> level3 = Pattern { value = "level3", elements = [] }
+-- >>> level2 = Pattern { value = "level2", elements = [level3] }
+-- >>> level1 = Pattern { value = "level1", elements = [level2] }
+-- >>> nested = Pattern { value = "root", elements = [level1] }
+-- >>> value nested
+-- "root"
+-- >>> value (head (elements nested))
+-- "level1"
 --
 -- Leaf patterns with different value types:
 --
@@ -50,6 +65,18 @@
 -- "text"
 -- >>> value leafInt
 -- 42
+--
+-- Patterns with varying numbers of children:
+--
+-- >>> zeroChildren = Pattern { value = "zero", elements = [] }
+-- >>> oneChild = Pattern { value = "one", elements = [Pattern { value = "child", elements = [] }] }
+-- >>> manyChildren = Pattern { value = "many", elements = [Pattern { value = "c1", elements = [] }, Pattern { value = "c2", elements = [] }] }
+-- >>> length (elements zeroChildren)
+-- 0
+-- >>> length (elements oneChild)
+-- 1
+-- >>> length (elements manyChildren)
+-- 2
 module Pattern.Core where
 
 -- | A recursive tree structure that stores a value and contains zero or more

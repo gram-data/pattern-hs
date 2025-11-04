@@ -114,5 +114,29 @@ data Pattern v = Pattern
 
 All technical decisions align with existing project infrastructure from feature 001. The Pattern type will be defined as a standard Haskell algebraic data type with record syntax, providing automatic field accessors. Comprehensive Haddock documentation will explain the recursive tree structure. Testing will focus on unit tests for construction and inspection, with property-based tests deferred to future phases when typeclass instances are implemented.
 
+---
+
+### Semantic Clarification: Pattern Length
+
+**Decision**: A Pattern is conceptually a sequence of elements with associated metadata (the value), not a tree structure. While the implementation uses a recursive tree structure, semantically patterns are sequences.
+
+**Terminology**:
+- `elements` - the sequence of pattern elements (not "children")
+- `value` - information/metadata about the sequence
+- `length (elements p)` - current way to get sequence length (number of elements)
+
+**Future Addition (Phase 7)**: 
+- `length :: Pattern v -> Int` - will be added alongside `depth` to provide idiomatic access to pattern sequence length
+- This will be equivalent to `length (elements p)` but more semantically appropriate
+
+**Rationale**: 
+- Patterns are sequences: "3 1 4 1 9 5" is a pattern of length 6
+- The recursive structure enables representing complex sequences, but the primary semantic is sequence-based
+- Adding `length` as a Pattern function makes the API more intuitive
+
+**Action**: Continue using `length (elements p)` in current code. Plan to add `length :: Pattern v -> Int` in Phase 7 alongside `depth :: Pattern v -> Int`.
+
+---
+
 The feature is ready to proceed with Phase 1 design artifacts.
 

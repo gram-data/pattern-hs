@@ -86,9 +86,10 @@
 ## Phase 7: Basic Query Functions
 
 ### 7.1 Size and Depth
+- [ ] Implement `length :: Pattern v -> Int` (number of elements in the sequence - equivalent to `length (elements p)`)
 - [ ] Implement `size :: Pattern v -> Int` (total number of nodes)
 - [ ] Implement `depth :: Pattern v -> Int` (maximum nesting depth)
-- [ ] Write tests: size and depth for various patterns
+- [ ] Write tests: length, size and depth for various patterns
 - [ ] Write tests: edge cases (empty, single node, deep nesting)
 
 ### 7.2 Value Access
