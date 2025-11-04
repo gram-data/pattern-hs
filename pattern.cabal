@@ -1,0 +1,55 @@
+cabal-version:      2.4
+name:               pattern
+version:            0.1.0.0
+
+synopsis:           A generalized representation of graph elements using category theory
+description:        
+    Pattern is a recursive tree data structure that can be interpreted as
+    different graph elements (nodes, relationships, subgraphs, paths) through
+    categorical views. This is a reference implementation designed to be
+    translatable to other languages while maintaining category-theoretic
+    correctness.
+
+license:            BSD-3-Clause
+license-file:       LICENSE
+author:             Pattern HS
+maintainer:         pattern@example.com
+category:           Data
+extra-source-files: CHANGELOG.md
+
+library
+    exposed-modules:
+        Pattern
+        Pattern.Core
+        Pattern.Views
+        Pattern.Graph
+        Pattern.Morphisms
+
+    -- LANGUAGE extensions used by modules in this package.
+    -- other-extensions:
+
+    build-depends:
+        base ^>=4.14.3.0,
+        containers ^>=0.6
+
+    hs-source-dirs:   src
+    default-language: Haskell2010
+
+test-suite pattern-test
+    type:                exitcode-stdio-1.0
+    main-is:             Test.hs
+    other-modules:
+        Spec.Pattern.CoreSpec
+        Spec.Pattern.ViewsSpec
+        Spec.Pattern.GraphSpec
+        Spec.Pattern.Properties
+
+    build-depends:
+        base ^>=4.14.3.0,
+        pattern,
+        QuickCheck ^>=2.14,
+        hspec ^>=2.10,
+        hspec-quickcheck ^>=0.1.0
+
+    hs-source-dirs:   tests
+    default-language: Haskell2010
