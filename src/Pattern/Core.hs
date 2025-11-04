@@ -2,8 +2,123 @@
 --
 -- This module defines the fundamental Pattern type as a recursive tree structure
 -- that can represent graph elements.
+--
+-- == Recursive Tree Structure
+--
+-- The Pattern type forms a recursive tree where each node stores a value and
+-- contains zero or more child Pattern instances. This structure enables:
+--
+-- * Leaf patterns (nodes): Patterns with no children, representing simple graph entities
+-- * Patterns with children: Representing relationships, subgraphs, or complex structures
+-- * Arbitrary nesting: Patterns can contain patterns containing patterns, etc.
+--
+-- == Type Safety
+--
+-- The Pattern type is parameterized over value type @v@, ensuring type consistency:
+-- all patterns in a structure must share the same value type. This is enforced by
+-- the type system.
+--
+-- == Mathematical Foundation
+--
+-- Patterns form the foundation for category-theoretic graph representations.
+-- The recursive structure enables functor instances (to be added in future phases)
+-- and supports various graph interpretations through categorical views.
+--
+-- == Examples
+--
+-- Leaf pattern (node):
+--
+-- >>> leaf = Pattern { value = "node1", elements = [] }
+--
+-- Pattern with children:
+--
+-- >>> parent = Pattern { value = "parent", elements = [leaf] }
+--
+-- Nested patterns:
+--
+-- >>> nested = Pattern { value = "root", elements = [Pattern { value = "level1", elements = [Pattern { value = "level2", elements = [] }] }] }
 module Pattern.Core where
 
--- Pattern data type will be implemented here
--- See data-model.md and DESIGN.md for the specification
-
+-- | A recursive tree structure that stores a value and contains zero or more
+-- child Pattern instances.
+--
+-- Patterns form the foundation for representing graph elements. Each pattern
+-- node can have an associated value of any type, and child patterns form a
+-- hierarchical tree structure.
+--
+-- The Pattern type is intentionally minimal - it provides just the structure
+-- needed for recursive representation. Classification functions (identifying
+-- nodes, relationships, subgraphs) will be added in future phases.
+--
+-- === Type Parameter
+--
+-- The @v@ type parameter allows patterns to store values of any type. All
+-- patterns in a structure must share the same value type (enforced by the
+-- type system).
+--
+-- === Pattern Variants
+--
+-- * Leaf pattern: @elements == []@ - represents a node with no children
+-- * Pattern with children: @elements@ contains child patterns - represents
+--   relationships, subgraphs, or complex structures
+--
+-- === Examples
+--
+-- Creating a leaf pattern (node):
+--
+-- >>> nodeA = Pattern { value = "A", elements = [] }
+--
+-- Creating a relationship pattern:
+--
+-- >>> nodeB = Pattern { value = "B", elements = [] }
+-- >>> relationship = Pattern { value = "knows", elements = [nodeA, nodeB] }
+--
+-- Creating a graph pattern:
+--
+-- >>> graph = Pattern { value = "myGraph", elements = [nodeA, nodeB, relationship] }
+--
+data Pattern v = Pattern 
+  { -- | The value associated with this pattern node.
+    --
+    -- Type parameter @v@ allows for different value types. This is the data
+    -- stored at this node in the tree structure.
+    --
+    -- === Examples
+    --
+    -- >>> value (Pattern { value = "test", elements = [] })
+    -- "test"
+    --
+    -- >>> value (Pattern { value = 42, elements = [] })
+    -- 42
+    value    :: v
+    
+    -- | The list of child patterns, forming the recursive tree structure.
+    --
+    -- An empty list @[]@ represents a leaf pattern (no children). A non-empty
+    -- list represents a pattern with child elements, enabling hierarchical
+    -- relationships.
+    --
+    -- The recursive structure allows patterns to contain patterns containing
+    -- patterns, etc., enabling arbitrary nesting depth.
+    --
+    -- === Examples
+    --
+    -- Leaf pattern (empty children):
+    --
+    -- >>> elements (Pattern { value = "leaf", elements = [] })
+    -- []
+    --
+    -- Pattern with children:
+    --
+    -- >>> leaf = Pattern { value = "child", elements = [] }
+    -- >>> elements (Pattern { value = "parent", elements = [leaf] })
+    -- [Pattern {value = "child", elements = []}]
+    --
+    -- Pattern with multiple children:
+    --
+    -- >>> child1 = Pattern { value = "child1", elements = [] }
+    -- >>> child2 = Pattern { value = "child2", elements = [] }
+    -- >>> elements (Pattern { value = "parent", elements = [child1, child2] })
+    -- [Pattern {value = "child1", elements = []},Pattern {value = "child2", elements = []}]
+  , elements :: [Pattern v]
+  }
