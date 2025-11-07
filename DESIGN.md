@@ -2,7 +2,7 @@
 
 ## Core Data Structure
 
-Patterns form a recursive tree structure that can be interpreted as graphs through different views:
+Patterns form a recursive data structure that can be interpreted as graphs through different views:
 
 ```haskell
 data Pattern v = Pattern 
@@ -16,7 +16,7 @@ data Pattern v = Pattern
 A Pattern can be interpreted as different graph elements based on its structure:
 
 ```haskell
--- Graph element classification
+-- Simple graph element classification
 isNode :: Pattern v -> Bool
 isNode p = all (not . isGraphElement) (elements p)
 

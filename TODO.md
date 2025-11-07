@@ -17,19 +17,19 @@ See [README.md](README.md#development-workflow) for complete workflow details.
 
 ---
 
-## Phase 1: Core Data Type (Foundation) ✅
+## Feaure 1: Core Data Type (Foundation) ✅
 
 ### 1.1 Basic Pattern Type
 - [x] Define `Pattern v` data type with `value :: v` and `elements :: [Pattern v]` in `src/Pattern/Core.hs`
 - [x] Add basic Haddock documentation explaining the recursive tree structure
-- [x] Write simple test: create a leaf pattern and verify structure
-- [x] Write simple test: create a pattern with children and verify structure
+- [x] Write simple test: create a pattern with no member elements and verify structure
+- [x] Write simple test: create a pattern with member elements and verify structure
 
 **Goal**: Have a working Pattern type that can be constructed and inspected. ✅ **COMPLETE**
 
 ---
 
-## Phase 2: Basic Typeclasses ✅
+## Feaure 2: Basic Typeclasses ✅
 
 ### 2.1 Show Instance
 - [x] Implement `Show` instance for `Pattern v` (requires `Show v`)
@@ -46,19 +46,19 @@ See [README.md](README.md#development-workflow) for complete workflow details.
 
 ---
 
-## Phase 3: Construction Functions
+## Feaure 3: Construction Functions
 
 ### 3.1 Basic Constructors
 - [ ] Implement `pattern :: v -> Pattern v` (creates leaf node)
-- [ ] Implement `patternWith :: v -> [Pattern v] -> Pattern v` (creates pattern with children)
+- [ ] Implement `patternWith :: v -> [Pattern v] -> Pattern v` (creates pattern with member elements)
 - [ ] Write tests: construct various patterns and verify structure
-- [ ] Write tests: edge cases (empty list, single child, many children)
+- [ ] Write tests: edge cases -- empty elements (an atomic node), single element (an annotation), two elements (a relationship), many elements (an extended pattern)
 
 **Goal**: Convenient ways to create patterns.
 
 ---
 
-## Phase 4: Functor Instance
+## Feaure 4: Functor Instance
 
 ### 4.1 Functor Implementation
 - [ ] Implement `Functor` instance for `Pattern`
@@ -71,7 +71,7 @@ See [README.md](README.md#development-workflow) for complete workflow details.
 
 ---
 
-## Phase 5: Foldable Instance
+## Feaure 5: Foldable Instance
 
 ### 5.1 Foldable Implementation
 - [ ] Implement `Foldable` instance for `Pattern`
@@ -84,7 +84,7 @@ See [README.md](README.md#development-workflow) for complete workflow details.
 
 ---
 
-## Phase 6: Traversable Instance
+## Feaure 6: Traversable Instance
 
 ### 6.1 Traversable Implementation
 - [ ] Implement `Traversable` instance for `Pattern`
@@ -96,7 +96,7 @@ See [README.md](README.md#development-workflow) for complete workflow details.
 
 ---
 
-## Phase 7: Basic Query Functions
+## Feaure 7: Basic Query Functions
 
 ### 7.1 Size and Depth
 - [ ] Implement `length :: Pattern v -> Int` (number of elements in the sequence - equivalent to `length (elements p)`)
@@ -114,94 +114,14 @@ See [README.md](README.md#development-workflow) for complete workflow details.
 
 ---
 
-## Phase 8: Simple Classification (Node Only)
+## Feaure 8: Additional Typeclasses (As Needed)
 
-### 8.1 Node Detection
-- [ ] Implement `isNode :: Pattern v -> Bool` (pattern has no children)
-- [ ] Write test: leaf pattern is a node
-- [ ] Write test: pattern with children is not a node
-- [ ] Write test: nested patterns correctly identify nodes
-
-**Goal**: Can identify the simplest graph element (node).
-
----
-
-## Phase 9: Relationship Classification
-
-### 9.1 Relationship Detection
-- [ ] Implement `isRelationship :: Pattern v -> Bool` (exactly 2 child nodes)
-- [ ] Write test: pattern with 2 child nodes is a relationship
-- [ ] Write test: pattern with 1 child is not a relationship
-- [ ] Write test: pattern with 3+ children is not a relationship
-- [ ] Write test: pattern with 2 children that aren't nodes is not a relationship
-
-### 9.2 Relationship Navigation
-- [ ] Implement `source :: Pattern v -> Pattern v` (first child of relationship)
-- [ ] Implement `target :: Pattern v -> Pattern v` (second child of relationship)
-- [ ] Write tests: extract source and target from relationships
-- [ ] Write tests: error handling for non-relationship patterns (consider `Maybe` return type)
-
-**Goal**: Can identify and navigate relationships.
-
----
-
-## Phase 10: Graph Element Classification
-
-### 10.1 Graph Element Detection
-- [ ] Implement `isGraphElement :: Pattern v -> Bool` (is node, relationship, subgraph, or path)
-- [ ] Write test: node is a graph element
-- [ ] Write test: relationship is a graph element
-- [ ] Write test: simple non-graph structure is not a graph element
-
-### 10.2 Subgraph Detection
-- [ ] Implement `isSubgraph :: Pattern v -> Bool` (all children are graph elements)
-- [ ] Write test: pattern with graph element children is subgraph
-- [ ] Write test: pattern with mixed children is not subgraph
-- [ ] Write test: nested subgraphs work correctly
-
-**Goal**: Can classify patterns as graph elements.
-
----
-
-## Phase 11: Path Detection
-
-### 11.1 Path Classification
-- [ ] Implement helper `chainsCorrectly :: [Pattern v] -> Bool`
-- [ ] Implement `isPath :: Pattern v -> Bool` (subgraph where relationships chain)
-- [ ] Write test: simple path of 2 relationships
-- [ ] Write test: longer path chains correctly
-- [ ] Write test: broken chain is not a path
-- [ ] Write test: path with branching is not a path (or is it? clarify semantics)
-
-**Goal**: Can identify paths in patterns.
-
----
-
-## Phase 12: Pattern Navigation and Extraction
-
-### 12.1 Node Extraction
-- [ ] Implement `nodes :: Pattern v -> [Pattern v]` (all nodes in pattern)
-- [ ] Write test: extract all nodes from simple pattern
-- [ ] Write test: extract all nodes from nested pattern
-- [ ] Write test: nodes appear in correct order (or specify order semantics)
-
-### 12.2 Relationship Extraction
-- [ ] Implement `relationships :: Pattern v -> [Pattern v]` (all relationships in pattern)
-- [ ] Write test: extract all relationships from pattern
-- [ ] Write test: nested relationships are included
-
-**Goal**: Can extract graph elements from patterns.
-
----
-
-## Phase 13: Additional Typeclasses (As Needed)
-
-### 13.1 Ord Instance (If Needed)
+### 8.1 Ord Instance (If Needed)
 - [ ] Consider if `Ord` instance is needed
 - [ ] If yes, implement `Ord` instance with clear ordering semantics
 - [ ] Write tests: ordering of patterns
 
-### 13.2 Other Instances
+### 8.2 Other Instances
 - [ ] Evaluate if other standard typeclasses are needed (e.g., `Semigroup`, `Monoid`)
 - [ ] Implement only if clearly needed for core functionality
 
@@ -209,33 +129,14 @@ See [README.md](README.md#development-workflow) for complete workflow details.
 
 ---
 
-## Phase 14: Graph Representation (Underspecified)
+## Feaure 9: Graph Views (Underspecified)
 
-### 14.1 Graph Type Design
-- [ ] **STOP and REVIEW**: Is Graph representation needed yet?
-- [ ] Define `Graph dir v` type (if proceeding)
-- [ ] Define `Edge dir v` type (if proceeding)
-- [ ] Keep this minimal - defer complex graph operations
-
-### 14.2 Basic Graph Operations (If Needed)
-- [ ] Implement `emptyGraph :: Graph dir v`
-- [ ] Implement basic graph construction from patterns
-- [ ] Write minimal tests
-
-**Goal**: Basic graph representation if needed for core functionality.
-
-**Note**: Advanced graph operations deferred until core is solid.
-
----
-
-## Phase 15: Graph Views (Underspecified)
-
-### 15.1 GraphView Typeclass Design
+### 9.1 GraphView Typeclass Design
 - [ ] **STOP and REVIEW**: Is GraphView needed yet?
 - [ ] Design `GraphView` typeclass interface (minimal)
 - [ ] Consider: can we defer this entirely?
 
-### 15.2 DirectedView (If Proceeding)
+### 9.2 DirectedView (If Proceeding)
 - [ ] Implement minimal `DirectedView` if needed
 - [ ] Keep implementation simple
 
@@ -245,9 +146,9 @@ See [README.md](README.md#development-workflow) for complete workflow details.
 
 ---
 
-## Phase 16: Pattern Morphisms (Underspecified)
+## Feaure 10: Pattern Morphisms (Underspecified)
 
-### 16.1 Morphism Design
+### 10.1 Morphism Design
 - [ ] **STOP and REVIEW**: Are morphisms needed yet?
 - [ ] Define `PatternMorphism` type synonym
 - [ ] Implement `homomorphism` if clearly needed
@@ -259,7 +160,7 @@ See [README.md](README.md#development-workflow) for complete workflow details.
 
 ---
 
-## Phase 17: Integration and Polish
+## Feaure 11: Integration and Polish
 
 ### 17.1 Module Exports
 - [ ] Review and finalize exports from `Pattern.Core`
