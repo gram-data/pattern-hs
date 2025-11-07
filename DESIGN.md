@@ -2,14 +2,16 @@
 
 ## Core Data Structure
 
-Patterns form a recursive data structure that can be interpreted as graphs through different views:
+Patterns form a recursive data structure representing decorated sequences that can be interpreted as graphs through different views:
 
 ```haskell
 data Pattern v = Pattern 
-  { value    :: v
-  , elements :: [Pattern v]
+  { value    :: v              -- Decoration about what kind of pattern it is
+  , elements :: [Pattern v]    -- The pattern itself, as a sequence of elements
   } deriving (Functor, Foldable, Traversable)
 ```
+
+**Key Insight**: The `elements` field IS the pattern - it contains the sequence that defines the pattern. The `value` field provides decoration about what kind of pattern it is. For example, the pattern "A B B A" with decoration "Enclosed rhyme" represents a specific sequence pattern (A B B A) that is classified as an "Enclosed rhyme".
 
 ## Graph Elements
 

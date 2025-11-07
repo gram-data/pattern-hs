@@ -12,7 +12,9 @@ This document establishes the authoritative definition of the Pattern data struc
 
 ### Definition
 
-A **Pattern** is a sequence of elements with associated metadata. While implemented using a recursive tree structure, the primary semantic is sequence-based. The structure stores a value and contains zero or more Pattern elements. The tree implementation supports the sequence semantics, but the conceptual model emphasizes sequences.
+A **Pattern** is a **decorated sequence**: the elements form the pattern itself, and the value provides metadata (decoration) about that pattern. For example, the pattern "A B B A" with decoration "Enclosed rhyme" represents a specific sequence pattern (A B B A) that is classified as an "Enclosed rhyme". The elements ARE the pattern; the value describes what kind of pattern it is.
+
+While implemented using a recursive tree structure, the primary semantic is that elements form the pattern sequence itself, not that they are children of a node. The tree structure is an implementation detail that supports the sequence representation.
 
 ### Structure
 
@@ -28,31 +30,35 @@ data Pattern v = Pattern
 
 ### Fields
 
-- **value** (`v`): The value associated with this pattern instance. The value field stores data of any type and is associated with the pattern sequence itself, not with individual elements in the sequence. Type parameter `v` allows for different value types.
+- **value** (`v`): The decoration or metadata associated with the pattern. The value field stores data of any type that describes or classifies the pattern sequence. For example, "Enclosed rhyme" describes the pattern "A B B A". The value is decoration about the pattern, not part of the pattern itself. Type parameter `v` allows for different value types.
 
-- **elements** (`[Pattern v]`): The elements contained within a pattern, forming the sequence structure. Each element in the sequence is itself a Pattern, enabling recursive nesting while maintaining the sequence semantic. An empty list `[]` represents a leaf pattern (a sequence with no elements). A non-empty list represents a pattern containing one or more pattern elements in sequence.
+- **elements** (`[Pattern v]`): The pattern itself, represented as a sequence of elements. The elements ARE the pattern; they are not children or subordinate to the value. Each element in the sequence is itself a Pattern, enabling recursive nesting. An empty list `[]` represents a pattern with no elements (an empty sequence). A non-empty list represents a pattern containing one or more pattern elements in sequence.
 
-### Conceptual Model: Sequence-Based
+### Conceptual Model: Decorated Sequences
 
-**Primary Semantic**: Patterns are conceptually sequences of elements.
+**Primary Semantic**: Patterns are decorated sequences where the elements form the pattern itself.
 
-- Each pattern represents a sequence where the `value` is metadata about the sequence
-- The `elements` field contains the sequence itself
-- Elements maintain their sequence order
-- Each element in the sequence is itself a Pattern, enabling nested sequences
+- The `elements` field IS the pattern - it contains the sequence that defines the pattern
+- The `value` field provides decoration/metadata about what kind of pattern it is
+- Elements maintain their sequence order - this order is essential to the pattern
+- Each element in the sequence is itself a Pattern, enabling nested patterns
 
-**Example**: The pattern "3 1 4 1 9 5" is conceptually a sequence of 6 elements, where "3 1 4 1 9 5" might be the metadata (value) describing the sequence.
+**Example**: The pattern "A B B A" with decoration "Enclosed rhyme" represents:
+- Pattern: the sequence `[A, B, B, A]` (the elements)
+- Decoration: "Enclosed rhyme" (the value describing what kind of pattern this is)
+
+The pattern itself is the sequence; the value is metadata about that pattern.
 
 ### Implementation Model: Recursive Tree
 
-**Implementation Detail**: Patterns are implemented as recursive trees.
+**Implementation Detail**: Patterns are implemented as recursive trees, but this is purely an implementation detail.
 
-- The tree structure supports the sequence semantics
-- Each pattern node stores a value and contains child patterns
+- The tree structure is how sequences are represented in memory
+- Each tree node stores a decoration (value) and contains the pattern elements
 - The recursive structure enables arbitrary nesting depth
 - Tree traversal provides access to sequence elements
 
-**Relationship**: The tree implementation is how sequences are represented in memory. The sequence semantic is what developers should think about when using patterns. The tree structure supports sequence operations (ordering, length, access by position).
+**Relationship**: The tree implementation is how decorated sequences are represented in memory. Conceptually, developers should think of patterns as decorated sequences where elements form the pattern itself. The tree structure is an implementation detail that supports sequence operations (ordering, length, access by position).
 
 ### Type Constraints
 
@@ -63,9 +69,9 @@ data Pattern v = Pattern
 
 ### Relationships
 
-- **Self-referential**: Each `Pattern` contains zero or more Pattern elements
-- **Recursive**: The sequence structure can be arbitrarily deep (patterns containing patterns containing patterns, etc.)
-- **Hierarchical**: Elements form a sequence hierarchy with the parent pattern as the sequence container
+- **Self-referential**: Each `Pattern` contains zero or more Pattern elements that form the pattern sequence
+- **Recursive**: Pattern elements can themselves be patterns, enabling arbitrarily deep nesting (patterns containing patterns containing patterns, etc.)
+- **Compositional**: Patterns can be composed by including other patterns as elements in the sequence
 
 ---
 
@@ -88,7 +94,7 @@ leafPattern = Pattern { value = "node1", elements = [] }
 
 ### Node
 
-A pattern interpreted as a **node** when it has no child elements that are graph elements themselves. Typically, this means `elements == []` (a leaf pattern).
+A pattern interpreted as a **node** when it has no elements that are graph elements themselves. Typically, this means `elements == []` (a leaf pattern).
 
 **Structure**: Empty sequence (leaf pattern)
 **Status**: ⏳ Planned (classification function `isNode` not yet implemented)
@@ -97,7 +103,7 @@ A pattern interpreted as a **node** when it has no child elements that are graph
 
 ### Relationship
 
-A pattern interpreted as a **relationship** when it has exactly 2 child elements, and both child elements are nodes (leaf patterns).
+A pattern interpreted as a **relationship** when it has exactly 2 elements, and both elements are nodes (leaf patterns).
 
 **Structure**: Exactly 2 elements, both are leaf patterns
 **Status**: ⏳ Planned (classification function `isRelationship` not yet implemented)
@@ -117,7 +123,7 @@ relationship = Pattern { value = "knows", elements = [nodeA, nodeB] }
 
 ### Subgraph
 
-A pattern interpreted as a **subgraph** when all child elements are graph elements (nodes, relationships, or other subgraphs).
+A pattern interpreted as a **subgraph** when all elements are graph elements (nodes, relationships, or other subgraphs).
 
 **Structure**: All elements are graph elements
 **Status**: ⏳ Planned (classification function `isSubgraph` not yet implemented)
@@ -191,18 +197,19 @@ class GraphView view where
 
 ### Primary Terms
 
-- **Pattern**: The data structure representing a sequence of elements
-- **value**: The value field storing metadata about the pattern sequence
-- **elements**: The elements field containing the sequence of pattern elements
-- **sequence**: The conceptual model (primary semantic)
+- **Pattern**: A decorated sequence - the elements form the pattern itself, the value decorates it
+- **value**: The decoration field storing metadata about what kind of pattern it is
+- **elements**: The pattern itself, represented as a sequence of elements
+- **decorated sequence**: The conceptual model - elements are the pattern, value is decoration
 - **tree**: The implementation model (supporting detail)
 
 ### Avoid These Terms
 
-- ❌ "metadata" (use "value")
-- ❌ "children" (use "elements")
-- ❌ "child patterns" (use "elements")
-- ❌ "tree" as primary model (use "sequence" as primary, "tree" as implementation)
+- ❌ "metadata" (use "value" or "decoration")
+- ❌ "children" (use "elements" - elements ARE the pattern, not children)
+- ❌ "child patterns" (use "elements" - elements form the pattern itself)
+- ❌ "tree" as primary model (use "decorated sequence" as primary, "tree" as implementation)
+- ❌ Language that suggests elements are subordinate to the value (elements ARE the pattern)
 
 ---
 
@@ -217,8 +224,8 @@ class GraphView view where
 ### Pattern Variant Classification (Planned)
 
 1. **Mutual exclusivity**: A pattern can be classified as node, relationship, subgraph, or path, but not multiple simultaneously (when classification functions are implemented)
-2. **Hierarchical**: Classification depends on child element structure
-3. **Recursive**: Classification applies recursively to child elements
+2. **Structure-dependent**: Classification depends on the structure of the pattern's elements
+3. **Recursive**: Classification applies recursively to pattern elements
 
 ---
 
@@ -238,7 +245,7 @@ class GraphView view where
 
 ## Design Principles
 
-1. **Sequence-Based Semantics**: Patterns are conceptually sequences; tree structure is implementation detail
+1. **Decorated Sequence Semantics**: Patterns are conceptually decorated sequences where elements form the pattern itself; tree structure is implementation detail
 2. **Schema-Lazy**: Patterns don't commit to specific graph semantics; interpretation happens in views (when implemented)
 3. **Compositional**: Views can be composed, stacked, or swapped without changing underlying patterns (when implemented)
 4. **Open-ended**: New views can be defined for any graph-like interpretation (when implemented)
