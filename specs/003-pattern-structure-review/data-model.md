@@ -1,15 +1,20 @@
-# Data Model: Pattern Data Structure
+# Data Model: Pattern Structure (Authoritative Definition)
 
-**Feature**: 001-pattern-data-structure  
-**Date**: 2025-01-27
+**Feature**: 003-pattern-structure-review  
+**Date**: 2025-01-27  
+**Status**: Authoritative Reference
+
+This document establishes the authoritative definition of the Pattern data structure and related concepts. All other documentation should align with these definitions.
+
+---
 
 ## Core Entity: Pattern
 
 ### Definition
 
-A **Pattern** is a **decorated sequence**: the elements form the pattern itself, and the value provides decoration about that pattern. For example, the pattern "A B B A" with decoration "Enclosed rhyme" represents a specific sequence pattern (A B B A) that is classified as an "Enclosed rhyme". The elements ARE the pattern; the value describes what kind of pattern it is.
+A **Pattern** is a **decorated sequence**: the elements form the pattern itself, and the value provides metadata (decoration) about that pattern. For example, the pattern "A B B A" with decoration "Enclosed rhyme" represents a specific sequence pattern (A B B A) that is classified as an "Enclosed rhyme". The elements ARE the pattern; the value describes what kind of pattern it is.
 
-While implemented using a recursive tree structure, the primary semantic is that elements form the pattern sequence itself. The tree structure is an implementation detail that supports the sequence representation.
+While implemented using a recursive tree structure, the primary semantic is that elements form the pattern sequence itself, not that they are children of a node. The tree structure is an implementation detail that supports the sequence representation.
 
 ### Structure
 
@@ -21,20 +26,20 @@ data Pattern v = Pattern
   deriving (Eq)
 ```
 
-**Note**: `Show` is implemented as a manual instance. `Functor`, `Foldable`, and `Traversable` are ⏳ Planned but not yet implemented (see Implementation Status section).
+**Note**: `Show` is implemented as a manual instance. `Functor`, `Foldable`, and `Traversable` are planned but not yet implemented (see Implementation Status section).
 
 ### Fields
 
-- **value** (`v`): The decoration (value) associated with the pattern. The value field stores data of any type that describes or classifies the pattern sequence. For example, "Enclosed rhyme" describes the pattern "A B B A". The value is decoration about the pattern, not part of the pattern itself. Type parameter `v` allows for different value types.
+- **value** (`v`): The decoration or metadata associated with the pattern. The value field stores data of any type that describes or classifies the pattern sequence. For example, "Enclosed rhyme" describes the pattern "A B B A". The value is decoration about the pattern, not part of the pattern itself. Type parameter `v` allows for different value types.
 
-- **elements** (`[Pattern v]`): The pattern itself, represented as a sequence of elements. The elements ARE the pattern; they are not subordinate to the value. Each element in the sequence is itself a Pattern, enabling recursive nesting. An empty list `[]` represents a pattern with no elements (an empty sequence). A non-empty list represents a pattern containing one or more pattern elements in sequence.
+- **elements** (`[Pattern v]`): The pattern itself, represented as a sequence of elements. The elements ARE the pattern; they are not children or subordinate to the value. Each element in the sequence is itself a Pattern, enabling recursive nesting. An empty list `[]` represents a pattern with no elements (an empty sequence). A non-empty list represents a pattern containing one or more pattern elements in sequence.
 
 ### Conceptual Model: Decorated Sequences
 
 **Primary Semantic**: Patterns are decorated sequences where the elements form the pattern itself.
 
 - The `elements` field IS the pattern - it contains the sequence that defines the pattern
-- The `value` field provides decoration about what kind of pattern it is
+- The `value` field provides decoration/metadata about what kind of pattern it is
 - Elements maintain their sequence order - this order is essential to the pattern
 - Each element in the sequence is itself a Pattern, enabling nested patterns
 
@@ -42,32 +47,18 @@ data Pattern v = Pattern
 - Pattern: the sequence `[A, B, B, A]` (the elements)
 - Decoration: "Enclosed rhyme" (the value describing what kind of pattern this is)
 
-The pattern itself is the sequence; the value is decoration about that pattern.
+The pattern itself is the sequence; the value is metadata about that pattern.
 
 ### Implementation Model: Recursive Tree
 
 **Implementation Detail**: Patterns are implemented as recursive trees, but this is purely an implementation detail.
 
 - The tree structure is how sequences are represented in memory
-- Each tree node stores a decoration (value) and contains the pattern elements as a list
+- Each tree node stores a decoration (value) and contains the pattern elements
 - The recursive structure enables arbitrary nesting depth
-- Tree traversal provides access to sequence elements in order
+- Tree traversal provides access to sequence elements
 
-### Relationship: Sequence Conceptual Model and Tree Implementation
-
-The relationship between the sequence conceptual model and tree implementation is:
-
-**Primary Semantic (Conceptual)**: Patterns are decorated sequences where elements form the pattern itself. The sequence order is essential to the pattern.
-
-**Implementation Detail**: The tree structure is how sequences are represented in memory. Each tree node stores a decoration (value) and contains the pattern elements as a list, enabling recursive nesting.
-
-**How They Relate**: The tree implementation supports sequence semantics:
-- Tree nodes store sequences (lists) of pattern elements
-- Tree traversal preserves sequence order
-- The recursive structure enables nested sequences (patterns containing patterns)
-- Sequence operations (ordering, length, access by position) are implemented via tree operations
-
-**Key Principle**: Conceptually, developers should think of patterns as decorated sequences where elements form the pattern itself. The tree structure is an implementation detail that supports sequence operations. There is no contradiction between these views - the tree is simply how sequences are represented in memory.
+**Relationship**: The tree implementation is how decorated sequences are represented in memory. Conceptually, developers should think of patterns as decorated sequences where elements form the pattern itself. The tree structure is an implementation detail that supports sequence operations (ordering, length, access by position).
 
 ### Type Constraints
 
@@ -81,7 +72,6 @@ The relationship between the sequence conceptual model and tree implementation i
 - **Self-referential**: Each `Pattern` contains zero or more Pattern elements that form the pattern sequence
 - **Recursive**: Pattern elements can themselves be patterns, enabling arbitrarily deep nesting (patterns containing patterns containing patterns, etc.)
 - **Compositional**: Patterns can be composed by including other patterns as elements in the sequence
-- **Graph representation**: Patterns are a data structure for representing graphs (like an adjacency matrix or adjacency list), optimized for expressiveness of layered, hierarchical graph structures. Patterns can be **interpreted** as different graph elements through views.
 
 ---
 
@@ -127,19 +117,7 @@ A pattern containing patterns that themselves contain patterns, enabling arbitra
 **Structure**: Recursive nesting of patterns  
 **Status**: ✅ Implemented (this is the basic Pattern structure)
 
-**Example**:
-```haskell
-nestedPattern :: Pattern String
-nestedPattern = Pattern 
-  { value = "outer"
-  , elements = [ Pattern { value = "middle"
-                         , elements = [ Pattern { value = "inner", elements = [] } ]
-                         }
-               ]
-  }
-```
-
-**Note**: Patterns are a data structure for representing graphs, optimized for expressiveness of layered, hierarchical graph structures rather than performance optimization over a single, "flat" graph.
+**Note**: Patterns are a data structure for representing graphs (like an adjacency matrix or adjacency list), optimized for expressiveness of layered, hierarchical graph structures rather than performance optimization over a single, "flat" graph.
 
 ---
 
@@ -241,56 +219,38 @@ class GraphView view where
 
 ---
 
-## Pattern Morphisms
+## Typeclass Instances
 
-### Type
+### Implemented
 
-```haskell
-type PatternMorphism v w = Pattern v -> Pattern w
-```
+- **Eq**: ✅ Implemented (`deriving Eq`)
+- **Show**: ✅ Implemented (manual instance)
 
-### Standard Morphisms
+### Planned
 
-#### homomorphism
-
-Structure-preserving map that transforms values:
-
-```haskell
-homomorphism :: (v -> w) -> PatternMorphism v w
-homomorphism f = fmap f
-```
-
-#### forget
-
-Forgetful morphism that removes value information:
-
-```haskell
-forget :: PatternMorphism v ()
-forget = forgetValues
-forgetValues :: Pattern v -> Pattern ()
-forgetValues = fmap (const ())
-```
+- **Functor**: ⏳ Planned (TODO.md Feature 4) - Enables value transformation while preserving structure
+- **Foldable**: ⏳ Planned (TODO.md Feature 5) - Enables aggregation over pattern values
+- **Traversable**: ⏳ Planned (TODO.md Feature 6) - Enables effectful traversal
 
 ---
 
-## Graph Representation
+## Terminology Standards
 
-### Graph Type
+### Primary Terms
 
-```haskell
-data Graph dir v = Graph
-  { nodes :: Set (Pattern v)
-  , edges :: Set (Edge dir v)
-  }
-```
+- **Pattern**: A decorated sequence - the elements form the pattern itself, the value decorates it
+- **value**: The decoration field storing metadata about what kind of pattern it is
+- **elements**: The pattern itself, represented as a sequence of elements
+- **decorated sequence**: The conceptual model - elements are the pattern, value is decoration
+- **tree**: The implementation model (supporting detail)
 
-### Edge Types
+### Avoid These Terms
 
-```haskell
-data Edge dir v where
-  DirectedEdge   :: Pattern v -> Pattern v -> Edge Ordered v
-  UndirectedEdge :: Set (Pattern v) -> Edge Unordered v
-```
+- ❌ "metadata" (use "value" or "decoration")
+- ❌ "children" (use "elements" - elements ARE the pattern, not children)
+- ❌ "child patterns" (use "elements" - elements form the pattern itself)
+- ❌ "tree" as primary model (use "decorated sequence" as primary, "tree" as implementation)
+- ❌ Language that suggests elements are subordinate to the value (elements ARE the pattern)
 
 ---
 
@@ -307,12 +267,6 @@ data Edge dir v where
 1. **Mutual exclusivity**: A pattern can be classified as node, relationship, subgraph, or path, but not multiple simultaneously (when classification functions are implemented)
 2. **Structure-dependent**: Classification depends on the structure of the pattern's elements
 3. **Recursive**: Classification applies recursively to pattern elements
-
-### Category-Theoretic Laws
-
-1. **Functor laws**: `fmap` must preserve identity and composition
-2. **Naturality**: Graph view transformations must be natural transformations
-3. **Composition**: Pattern morphisms must compose correctly
 
 ---
 
@@ -337,4 +291,30 @@ data Edge dir v where
 3. **Compositional**: Views can be composed, stacked, or swapped without changing underlying patterns (when implemented)
 4. **Open-ended**: New views can be defined for any graph-like interpretation (when implemented)
 5. **Categorical**: Each view defines a functor; forgetful pattern matching uses functor composition (when implemented)
+
+---
+
+## Implementation Status Summary
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Pattern data type | ✅ Implemented | Basic structure with value and elements |
+| Eq instance | ✅ Implemented | `deriving Eq` |
+| Show instance | ✅ Implemented | Manual instance |
+| Functor instance | ⏳ Planned | TODO.md Feature 4 |
+| Foldable instance | ⏳ Planned | TODO.md Feature 5 |
+| Traversable instance | ⏳ Planned | TODO.md Feature 6 |
+| Classification functions | ⏳ Planned | TODO.md Features 8-11 |
+| Navigation functions | ⏳ Planned | TODO.md Feature 12 |
+| GraphView typeclass | ⏳ Planned | TODO.md Feature 15 |
+| Graph operations | ⏳ Planned | TODO.md Feature 15 |
+
+---
+
+## References
+
+- **Implementation**: `src/Pattern/Core.hs`
+- **Design Documentation**: `DESIGN.md`
+- **Project Overview**: `README.md`
+- **Implementation Roadmap**: `TODO.md`
 

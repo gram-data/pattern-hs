@@ -35,15 +35,16 @@ Given that feature description, do this:
       git fetch --all --prune
       ```
    
-   b. Find the highest feature number across all sources for the short-name:
-      - Remote branches: `git ls-remote --heads origin | grep -E 'refs/heads/[0-9]+-<short-name>$'`
-      - Local branches: `git branch | grep -E '^[* ]*[0-9]+-<short-name>$'`
-      - Specs directories: Check for directories matching `specs/[0-9]+-<short-name>`
+   b. Find the highest feature number across ALL features (globally sequential):
+      - Remote branches: `git ls-remote --heads origin | grep -E 'refs/heads/[0-9]+-' | sed 's|.*refs/heads/||' | sort -t- -k1 -n`
+      - Local branches: `git branch | grep -E '^[* ]*[0-9]+-' | sed 's/^[* ]*//' | sort -t- -k1 -n`
+      - Specs directories: `ls -d specs/[0-9]*/ 2>/dev/null | sed 's|specs/||' | sed 's|/||' | grep -E '^[0-9]+-' | sort -t- -k1 -n`
    
    c. Determine the next available number:
-      - Extract all numbers from all three sources
-      - Find the highest number N
-      - Use N+1 for the new branch number
+      - Extract all numbers from all three sources (any short-name, not filtered by current short-name)
+      - Find the highest number N across ALL features
+      - Use N+1 for the new branch number (globally sequential)
+      - If no existing features found, start with number 1
    
    d. Run the script `.specify/scripts/bash/create-new-feature.sh --json "$ARGUMENTS"` with the calculated number and short-name:
       - Pass `--number N+1` and `--short-name "your-short-name"` along with the feature description
@@ -52,8 +53,10 @@ Given that feature description, do this:
    
    **IMPORTANT**:
    - Check all three sources (remote branches, local branches, specs directories) to find the highest number
-   - Only match branches/directories with the exact short-name pattern
-   - If no existing branches/directories found with this short-name, start with number 1
+   - Feature numbers are GLOBALLY SEQUENTIAL across all features (not per short-name)
+   - Extract numbers from ALL features (any short-name), not just the current short-name
+   - Short-names are descriptive labels and can repeat (e.g., `004-cool-feature` and `005-cool-feature` are allowed)
+   - Feature numbers provide uniqueness; short-names are for readability
    - You must only ever run this script once per feature
    - The JSON is provided in the terminal as output - always refer to it to get the actual content you're looking for
    - The JSON output will contain BRANCH_NAME and SPEC_FILE paths

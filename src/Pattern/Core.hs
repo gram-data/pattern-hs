@@ -3,68 +3,85 @@
 -- This module defines the fundamental Pattern type as a recursive structure
 -- that can represent graph elements and sequences.
 --
--- == Conceptual Model: Patterns as Sequences
+-- == Conceptual Model: Patterns as Decorated Sequences
 --
--- Conceptually, a Pattern is a sequence of elements with associated metadata.
--- For example, the pattern "3 1 4 1 9 5" is a sequence of 6 elements. The Pattern
--- type represents such sequences where:
+-- Conceptually, a Pattern is a decorated sequence: the elements form the pattern
+-- itself, and the value provides decoration about that pattern.
+-- For example, the pattern "A B B A" with decoration "Enclosed rhyme" represents
+-- a specific sequence pattern (A B B A) that is classified as an "Enclosed rhyme".
+-- The Pattern type represents such decorated sequences where:
 --
--- * @value@ - Metadata or information about the sequence (e.g., sequence name, type, or properties)
--- * @elements@ - The sequence itself, which is a list of Pattern instances
+-- * @elements@ - The pattern itself, represented as a sequence of elements
+-- * @value@ - Decoration about what kind of pattern it is
 --
--- While implemented using a recursive tree structure, the primary semantic is
--- sequence-based. Each element in the sequence is itself a Pattern, enabling
--- arbitrarily nested and complex sequence structures.
+-- The elements ARE the pattern; they are not subordinate to the value.
+-- While implemented using a recursive tree structure, the primary semantic is that
+-- elements form the pattern sequence itself. Each element in the sequence is itself
+-- a Pattern, enabling arbitrarily nested and complex pattern structures.
 --
--- == Implementation: Recursive Structure
+-- == Implementation: Recursive Tree Structure
 --
--- The Pattern type is implemented as a recursive tree structure where:
+-- The Pattern type is implemented as a recursive tree structure, but this is purely
+-- an implementation detail. The relationship between the sequence conceptual model
+-- and tree implementation is:
 --
--- * Each pattern stores a @value@ of type @v@ (the metadata)
--- * Each pattern contains an @elements@ list of zero or more Pattern instances (the sequence)
+-- **Primary Semantic (Conceptual)**: Patterns are decorated sequences where elements
+-- form the pattern itself. The sequence order is essential to the pattern.
+--
+-- **Implementation Detail**: The tree structure is how sequences are represented in
+-- memory. Each tree node stores a decoration (value) and contains the pattern elements
+-- as a list, enabling recursive nesting.
+--
+-- **Relationship**: The tree implementation supports sequence semantics:
+--
+-- * The @elements@ field IS the pattern - it contains the sequence that defines the pattern
+-- * The @value@ field provides decoration about what kind of pattern it is
+-- * Tree traversal provides access to sequence elements in order
 -- * The recursive structure enables patterns to contain patterns containing patterns, etc.
+--
+-- Conceptually, developers should think of patterns as decorated sequences where elements
+-- form the pattern itself. The tree structure is an implementation detail that supports
+-- sequence operations (ordering, length, access by position).
 --
 -- This recursive implementation enables:
 --
--- * Leaf patterns: Sequences with no elements (@elements == []@), representing simple entities
--- * Patterns with elements: Sequences containing one or more pattern elements, representing
---   relationships, subgraphs, or complex structures
+-- * Atomic patterns: Patterns with no elements (@elements == []@), representing empty sequences. Atomic patterns are the fundamental building blocks from which all other patterns are constructed.
+-- * Patterns with elements: Patterns containing one or more pattern elements in sequence
 -- * Arbitrary nesting: Patterns can contain patterns containing patterns, enabling
---   hierarchical and deeply nested sequence structures
+--   deeply nested pattern structures
 --
--- == Values and Pattern Association
+-- == Values and Pattern Decoration
 --
--- Each Pattern instance associates a value with a sequence of elements:
+-- Each Pattern instance decorates a sequence of elements with a value:
 --
--- * The @value@ field stores metadata about the pattern. This can be any type @v@,
+-- * The @value@ field stores decoration about what kind of pattern it is. This can be any type @v@,
 --   such as a string identifier, an integer, a custom data type, etc.
--- * The @value@ is associated with the pattern instance itself, not with individual
---   elements in the sequence.
+-- * The @value@ is decoration about the pattern sequence itself, not part of the pattern.
 -- * All patterns in a structure must share the same value type @v@ (enforced by the type system).
 --
--- For example, a pattern representing a graph node might have @value = "Person"@
--- (metadata indicating the node type) and @elements = []@ (empty sequence, indicating a leaf).
--- A pattern representing a relationship might have @value = "knows"@ (the relationship type)
--- and @elements = [nodeA, nodeB]@ (a sequence of two node patterns).
+-- For example, an atomic pattern might have @value = "Person"@
+-- (decoration indicating the pattern type) and @elements = []@ (empty sequence pattern).
+-- A pattern with two elements might have @value = "knows"@ (the pattern type decoration)
+-- and @elements = [atomA, atomB]@ (the pattern itself - a sequence of two atomic patterns).
 --
--- == Elements and Sequence Structure
+-- == Elements and Pattern Structure
 --
--- The @elements@ field forms the sequence structure of the pattern:
+-- The @elements@ field IS the pattern - it contains the sequence that defines the pattern:
 --
--- * An empty sequence (@elements == []@) represents a leaf pattern - a pattern with no elements
+-- * An empty sequence (@elements == []@) represents a pattern with no elements (empty sequence)
 -- * A non-empty sequence represents a pattern containing one or more pattern elements
--- * The elements are ordered and maintain their sequence order
+-- * The elements are ordered and maintain their sequence order - this order is essential to the pattern
 -- * Each element in the sequence is itself a Pattern, enabling recursive nesting
 --
--- The sequence structure enables hierarchical patterns:
+-- The pattern structure enables compositional patterns:
 --
--- * A pattern can contain other patterns as its elements
--- * Those element patterns can themselves contain patterns
--- * This enables arbitrary depth nesting while maintaining the sequence semantic
+-- * A pattern can include other patterns as its elements
+-- * Those element patterns can themselves include patterns
+-- * This enables arbitrary depth nesting while maintaining the pattern sequence semantic
 --
--- For example, a graph pattern might have @elements = [node1, node2, relationship1]@
--- where each element is a Pattern. The relationship pattern itself might have
--- @elements = [nodeA, nodeB]@, creating a nested structure.
+-- For example, a pattern might have @elements = [atom1, atom2, pair1]@
+-- where each element is a Pattern. A pair pattern itself might have
+-- @elements = [atomA, atomB]@, creating a nested pattern structure.
 --
 -- == Type Safety and Type Parameter @v@
 --
@@ -94,25 +111,25 @@
 --
 -- == Examples
 --
--- Leaf pattern (node):
+-- Atomic pattern:
 --
--- >>> leaf = Pattern { value = "node1", elements = [] }
--- >>> value leaf
--- "node1"
--- >>> elements leaf
+-- >>> atom = Pattern { value = "atom1", elements = [] }
+-- >>> value atom
+-- "atom1"
+-- >>> elements atom
 -- []
 --
--- Pattern with children:
+-- Pattern with elements:
 --
--- >>> child1 = Pattern { value = "child1", elements = [] }
--- >>> child2 = Pattern { value = "child2", elements = [] }
--- >>> parent = Pattern { value = "parent", elements = [child1, child2] }
--- >>> value parent
--- "parent"
--- >>> length (elements parent)
+-- >>> elem1 = Pattern { value = "elem1", elements = [] }
+-- >>> elem2 = Pattern { value = "elem2", elements = [] }
+-- >>> pattern = Pattern { value = "pattern", elements = [elem1, elem2] }
+-- >>> value pattern
+-- "pattern"
+-- >>> length (elements pattern)
 -- 2
--- >>> map value (elements parent)
--- ["child1","child2"]
+-- >>> map value (elements pattern)
+-- ["elem1","elem2"]
 --
 -- Nested patterns (arbitrary depth):
 --
@@ -125,7 +142,7 @@
 -- >>> value (head (elements nested))
 -- "level1"
 --
--- Leaf patterns with different value types:
+-- Atomic patterns with different value types:
 --
 -- >>> leafString = Pattern { value = "text", elements = [] }
 -- >>> leafInt = Pattern { value = 42, elements = [] }
@@ -134,31 +151,32 @@
 -- >>> value leafInt
 -- 42
 --
--- Patterns with varying numbers of children:
+-- Patterns with varying numbers of elements:
 --
--- >>> zeroChildren = Pattern { value = "zero", elements = [] }
--- >>> oneChild = Pattern { value = "one", elements = [Pattern { value = "child", elements = [] }] }
--- >>> manyChildren = Pattern { value = "many", elements = [Pattern { value = "c1", elements = [] }, Pattern { value = "c2", elements = [] }] }
--- >>> length (elements zeroChildren)
+-- >>> zeroElements = Pattern { value = "zero", elements = [] }
+-- >>> oneElement = Pattern { value = "one", elements = [Pattern { value = "elem", elements = [] }] }
+-- >>> manyElements = Pattern { value = "many", elements = [Pattern { value = "e1", elements = [] }, Pattern { value = "e2", elements = [] }] }
+-- >>> length (elements zeroElements)
 -- 0
--- >>> length (elements oneChild)
+-- >>> length (elements oneElement)
 -- 1
--- >>> length (elements manyChildren)
+-- >>> length (elements manyElements)
 -- 2
 module Pattern.Core where
 
--- | A recursive structure representing a sequence of pattern elements with
--- associated metadata.
+-- | A recursive structure representing a decorated sequence pattern.
 --
--- Conceptually, a Pattern is a sequence of elements with a value (metadata)
--- associated with the sequence. For example, the pattern "3 1 4 1 9 5" is a
--- sequence of 6 elements. The Pattern type represents such sequences where
--- each element is itself a Pattern, enabling recursive nesting.
+-- Conceptually, a Pattern is a decorated sequence: the elements form the pattern
+-- itself, and the value provides decoration about that pattern.
+-- For example, the pattern "A B B A" with decoration "Enclosed rhyme" represents
+-- a specific sequence pattern (A B B A) that is classified as an "Enclosed rhyme".
+-- The Pattern type represents such decorated sequences where each element is itself
+-- a Pattern, enabling recursive nesting.
 --
 -- Patterns form the foundation for representing graph elements and sequences.
--- Each pattern associates a value (metadata) of any type with a sequence of
--- pattern elements. The recursive structure enables hierarchical and nested
--- sequences while maintaining the sequence semantic.
+-- Each pattern decorates a sequence of pattern elements with a value of any type.
+-- The recursive structure enables compositional and nested patterns while maintaining
+-- the decorated sequence semantic.
 --
 -- The Pattern type is intentionally minimal - it provides just the structure
 -- needed for recursive sequence representation. Classification functions
@@ -166,47 +184,62 @@ module Pattern.Core where
 --
 -- === Type Parameter @v@
 --
--- The @v@ type parameter allows patterns to store values of any type as metadata.
+-- The @v@ type parameter allows patterns to store decorations of any type.
 -- All patterns in a structure must share the same value type @v@. This type
 -- consistency is enforced by Haskell's type system, ensuring type safety when
 -- working with patterns.
 --
--- For example, @Pattern String@ represents patterns storing string values,
--- @Pattern Int@ represents patterns storing integer values, and @Pattern Person@
--- represents patterns storing custom Person values. All elements in a pattern's
--- sequence must have the same value type as the pattern itself.
+-- For example, @Pattern String@ represents patterns with string decorations,
+-- @Pattern Int@ represents patterns with integer decorations, and @Pattern Person@
+-- represents patterns with custom Person decorations. All elements in a pattern's
+-- sequence must have the same decoration type as the pattern itself.
 --
--- === Pattern Variants
+-- === Pattern Structural Classifications
 --
--- * Leaf pattern: @elements == []@ - a sequence with no elements, representing
---   a simple entity or atomic pattern
--- * Pattern with elements: @elements@ contains one or more pattern elements -
---   represents relationships, subgraphs, or complex sequence structures
+-- Patterns have structural classifications based on their element structure:
+--
+-- * Atomic pattern: @elements == []@ - a sequence with no elements. Atomic patterns are the fundamental building blocks from which all other patterns are constructed.
+-- * Pattern with elements: @elements@ contains one or more pattern elements
+-- * Nested pattern: patterns containing patterns containing patterns, enabling arbitrary nesting
+--
+-- === Graph Interpretations (Views)
+--
+-- Patterns can be **interpreted** as graph elements through different views.
+-- These are interpretations/views of pattern structures, not pattern variants themselves:
+--
+-- * Atomic patterns can be interpreted as nodes through graph views
+-- * Patterns with 2 elements can be interpreted as relationships through graph views
+-- * Patterns with elements can be interpreted as subgraphs through graph views
+--
+-- **Note**: Patterns are a data structure for representing graphs (like an adjacency matrix
+-- or adjacency list), optimized for expressiveness of layered, hierarchical graph structures
+-- rather than performance optimization over a single, "flat" graph.
 --
 -- === Examples
 --
--- Creating a leaf pattern (node):
+-- Creating an atomic pattern:
 --
--- >>> nodeA = Pattern { value = "A", elements = [] }
+-- >>> atom = Pattern { value = "A", elements = [] }
 --
--- Creating a relationship pattern:
+-- Creating a pattern with elements (can be interpreted as a relationship):
 --
--- >>> nodeB = Pattern { value = "B", elements = [] }
--- >>> relationship = Pattern { value = "knows", elements = [nodeA, nodeB] }
+-- >>> elem1 = Pattern { value = "A", elements = [] }
+-- >>> elem2 = Pattern { value = "B", elements = [] }
+-- >>> pattern = Pattern { value = "knows", elements = [elem1, elem2] }
 --
--- Creating a graph pattern:
+-- Creating a pattern with multiple elements (can be interpreted as a subgraph):
 --
--- >>> graph = Pattern { value = "myGraph", elements = [nodeA, nodeB, relationship] }
+-- >>> graph = Pattern { value = "myGraph", elements = [elem1, elem2, pattern] }
 --
 data Pattern v = Pattern 
-  { -- | The metadata or value associated with this pattern sequence.
+  { -- | The decoration (value) associated with this pattern.
     --
-    -- The @value@ field stores metadata about the pattern sequence. This can be
-    -- any type @v@, such as a string identifier, an integer, or a custom data type.
-    -- The value is associated with the pattern instance itself, not with individual
-    -- elements in the sequence.
+    -- The @value@ field stores decoration about what kind of pattern it is.
+    -- This can be any type @v@, such as a string identifier, an integer, or a
+    -- custom data type. The value is decoration about the pattern sequence itself,
+    -- not part of the pattern. The elements form the pattern; the value describes it.
     --
-    -- Type parameter @v@ allows for different value types. All patterns in a
+    -- Type parameter @v@ allows for different decoration types. All patterns in a
     -- structure must share the same value type (enforced by the type system).
     --
     -- === Examples
@@ -217,41 +250,42 @@ data Pattern v = Pattern
     -- >>> value (Pattern { value = 42, elements = [] })
     -- 42
     --
-    -- >>> value (Pattern { value = "graph", elements = [Pattern { value = "node", elements = [] }] })
-    -- "graph"
+    -- >>> value (Pattern { value = "group", elements = [Pattern { value = "atom", elements = [] }] })
+    -- "group"
     value    :: v
     
-    -- | The sequence of pattern elements.
+    -- | The pattern itself, represented as a sequence of elements.
     --
-    -- The @elements@ field contains the sequence of pattern elements. An empty
-    -- list @[]@ represents a leaf pattern (a sequence with no elements). A
-    -- non-empty list represents a pattern containing one or more pattern elements
-    -- in sequence.
+    -- The @elements@ field IS the pattern - it contains the sequence that defines
+    -- the pattern. An empty list @[]@ represents a pattern with no elements
+    -- (empty sequence). A non-empty list represents a pattern containing one or
+    -- more pattern elements in sequence.
     --
     -- The elements maintain their sequence order and are accessible in that order.
-    -- Each element in the sequence is itself a Pattern, enabling recursive nesting
-    -- where patterns can contain patterns containing patterns, etc., enabling
-    -- arbitrary nesting depth while maintaining the sequence semantic.
+    -- This order is essential to the pattern. Each element in the sequence is itself
+    -- a Pattern, enabling recursive nesting where patterns can contain patterns
+    -- containing patterns, etc., enabling arbitrary nesting depth while maintaining
+    -- the pattern sequence semantic.
     --
     -- === Examples
     --
-    -- Leaf pattern (empty children):
+    -- Pattern with no elements (empty sequence):
     --
-    -- >>> elements (Pattern { value = "leaf", elements = [] })
+    -- >>> elements (Pattern { value = "empty", elements = [] })
     -- []
     --
-    -- Pattern with children:
+    -- Pattern with one element:
     --
-    -- >>> leaf = Pattern { value = "child", elements = [] }
-    -- >>> elements (Pattern { value = "parent", elements = [leaf] })
-    -- [Pattern {value = "child", elements = []}]
+    -- >>> elem = Pattern { value = "elem", elements = [] }
+    -- >>> elements (Pattern { value = "pattern", elements = [elem] })
+    -- [Pattern {value = "elem", elements = []}]
     --
-    -- Pattern with multiple children:
+    -- Pattern with multiple elements:
     --
-    -- >>> child1 = Pattern { value = "child1", elements = [] }
-    -- >>> child2 = Pattern { value = "child2", elements = [] }
-    -- >>> elements (Pattern { value = "parent", elements = [child1, child2] })
-    -- [Pattern {value = "child1", elements = []},Pattern {value = "child2", elements = []}]
+    -- >>> elem1 = Pattern { value = "elem1", elements = [] }
+    -- >>> elem2 = Pattern { value = "elem2", elements = [] }
+    -- >>> elements (Pattern { value = "pattern", elements = [elem1, elem2] })
+    -- [Pattern {value = "elem1", elements = []},Pattern {value = "elem2", elements = []}]
   , elements :: [Pattern v]
   }
   deriving (Eq)

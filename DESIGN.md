@@ -2,30 +2,106 @@
 
 ## Core Data Structure
 
-Patterns form a recursive tree structure that can be interpreted as graphs through different views:
+Patterns form a recursive data structure representing decorated sequences that can be interpreted as graphs through different views:
 
 ```haskell
 data Pattern v = Pattern 
-  { value    :: v
-  , elements :: [Pattern v]
-  } deriving (Functor, Foldable, Traversable)
+  { value    :: v              -- Decoration about what kind of pattern it is
+  , elements :: [Pattern v]    -- The pattern itself, as a sequence of elements
+  }
+  deriving (Eq)
 ```
 
-## Graph Elements
+**Note**: `Show` is implemented as a manual instance. `Functor`, `Foldable`, and `Traversable` are ⏳ Planned but not yet implemented.
 
-A Pattern can be interpreted as different graph elements based on its structure:
+**Key Insight**: The `elements` field IS the pattern - it contains the sequence that defines the pattern. The `value` field provides decoration about what kind of pattern it is. For example, the pattern "A B B A" with decoration "Enclosed rhyme" represents a specific sequence pattern (A B B A) that is classified as an "Enclosed rhyme".
+
+## Sequence vs Tree: Conceptual Model and Implementation
+
+Patterns have two complementary views: the **conceptual model** (decorated sequences) and the **implementation model** (recursive trees). Understanding their relationship is essential:
+
+### Primary Semantic: Decorated Sequences
+
+**Conceptually**, patterns are decorated sequences where:
+- The `elements` field IS the pattern - it contains the sequence that defines the pattern
+- The `value` field provides decoration about what kind of pattern it is
+- Elements maintain their sequence order - this order is essential to the pattern
+- Each element in the sequence is itself a Pattern, enabling nested patterns
+
+The sequence semantic is primary because:
+- Patterns are fundamentally about ordered sequences (e.g., "A B B A")
+- The order of elements matters for pattern matching
+- Sequence operations (length, indexing, concatenation) are natural operations on patterns
+
+### Implementation Detail: Recursive Tree Structure
+
+**Implementation-wise**, patterns are represented as recursive trees:
+- The tree structure is how sequences are represented in memory
+- Each tree node stores a decoration (value) and contains the pattern elements as a list
+- The recursive structure enables arbitrary nesting depth
+- Tree traversal provides access to sequence elements in order
+
+### Relationship Between Models
+
+The tree implementation **supports** the sequence semantic:
+- Tree nodes store sequences (lists) of pattern elements
+- Tree traversal preserves sequence order
+- The recursive structure enables nested sequences (patterns containing patterns)
+- Sequence operations (ordering, length, access by position) are implemented via tree operations
+
+**Key Principle**: Conceptually, developers should think of patterns as decorated sequences where elements form the pattern itself. The tree structure is an implementation detail that supports sequence operations. There is no contradiction between these views - the tree is simply how sequences are represented in memory.
+
+## Pattern Structural Classifications
+
+Patterns have structural classifications based on their element structure. These describe what patterns **are** structurally, not how they are interpreted:
+
+### Atomic Pattern
+
+A pattern with no elements (`elements == []`). Atomic patterns are the fundamental building blocks from which all other patterns are constructed.
+
+**Structure**: Empty sequence  
+**Status**: ✅ Implemented (this is the basic Pattern structure)
+
+### Pattern with Elements
+
+A pattern containing one or more pattern elements in sequence.
+
+**Structure**: Non-empty sequence of patterns  
+**Status**: ✅ Implemented (this is the basic Pattern structure)
+
+### Nested Pattern
+
+A pattern containing patterns that themselves contain patterns, enabling arbitrary nesting depth.
+
+**Structure**: Recursive nesting of patterns  
+**Status**: ✅ Implemented (this is the basic Pattern structure)
+
+**Note**: Patterns are a data structure for representing graphs (like an adjacency matrix or adjacency list), optimized for expressiveness of layered, hierarchical graph structures rather than performance optimization over a single, "flat" graph.
+
+## Graph Interpretations (Views)
+
+Patterns can be **interpreted** as graph elements through different views. These are interpretations/views of pattern structures, not pattern variants themselves. The following interpretation functions are planned but not yet implemented:
 
 ```haskell
--- Graph element classification
+-- ⏳ Planned: Graph interpretation functions
+-- These interpret pattern structures as graph elements through views
+
+-- ⏳ Planned: Check if pattern is a graph element (node, relationship, subgraph, or path)
+isGraphElement :: Pattern v -> Bool
+
+-- ⏳ Planned: Interpret pattern as a node (typically atomic pattern)
 isNode :: Pattern v -> Bool
 isNode p = all (not . isGraphElement) (elements p)
 
+-- ⏳ Planned: Interpret pattern as a relationship (typically 2 elements that are nodes)
 isRelationship :: Pattern v -> Bool
 isRelationship p = length (elements p) == 2 && all isNode (elements p)
 
+-- ⏳ Planned: Interpret pattern as a subgraph (all elements are graph elements)
 isSubgraph :: Pattern v -> Bool
 isSubgraph p = all isGraphElement (elements p)
 
+-- ⏳ Planned: Interpret pattern as a path (subgraph with chained relationships)
 isPath :: Pattern v -> Bool
 isPath p = isSubgraph p && chainsCorrectly (elements p)
   where
@@ -35,6 +111,30 @@ isPath p = isSubgraph p && chainsCorrectly (elements p)
       isRelationship r1 && isRelationship r2 &&
       target r1 == source r2 && chainsCorrectly (r2:rs)
 ```
+
+**Status**: ⏳ Planned (graph interpretation functions not yet implemented)
+
+**Note**: These functions interpret pattern structures as graph elements. Patterns themselves are decorated sequences; graph interpretations (nodes, relationships, subgraphs, paths) are views of those structures, not pattern variants.
+
+## Pattern Navigation Functions
+
+Navigation functions extract graph elements from patterns. These functions are planned but not yet implemented:
+
+```haskell
+-- ⏳ Planned: Get source node from a relationship pattern
+source :: Pattern v -> Pattern v
+
+-- ⏳ Planned: Get target node from a relationship pattern
+target :: Pattern v -> Pattern v
+
+-- ⏳ Planned: Get all nodes in a pattern
+nodes :: Pattern v -> [Pattern v]
+
+-- ⏳ Planned: Get all relationships in a pattern
+relationships :: Pattern v -> [Pattern v]
+```
+
+**Status**: ⏳ Planned (navigation functions not yet implemented)
 
 ## Category Theoretic Perspective
 
@@ -64,9 +164,11 @@ class GraphView view where
   toGraph :: view -> Pattern v -> Graph (Direction view) v
 ```
 
-## Standard Views
+## Standard Views (Planned)
 
-### Directed Graph View
+Graph views provide different semantic interpretations of pattern structures. Views are planned but not yet implemented.
+
+### Directed Graph View (Planned)
 
 ```haskell
 data DirectedView = DirectedView
@@ -78,7 +180,9 @@ instance GraphView DirectedView where
   canChain _ r1 r2 = target r1 == source r2
 ```
 
-### Undirected Graph View  
+**Status**: ⏳ Planned (not yet implemented)
+
+### Undirected Graph View (Planned)
 
 ```haskell
 data UndirectedView = UndirectedView
@@ -90,6 +194,8 @@ instance GraphView UndirectedView where
   canChain _ r1 r2 = not $ Set.null $ 
     Set.intersection (nodes r1) (nodes r2)
 ```
+
+**Status**: ⏳ Planned (not yet implemented)
 
 ## Forgetful Pattern Matching
 
@@ -131,7 +237,9 @@ data Context v = Context
   }
 ```
 
-### Pattern Morphisms
+**Status**: ⏳ Planned (future work)
+
+### Pattern Morphisms (Planned)
 
 Morphisms between patterns respect structure while potentially forgetting decorations:
 
@@ -146,6 +254,8 @@ homomorphism f = fmap f
 forget :: PatternMorphism v ()
 forget = forgetValues
 ```
+
+**Status**: ⏳ Planned (not yet implemented)
 
 ## Key Properties
 

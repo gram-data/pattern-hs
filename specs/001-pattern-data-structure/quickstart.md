@@ -222,10 +222,10 @@ prop_nodeHasNoRelationships p =
 ```haskell
 -- Pattern match on Pattern structure
 case somePattern of
-  Pattern v [] -> -- This is a leaf node
-  Pattern v [child] -> -- Single child
+  Pattern v [] -> -- This is an atomic pattern
+  Pattern v [elem] -> -- Single element
   Pattern v [left, right] -> -- Possibly a relationship
-  Pattern v children -> -- Multiple children (subgraph)
+  Pattern v elems -> -- Multiple elements (subgraph)
 ```
 
 ### Transforming Patterns
@@ -256,7 +256,7 @@ sumValues = foldr (+) 0 . fmap id
 ### Common Issues
 
 **Issue**: "Pattern is not a relationship" error
-- **Solution**: Ensure the pattern has exactly 2 child elements, and both are nodes
+- **Solution**: Ensure the pattern has exactly 2 elements, and both are nodes
 
 **Issue**: "Cannot chain relationships"
 - **Solution**: Verify that `target r1 == source r2` for directed views, or that relationships share nodes for undirected views

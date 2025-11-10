@@ -19,7 +19,7 @@ A Haskell library providing a generalized representation of graph elements using
    - View composition and stacking
    - Open-ended extensions for new graph-like interpretations
 
-4. **Sequence-Based Semantics**: Conceptually, patterns are sequences of elements with associated metadata. While implemented using a recursive tree structure, the primary semantic is sequence-based, enabling intuitive pattern matching and manipulation.
+4. **Decorated Sequence Semantics**: Conceptually, patterns are decorated sequences where the elements form the pattern itself, and the value provides decoration about that pattern. While implemented using a recursive tree structure, the primary semantic is that elements form the pattern sequence itself, enabling intuitive pattern matching and manipulation.
 
 5. **Multi-Language Translation**: The design prioritizes clarity and mathematical correctness over language-specific optimizations, making it easier to translate to other languages while preserving conceptual consistency.
 
@@ -31,24 +31,35 @@ A Haskell library providing a generalized representation of graph elements using
 - **Mathematical Clarity**: Formal definitions and mathematical properties are explicitly stated
 - **Cross-Language Alignment**: Core design is language-agnostic and translatable
 
-## Core Concept: Patterns as Sequences
+## Core Concept: Patterns as Decorated Sequences
 
-A Pattern is conceptually a **sequence of elements with associated metadata**. For example, the pattern "3 1 4 1 5 9" is a sequence of 6 elements, that could be described as some digits of Pi.
+A Pattern is conceptually a **decorated sequence**: the elements form the pattern itself, and the value provides decoration about that pattern. For example, the pattern "A B B A" with decoration "Enclosed rhyme" represents a specific sequence pattern (A B B A) that is classified as an "Enclosed rhyme".
 
 ```haskell
 data Pattern v = Pattern 
-  { value    :: v        -- Metadata about the sequence
-  , elements :: [Pattern v]  -- The sequence itself
+  { value    :: v              -- Decoration about what kind of pattern it is
+  , elements :: [Pattern v]    -- The pattern itself, as a sequence of elements
   }
 ```
 
-The `value` field stores metadata about the sequence (e.g., sequence name, type, or properties), while `elements` contains the sequence of pattern elements. Each element in the sequence is itself a Pattern, enabling recursive nesting while maintaining the sequence semantic.
+**Key Insight**: The `elements` field IS the pattern - it contains the sequence that defines the pattern. The `value` field provides decoration about what kind of pattern it is. Each element in the sequence is itself a Pattern, enabling recursive nesting while maintaining the decorated sequence semantic.
 
-While implemented using a recursive tree structure, the primary semantic is sequence-based. This enables:
-- Intuitive pattern matching
-- Clear length semantics (number of elements in the sequence)
+### Sequence vs Tree: Two Complementary Views
+
+Patterns have two complementary views that work together:
+
+**Primary Semantic (Conceptual)**: Patterns are decorated sequences where elements form the pattern itself. The sequence order is essential - patterns like "A B B A" depend on element order.
+
+**Implementation Detail**: Patterns are implemented as recursive trees in memory. Each tree node stores a decoration (value) and contains the pattern elements as a list. The tree structure supports sequence operations.
+
+**Relationship**: The tree implementation supports the sequence semantic. Tree nodes store sequences (lists), tree traversal preserves order, and the recursive structure enables nested sequences. There's no contradiction - the tree is simply how sequences are represented in memory.
+
+This dual view enables:
+- Intuitive pattern matching (the pattern is the sequence)
+- Clear length semantics (number of elements in the pattern)
 - Natural composition operations
 - Graph element interpretation through views
+- Efficient recursive operations via tree structure
 
 ## Project Structure
 
@@ -315,24 +326,24 @@ find src tests -name "*.hs" -exec ormolu -m inplace {} \;
 ```haskell
 import Pattern.Core (Pattern(..))
 
--- Create a leaf pattern (sequence with no elements)
-nodeA :: Pattern String
-nodeA = Pattern { value = "A", elements = [] }
+-- Create an atomic pattern (sequence with no elements)
+atomA :: Pattern String
+atomA = Pattern { value = "A", elements = [] }
 
 -- Create a pattern with elements
-nodeB = Pattern { value = "B", elements = [] }
-relationship = Pattern { value = "knows", elements = [nodeA, nodeB] }
+atomB = Pattern { value = "B", elements = [] }
+pair = Pattern { value = "knows", elements = [atomA, atomB] }
 
 -- Inspect pattern structure
 main = do
-  putStrLn $ "Node value: " ++ value nodeA
-  putStrLn $ "Elements count: " ++ show (length (elements relationship))
+  putStrLn $ "Pattern value: " ++ value atomA
+  putStrLn $ "Elements count: " ++ show (length (elements pair))
 ```
 
 ### More Examples
 
 See `specs/002-basic-pattern-type/quickstart.md` for comprehensive examples including:
-- Creating leaf patterns with different value types
+- Creating atomic patterns with different value types
 - Creating patterns with multiple elements
 - Building nested pattern structures
 - Type safety examples
@@ -352,7 +363,7 @@ See `specs/002-basic-pattern-type/quickstart.md` for comprehensive examples incl
 - **Pattern Type Definition**: Core `Pattern v` data type with record syntax
 - **Field Accessors**: `value` and `elements` accessors
 - **Comprehensive Documentation**: Haddock documentation at all levels
-- **Test Suite**: 25 test cases covering leaf patterns and patterns with elements
+- **Test Suite**: 25 test cases covering atomic patterns and patterns with elements
 
 ### 🔄 In Progress / Planned
 
