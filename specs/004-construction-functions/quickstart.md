@@ -5,7 +5,7 @@
 
 ## Overview
 
-This quickstart guide shows how to use the pattern constructor functions `pattern` and `patternWith` to create patterns more conveniently than using verbose record syntax.
+This quickstart guide shows how to use the pattern constructor functions `pattern`, `patternWith`, and `fromList` to create patterns more conveniently than using verbose record syntax.
 
 ## Prerequisites
 
