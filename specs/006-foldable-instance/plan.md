@@ -7,7 +7,7 @@
 
 ## Summary
 
-Implement a `Foldable` instance for the `Pattern` data type that enables folding over all values in pattern structures (including the pattern's own value and all element values at all nesting levels). The implementation must support `foldr`, `foldl`, `foldMap`, and `toList` operations, work with patterns of any structure (atomic, with elements, nested), and satisfy foldable laws and properties. This provides the foundational capability for aggregating pattern values without manual traversal, enabling statistics computation, value extraction, and data analysis over pattern structures.
+Implement a `Foldable` instance for the `Pattern` data type that enables folding over all values in pattern structures (including the pattern's own value and all element values at all nesting levels). The implementation must support `foldr`, `foldl`, `foldMap`, and `toList` operations, work with patterns of any structure (atomic, with elements, nested), and satisfy foldable laws and properties. Additionally, implement a `flatten()` function that extracts all values as a flat list. The `toList()` operation preserves pattern structure (like standard Foldable behavior on lists), while `flatten()` explicitly flattens all nesting levels. This provides the foundational capability for aggregating pattern values without manual traversal, enabling statistics computation, value extraction, and data analysis over pattern structures.
 
 ## Technical Context
 
@@ -228,7 +228,16 @@ instance Foldable Pattern where
   -- Derived methods (can be overridden for efficiency if needed)
   foldl :: (b -> a -> b) -> b -> Pattern a -> b
   foldMap :: Monoid m => (a -> m) -> Pattern a -> m
-  toList :: Pattern a -> [a]
+  toList :: Pattern a -> [a]  -- Structure-preserving: returns nested lists
+```
+
+### flatten() Function
+
+```haskell
+-- Explicit flattening function
+flatten :: Pattern a -> [a]
+flatten = foldr (:) []
+-- Extracts all values from all nesting levels as a flat list
 ```
 
 ### Value Processing Order
@@ -276,8 +285,11 @@ sum (toList p)  -- [10, 5, 3] -> 18
 -- Or using foldMap with Sum monoid
 getSum (foldMap Sum p)  -- 18
 
--- Extract all values as a list
-toList p  -- [10, 5, 3]
+-- Extract values as a list (preserves structure)
+toList p  -- [10, [5], [3]]  (structure-preserving)
+
+-- Flatten all values (explicit flattening)
+flatten p  -- [10, 5, 3]  (flat list)
 
 -- Fold with custom function
 foldr (+) 0 p  -- 18
@@ -292,11 +304,14 @@ getSum (foldMap Sum pattern) :: Int
 -- Concatenate strings
 foldr (++) "" pattern :: String
 
--- Count values
-length (toList pattern) :: Int
+-- Count values (using flatten for flat list)
+length (flatten pattern) :: Int
 
 -- Check if all values satisfy a predicate
-all (> 0) (toList pattern) :: Bool
+all (> 0) (flatten pattern) :: Bool
+
+-- Extract with structure preserved
+toList pattern :: [a]  -- Nested list structure
 ```
 
 ## Contracts
@@ -317,9 +332,11 @@ toList :: Pattern a -> [a]
 
 ### Laws and Properties
 
-1. **toList extracts all values**: `toList (Pattern v els) = v : concatMap toList els`
-2. **foldr processes all values**: `foldr f z p = foldr f z (toList p)` (conceptually)
-3. **foldMap with monoids**: `foldMap f p = foldMap f (toList p)` (conceptually)
+1. **toList preserves structure**: `toList (Pattern v els) = v : map toList els` (structure-preserving)
+2. **flatten extracts all values**: `flatten (Pattern v els) = v : concatMap flatten els` (flat list)
+3. **foldr processes all values**: `foldr f z p = foldr f z (flatten p)` (conceptually, using flatten)
+4. **foldMap with monoids**: `foldMap f p = foldMap f (flatten p)` (conceptually, using flatten)
+5. **Relationship**: `flatten p = concat (toList p)` (when toList returns nested lists)
 
 ## Testing Plan
 
@@ -332,11 +349,17 @@ toList :: Pattern a -> [a]
 - Nested pattern: `foldr (+) 0` sums values from all levels
 - Custom type: `foldr` works with custom aggregation functions
 
-**User Story 2 - Extract All Values as List**:
+**User Story 2 - Extract Values as List (Structure-Preserving)**:
 - Atomic pattern: `toList` returns single-element list
-- Pattern with elements: `toList` returns all values including pattern's value
-- Nested pattern: `toList` returns values from all levels
-- Integer pattern: `toList` returns list of integers
+- Pattern with elements: `toList` returns pattern value followed by lists representing each element
+- Nested pattern: `toList` returns nested list structure preserving nesting levels
+- Integer pattern: `toList` returns nested list structure with integers
+
+**User Story 2a - Flatten All Values**:
+- Atomic pattern: `flatten` returns single-element list
+- Pattern with elements: `flatten` returns flat list with all values including pattern's value
+- Nested pattern: `flatten` returns flat list with values from all levels
+- Integer pattern: `flatten` returns flat list of integers
 
 **User Story 3 - Right-Associative Folding**:
 - Pattern with values: `foldr` processes in correct order
@@ -366,11 +389,13 @@ toList :: Pattern a -> [a]
 
 **Using `quickProperty` helper (20 test cases max)**:
 
-1. **toList extracts all values**: `length (toList p) == countValues p` (where `countValues` manually counts all values)
-2. **foldr processes all values**: `foldr (+) 0 p == sum (toList p)` (for numeric patterns)
-3. **foldl processes all values**: `foldl (+) 0 p == sum (toList p)` (for commutative operations)
-4. **foldMap with Sum monoid**: `getSum (foldMap Sum p) == sum (toList p)` (for numeric patterns)
-5. **Order preservation**: `toList p` maintains consistent order across multiple calls
+1. **toList preserves structure**: `toList p` returns nested list structure matching pattern structure
+2. **flatten extracts all values**: `length (flatten p) == countValues p` (where `countValues` manually counts all values)
+3. **foldr processes all values**: `foldr (+) 0 p == sum (flatten p)` (for numeric patterns)
+4. **foldl processes all values**: `foldl (+) 0 p == sum (flatten p)` (for commutative operations)
+5. **foldMap with Sum monoid**: `getSum (foldMap Sum p) == sum (flatten p)` (for numeric patterns)
+6. **Order preservation**: Both `toList p` and `flatten p` maintain consistent order across multiple calls
+7. **Relationship**: `flatten p = concat (toList p)` (when toList returns nested lists)
 
 **Performance**: All property-based tests must complete in <10ms total using `quickProperty` helper.
 
@@ -389,7 +414,8 @@ Ensure test examples align with patterns shown in `examples/examples.md`:
 - ✅ **SC-002**: Property-based tests verify `foldr` processes all values with 100% accuracy
 - ✅ **SC-003**: Property-based tests verify `foldl` processes all values with 100% accuracy
 - ✅ **SC-004**: Unit and property-based tests verify `foldMap` works correctly
-- ✅ **SC-005**: Unit and property-based tests verify `toList` extracts all values correctly
+- ✅ **SC-005**: Unit and property-based tests verify `toList` extracts values correctly while preserving structure
+- ✅ **SC-005a**: Unit and property-based tests verify `flatten` extracts all values correctly as flat lists
 - ✅ **SC-006**: Tests cover String, Int, and custom type values
 - ✅ **SC-007**: Tests include nested patterns (3+ levels deep)
 - ✅ **SC-008**: Tests verify order preservation

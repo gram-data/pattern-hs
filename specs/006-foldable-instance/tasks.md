@@ -76,6 +76,8 @@
 
 ## Phase 3: User Story 3 - Fold with Right-Associative Operations (Priority: P1)
 
+**Note**: This phase depends on User Story 2a (flatten) completion for testing, as foldr operations should be verified using flatten for flat list extraction.
+
 **Goal**: Verify that foldr correctly processes values in right-to-left order and handles operations that depend on processing order. This ensures reliable right-associative folding over patterns.
 
 **Independent Test**: Apply foldr to patterns and verify that: (1) values are processed in the correct order, (2) right-associative operations produce correct results, and (3) foldr works for all pattern structures.
@@ -84,15 +86,15 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T019 [P] [US3] Write unit test for foldr processing values in correct order with addition in `tests/Spec/Pattern/CoreSpec.hs`
-- [ ] T020 [P] [US3] Write unit test for foldr building list in correct order with string values in `tests/Spec/Pattern/CoreSpec.hs`
-- [ ] T021 [P] [US3] Write unit test for foldr processing nested pattern values in correct order in `tests/Spec/Pattern/CoreSpec.hs`
-- [ ] T022 [P] [US3] Write unit test verifying foldr right-associativity property in `tests/Spec/Pattern/CoreSpec.hs`
+- [ ] T029 [P] [US3] Write unit test for foldr processing values in correct order with addition in `tests/Spec/Pattern/CoreSpec.hs`
+- [ ] T030 [P] [US3] Write unit test for foldr building list in correct order with string values in `tests/Spec/Pattern/CoreSpec.hs`
+- [ ] T031 [P] [US3] Write unit test for foldr processing nested pattern values in correct order in `tests/Spec/Pattern/CoreSpec.hs`
+- [ ] T032 [P] [US3] Write unit test verifying foldr right-associativity property in `tests/Spec/Pattern/CoreSpec.hs`
 
 ### Implementation for User Story 3
 
-- [ ] T023 [US3] Verify foldr implementation processes values in correct order (no code changes if already correct)
-- [ ] T024 [US3] Add Haddock documentation examples for foldr order semantics in `src/Pattern/Core.hs`
+- [ ] T033 [US3] Verify foldr implementation processes values in correct order (no code changes if already correct)
+- [ ] T034 [US3] Add Haddock documentation examples for foldr order semantics in `src/Pattern/Core.hs`
 
 **Checkpoint**: At this point, User Stories 1, 2, AND 3 should all work independently. foldr should process values in correct order.
 
@@ -108,15 +110,15 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T025 [P] [US4] Write unit test for foldl processing values in left-to-right order with addition in `tests/Spec/Pattern/CoreSpec.hs`
-- [ ] T026 [P] [US4] Write unit test for foldl computing running total correctly with integer values in `tests/Spec/Pattern/CoreSpec.hs`
-- [ ] T027 [P] [US4] Write unit test for foldl processing nested pattern values in left-to-right order in `tests/Spec/Pattern/CoreSpec.hs`
-- [ ] T028 [P] [US4] Write unit test verifying foldl left-associativity property in `tests/Spec/Pattern/CoreSpec.hs`
+- [ ] T035 [P] [US4] Write unit test for foldl processing values in left-to-right order with addition in `tests/Spec/Pattern/CoreSpec.hs`
+- [ ] T036 [P] [US4] Write unit test for foldl computing running total correctly with integer values in `tests/Spec/Pattern/CoreSpec.hs`
+- [ ] T037 [P] [US4] Write unit test for foldl processing nested pattern values in left-to-right order in `tests/Spec/Pattern/CoreSpec.hs`
+- [ ] T038 [P] [US4] Write unit test verifying foldl left-associativity property in `tests/Spec/Pattern/CoreSpec.hs`
 
 ### Implementation for User Story 4
 
-- [ ] T029 [US4] Verify foldl is correctly derived from foldr (or implement explicitly if needed) in `src/Pattern/Core.hs`
-- [ ] T030 [US4] Add Haddock documentation examples for foldl usage in `src/Pattern/Core.hs`
+- [ ] T039 [US4] Verify foldl is correctly derived from foldr (or implement explicitly if needed) in `src/Pattern/Core.hs`
+- [ ] T040 [US4] Add Haddock documentation examples for foldl usage in `src/Pattern/Core.hs`
 
 **Checkpoint**: At this point, User Stories 1, 2, 3, AND 4 should all work independently. foldl should process values in left-to-right order.
 
@@ -132,15 +134,15 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T031 [P] [US5] Write unit test for foldMap with Sum monoid on integer pattern in `tests/Spec/Pattern/CoreSpec.hs`
-- [ ] T032 [P] [US5] Write unit test for foldMap with list monoid on string pattern in `tests/Spec/Pattern/CoreSpec.hs`
-- [ ] T033 [P] [US5] Write unit test for foldMap with All monoid on boolean pattern in `tests/Spec/Pattern/CoreSpec.hs`
-- [ ] T034 [P] [US5] Write unit test for foldMap processing nested pattern values correctly in `tests/Spec/Pattern/CoreSpec.hs`
+- [ ] T041 [P] [US5] Write unit test for foldMap with Sum monoid on integer pattern in `tests/Spec/Pattern/CoreSpec.hs`
+- [ ] T042 [P] [US5] Write unit test for foldMap with list monoid on string pattern in `tests/Spec/Pattern/CoreSpec.hs`
+- [ ] T043 [P] [US5] Write unit test for foldMap with All monoid on boolean pattern in `tests/Spec/Pattern/CoreSpec.hs`
+- [ ] T044 [P] [US5] Write unit test for foldMap processing nested pattern values correctly in `tests/Spec/Pattern/CoreSpec.hs`
 
 ### Implementation for User Story 5
 
-- [ ] T035 [US5] Verify foldMap is correctly derived from foldr (or implement explicitly if needed) in `src/Pattern/Core.hs`
-- [ ] T036 [US5] Add Haddock documentation examples for foldMap usage with monoids in `src/Pattern/Core.hs`
+- [ ] T045 [US5] Verify foldMap is correctly derived from foldr (or implement explicitly if needed) in `src/Pattern/Core.hs`
+- [ ] T046 [US5] Add Haddock documentation examples for foldMap usage with monoids in `src/Pattern/Core.hs`
 
 **Checkpoint**: At this point, all user stories should be independently functional. foldMap should work correctly with monoids.
 
@@ -156,17 +158,19 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T037 [P] Write property-based test for toList extracting all values correctly in `tests/Spec/Pattern/Properties.hs`
-- [ ] T038 [P] Write property-based test for foldr processing all values correctly in `tests/Spec/Pattern/Properties.hs`
-- [ ] T039 [P] Write property-based test for foldl processing all values correctly in `tests/Spec/Pattern/Properties.hs`
-- [ ] T040 [P] Write property-based test for foldMap with Sum monoid producing correct results in `tests/Spec/Pattern/Properties.hs`
-- [ ] T041 [P] Write property-based test for order preservation in toList in `tests/Spec/Pattern/Properties.hs`
-- [ ] T042 [P] Write property-based test verifying foldr and foldl produce same results for commutative operations in `tests/Spec/Pattern/Properties.hs`
+- [ ] T047 [P] Write property-based test for toList preserving structure correctly in `tests/Spec/Pattern/Properties.hs`
+- [ ] T048 [P] Write property-based test for flatten extracting all values correctly in `tests/Spec/Pattern/Properties.hs`
+- [ ] T049 [P] Write property-based test for foldr processing all values correctly in `tests/Spec/Pattern/Properties.hs`
+- [ ] T050 [P] Write property-based test for foldl processing all values correctly in `tests/Spec/Pattern/Properties.hs`
+- [ ] T051 [P] Write property-based test for foldMap with Sum monoid producing correct results in `tests/Spec/Pattern/Properties.hs`
+- [ ] T052 [P] Write property-based test for order preservation in toList and flatten in `tests/Spec/Pattern/Properties.hs`
+- [ ] T053 [P] Write property-based test verifying flatten p = concat (toList p) relationship in `tests/Spec/Pattern/Properties.hs`
+- [ ] T054 [P] Write property-based test verifying foldr and foldl produce same results for commutative operations in `tests/Spec/Pattern/Properties.hs`
 
 ### Implementation for Foldable Laws
 
-- [ ] T043 Verify Foldable instance implementation satisfies all foldable laws (no code changes if already correct)
-- [ ] T044 Add Haddock documentation for foldable laws in `src/Pattern/Core.hs` with formal statements
+- [ ] T055 Verify Foldable instance implementation satisfies all foldable laws (no code changes if already correct)
+- [ ] T056 Add Haddock documentation for foldable laws in `src/Pattern/Core.hs` with formal statements
 
 **Checkpoint**: All property-based tests should pass, verifying foldable laws and properties hold for all pattern structures.
 
@@ -180,19 +184,19 @@
 
 ### Tests for Edge Cases
 
-- [ ] T045 [P] Write unit test for folding atomic pattern (no elements) in `tests/Spec/Pattern/CoreSpec.hs`
-- [ ] T046 [P] Write unit test for folding pattern with empty elements list in `tests/Spec/Pattern/CoreSpec.hs`
-- [ ] T047 [P] Write unit test for folding singular pattern (one element) in `tests/Spec/Pattern/CoreSpec.hs`
-- [ ] T048 [P] Write unit test for folding pattern with many elements in `tests/Spec/Pattern/CoreSpec.hs`
-- [ ] T049 [P] Write unit test for folding nested patterns with varying depths in `tests/Spec/Pattern/CoreSpec.hs`
-- [ ] T050 [P] Write unit test for folding patterns with different value types (strings, integers, custom types) in `tests/Spec/Pattern/CoreSpec.hs`
-- [ ] T051 [P] Write unit test for order preservation in folding operations in `tests/Spec/Pattern/CoreSpec.hs`
-- [ ] T052 [P] Write unit test for deep nesting (3+ levels) in `tests/Spec/Pattern/CoreSpec.hs`
+- [ ] T057 [P] Write unit test for folding atomic pattern (no elements) in `tests/Spec/Pattern/CoreSpec.hs`
+- [ ] T058 [P] Write unit test for folding pattern with empty elements list in `tests/Spec/Pattern/CoreSpec.hs`
+- [ ] T059 [P] Write unit test for folding singular pattern (one element) in `tests/Spec/Pattern/CoreSpec.hs`
+- [ ] T060 [P] Write unit test for folding pattern with many elements in `tests/Spec/Pattern/CoreSpec.hs`
+- [ ] T061 [P] Write unit test for folding nested patterns with varying depths in `tests/Spec/Pattern/CoreSpec.hs`
+- [ ] T062 [P] Write unit test for folding patterns with different value types (strings, integers, custom types) in `tests/Spec/Pattern/CoreSpec.hs`
+- [ ] T063 [P] Write unit test for order preservation in folding operations in `tests/Spec/Pattern/CoreSpec.hs`
+- [ ] T064 [P] Write unit test for deep nesting (3+ levels) in `tests/Spec/Pattern/CoreSpec.hs`
 
 ### Implementation for Edge Cases
 
-- [ ] T053 Verify all edge cases are handled correctly by existing Foldable instance (no code changes expected)
-- [ ] T054 Add Haddock documentation examples for edge cases in `src/Pattern/Core.hs`
+- [ ] T065 Verify all edge cases are handled correctly by existing Foldable instance (no code changes expected)
+- [ ] T066 Add Haddock documentation examples for edge cases in `src/Pattern/Core.hs`
 
 **Checkpoint**: All edge cases should be tested and verified. The Foldable instance should handle all pattern structures correctly.
 
@@ -202,15 +206,15 @@
 
 **Purpose**: Final documentation, examples, validation, and cross-cutting improvements
 
-- [ ] T055 [P] Update module-level Haddock documentation in `src/Pattern/Core.hs` to mention Foldable instance
-- [ ] T056 [P] Add Foldable instance to main Pattern module exports in `src/Pattern.hs` (if needed)
-- [ ] T057 [P] Verify all examples in `specs/006-foldable-instance/quickstart.md` work correctly (when created)
-- [ ] T058 [P] Run all tests and verify 100% pass rate for foldable instance tests
-- [ ] T059 [P] Verify foldable laws hold for all test cases (property-based tests should pass)
-- [ ] T060 [P] Verify test performance: property-based tests complete in <10ms using quickProperty helper
-- [ ] T061 Review and update any related documentation that references Pattern typeclass instances
-- [ ] T062 Code review: verify Foldable instance follows Haskell best practices
-- [ ] T063 Final validation: run full test suite and verify no regressions
+- [ ] T067 [P] Update module-level Haddock documentation in `src/Pattern/Core.hs` to mention Foldable instance and flatten function
+- [ ] T068 [P] Add Foldable instance and flatten function to main Pattern module exports in `src/Pattern.hs` (if needed)
+- [ ] T069 [P] Verify all examples in `specs/006-foldable-instance/quickstart.md` work correctly (when created)
+- [ ] T070 [P] Run all tests and verify 100% pass rate for foldable instance tests
+- [ ] T071 [P] Verify foldable laws hold for all test cases (property-based tests should pass)
+- [ ] T072 [P] Verify test performance: property-based tests complete in <10ms using quickProperty helper
+- [ ] T073 Review and update any related documentation that references Pattern typeclass instances
+- [ ] T074 Code review: verify Foldable instance and flatten function follow Haskell best practices
+- [ ] T075 Final validation: run full test suite and verify no regressions
 
 ---
 
@@ -219,10 +223,11 @@
 ### Phase Dependencies
 
 - **User Story 1 (Phase 1)**: No dependencies - Pattern data type, Eq, Show, and Functor instances already exist (Features 1-4)
-- **User Story 2 (Phase 2)**: Depends on User Story 1 completion - toList requires working foldr
-- **User Story 3 (Phase 3)**: Depends on User Story 1 completion - foldr order verification requires working foldr
-- **User Story 4 (Phase 4)**: Depends on User Story 1 completion - foldl derivation requires working foldr
-- **User Story 5 (Phase 5)**: Depends on User Story 1 completion - foldMap derivation requires working foldr
+- **User Story 2 (Phase 2)**: Depends on User Story 1 completion - toList requires working foldr (structure-preserving)
+- **User Story 2a (Phase 2a)**: Depends on User Story 1 completion - flatten requires working foldr (explicit flattening)
+- **User Story 3 (Phase 3)**: Depends on User Stories 1 and 2a completion - foldr order verification requires working foldr and flatten for testing
+- **User Story 4 (Phase 4)**: Depends on User Stories 1 and 2a completion - foldl derivation requires working foldr and flatten for testing
+- **User Story 5 (Phase 5)**: Depends on User Stories 1 and 2a completion - foldMap derivation requires working foldr and flatten for testing
 - **Property-Based Tests (Phase 6)**: Depends on User Stories 1-5 completion - law verification requires all operations
 - **Edge Cases (Phase 7)**: Depends on User Stories 1-5 completion - edge case testing requires all operations
 - **Polish (Phase 8)**: Depends on all previous phases - final validation requires complete implementation
@@ -230,13 +235,14 @@
 ### Story Completion Order
 
 1. **User Story 1** (MVP) - Must complete first - provides foldr foundation
-2. **User Story 2** - Can start after US1 - toList depends on foldr
-3. **User Story 3** - Can start after US1 - order verification depends on foldr
-4. **User Story 4** - Can start after US1 - foldl depends on foldr
-5. **User Story 5** - Can start after US1 - foldMap depends on foldr
-6. **Property-Based Tests** - Must complete after all user stories
-7. **Edge Cases** - Can run in parallel with property-based tests
-8. **Polish** - Must complete last
+2. **User Story 2** - Can start after US1 - toList depends on foldr (structure-preserving)
+3. **User Story 2a** - Can start after US1 - flatten depends on foldr (explicit flattening)
+4. **User Story 3** - Can start after US1 and US2a - order verification depends on foldr, testing uses flatten
+5. **User Story 4** - Can start after US1 and US2a - foldl depends on foldr, testing uses flatten
+6. **User Story 5** - Can start after US1 and US2a - foldMap depends on foldr, testing uses flatten
+7. **Property-Based Tests** - Must complete after all user stories
+8. **Edge Cases** - Can run in parallel with property-based tests
+9. **Polish** - Must complete last
 
 ### Parallel Execution Opportunities
 
@@ -312,7 +318,8 @@ Each phase includes checkpoint verification. Final success criteria from spec:
 - ✅ **SC-002**: Property-based tests verify foldr processes all values with 100% accuracy
 - ✅ **SC-003**: Property-based tests verify foldl processes all values with 100% accuracy
 - ✅ **SC-004**: Unit and property-based tests verify foldMap works correctly
-- ✅ **SC-005**: Unit and property-based tests verify toList extracts all values correctly
+- ✅ **SC-005**: Unit and property-based tests verify toList extracts values correctly while preserving structure
+- ✅ **SC-005a**: Unit and property-based tests verify flatten extracts all values correctly as flat lists
 - ✅ **SC-006**: Tests cover String, Int, and custom type values
 - ✅ **SC-007**: Tests include nested patterns (3+ levels deep)
 - ✅ **SC-008**: Tests verify order preservation
@@ -324,4 +331,7 @@ Each phase includes checkpoint verification. Final success criteria from spec:
 - **Examples Alignment**: Test examples should align with patterns shown in `examples/examples.md`
 - **Terminology**: Use consistent terminology (atomic patterns, elements, values) throughout tests and documentation
 - **Implementation Pattern**: foldr is the primary method; other methods (foldl, foldMap, toList) can be derived or implemented explicitly for efficiency
+- **toList Behavior**: `toList()` preserves pattern structure (returns nested lists), consistent with standard Foldable behavior on lists
+- **flatten Function**: `flatten()` explicitly extracts all values as a flat list, complementing `toList()` for cases where structure is not needed
+- **Relationship**: `flatten p = concat (toList p)` when toList returns nested lists
 
