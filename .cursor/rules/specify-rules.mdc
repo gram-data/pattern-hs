@@ -7,7 +7,7 @@ Auto-generated from all feature plans. Last updated: 2025-11-04
 - N/A (in-memory data structure) (002-basic-pattern-type)
 - Haskell (GHC 9.10.3) + Standard Haskell libraries (base, no external dependencies for this feature) (001-pattern-structure-review)
 - N/A (documentation review feature, no data storage) (001-pattern-structure-review)
-- Haskell / GHC 9.10.3 (from cabal.project, matches existing features) + `base` ^>=4.17.0.0, `containers` ^>=0.6 (from existing pattern.cabal) (004-construction-functions)
+- Haskell (GHC 9.8.4, 9.10.3) + `base >=4.17.0.0 && <5`, `QuickCheck ^>=2.14`, `hspec ^>=2.11` (005-functor-instance)
 
 - (001-pattern-data-structure)
 
@@ -27,7 +27,7 @@ tests/
 : Follow standard conventions
 
 ## Recent Changes
-- 004-construction-functions: Added Haskell / GHC 9.10.3 (from cabal.project, matches existing features) + `base` ^>=4.17.0.0, `containers` ^>=0.6 (from existing pattern.cabal)
+- 005-functor-instance: Added Haskell (GHC 9.8.4, 9.10.3) + `base >=4.17.0.0 && <5`, `QuickCheck ^>=2.14`, `hspec ^>=2.11`
 - 001-pattern-structure-review: Added Haskell (GHC 9.10.3) + Standard Haskell libraries (base, no external dependencies for this feature)
 - 002-basic-pattern-type: Added Haskell / GHC 9.8.4 (from cabal.project, matches feature 001) + `base` ^>=4.17.0.0, `containers` ^>=0.6 (from existing pattern.cabal)
 
