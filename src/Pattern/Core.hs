@@ -119,7 +119,9 @@
 -- elements, and computing statistics without manually traversing the pattern tree. The instance
 -- provides @foldr@ for right-associative folding, @foldl@ for left-associative folding,
 -- @foldMap@ for monoid-based aggregation, and @toList@ for extracting all values as a flat list.
--- See the Foldable instance documentation below for details on value aggregation and folding operations.
+-- The module also provides @flatten@ as an explicit function for extracting all values as a flat
+-- list, equivalent to @toList@. See the Foldable instance documentation below for details on
+-- value aggregation and folding operations.
 --
 -- == Examples
 --
@@ -175,6 +177,8 @@
 -- >>> length (elements manyElements)
 -- 2
 module Pattern.Core where
+
+import Data.Foldable (toList)
 
 -- | A recursive structure representing a decorated sequence pattern.
 --
@@ -1226,3 +1230,107 @@ fromList decoration values = patternWith decoration (map pattern values)
 --
 toTuple :: Pattern v -> (v, [Pattern v])
 toTuple (Pattern v els) = (v, els)
+
+-- | Extract all values from a pattern as a flat list, explicitly flattening all nesting levels.
+--
+-- This function extracts all values from the pattern structure, including the pattern's own value
+-- and all element values at all nesting levels, into a single flat list. The function is equivalent
+-- to @toList@ (standard Foldable behavior) but is provided explicitly for clarity and to make
+-- flattening operations intentional.
+--
+-- The @flatten@ function processes all values in the pattern structure:
+--
+-- * The pattern's own value is included in the result
+-- * All element values are processed recursively
+-- * Values from all nesting levels are included
+-- * The result is always a flat list (no nested lists)
+--
+-- === Relationship to toList
+--
+-- The @flatten@ function is equivalent to @toList@ (standard Foldable behavior):
+--
+-- @
+-- flatten p = toList p
+-- @
+--
+-- Both functions extract all values as a flat list. Use @flatten@ when you want to make the
+-- flattening operation explicit, or use @toList@ for standard Foldable behavior.
+--
+-- === Examples
+--
+-- Atomic pattern:
+--
+-- >>> atom = Pattern { value = "test", elements = [] }
+-- >>> flatten atom
+-- ["test"]
+--
+-- Pattern with multiple elements:
+--
+-- >>> elem1 = Pattern { value = "a", elements = [] }
+-- >>> elem2 = Pattern { value = "b", elements = [] }
+-- >>> pattern = Pattern { value = "root", elements = [elem1, elem2] }
+-- >>> flatten pattern
+-- ["root", "a", "b"]
+--
+-- Nested pattern structure:
+--
+-- >>> inner = Pattern { value = "inner", elements = [] }
+-- >>> middle = Pattern { value = "middle", elements = [inner] }
+-- >>> pattern = Pattern { value = "root", elements = [middle] }
+-- >>> flatten pattern
+-- ["root", "middle", "inner"]
+--
+-- Pattern with integer values:
+--
+-- >>> elem1 = Pattern { value = 10, elements = [] }
+-- >>> elem2 = Pattern { value = 20, elements = [] }
+-- >>> pattern = Pattern { value = 100, elements = [elem1, elem2] }
+-- >>> flatten pattern
+-- [100, 10, 20]
+--
+-- Using flatten for aggregation:
+--
+-- >>> pattern = Pattern { value = 10, elements = [Pattern { value = 5, elements = [] }, Pattern { value = 3, elements = [] }] }
+-- >>> sum (flatten pattern)
+-- 18
+--
+-- === Edge Cases
+--
+-- **Atomic patterns** (no elements):
+--
+-- >>> atom = Pattern { value = 42, elements = [] }
+-- >>> flatten atom
+-- [42]
+--
+-- **Patterns with empty elements list**:
+--
+-- >>> pattern = Pattern { value = 10, elements = [] }
+-- >>> flatten pattern
+-- [10]
+--
+-- **Singular patterns** (one element):
+--
+-- >>> elem = Pattern { value = 5, elements = [] }
+-- >>> pattern = Pattern { value = 10, elements = [elem] }
+-- >>> flatten pattern
+-- [10, 5]
+--
+-- **Patterns with many elements**:
+--
+-- >>> elems = map (\i -> Pattern { value = i, elements = [] }) [1..5]
+-- >>> pattern = Pattern { value = 100, elements = elems }
+-- >>> flatten pattern
+-- [100, 1, 2, 3, 4, 5]
+--
+-- **Deep nesting** (3+ levels):
+--
+-- >>> level4 = Pattern { value = 1, elements = [] }
+-- >>> level3 = Pattern { value = 2, elements = [level4] }
+-- >>> level2 = Pattern { value = 3, elements = [level3] }
+-- >>> level1 = Pattern { value = 4, elements = [level2] }
+-- >>> pattern = Pattern { value = 5, elements = [level1] }
+-- >>> flatten pattern
+-- [5, 4, 3, 2, 1]
+--
+flatten :: Pattern a -> [a]
+flatten = toList

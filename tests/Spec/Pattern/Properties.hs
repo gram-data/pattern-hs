@@ -12,7 +12,7 @@ module Spec.Pattern.Properties where
 import Data.Char (toUpper)
 import Data.Foldable (foldl, foldMap, foldr, toList)
 import Data.Monoid (All(..), Sum(..))
-import Pattern.Core (Pattern(..), pattern, patternWith, fromList)
+import Pattern.Core (Pattern(..), pattern, patternWith, fromList, flatten)
 import Test.Hspec
 import Test.QuickCheck hiding (elements)
 import qualified Test.QuickCheck as QC
@@ -87,12 +87,6 @@ quickProperty = withMaxSuccess 20 . property
 -- Used for verifying that foldable operations process all values correctly.
 countValues :: Pattern a -> Int
 countValues (Pattern _ els) = 1 + sum (map countValues els)
-
--- | Helper function for flattening (equivalent to toList).
--- Note: According to spec, flatten should be equivalent to toList.
--- This helper is used in tests where flatten is mentioned.
-flatten :: Pattern a -> [a]
-flatten = toList
 
 spec :: Spec
 spec = do

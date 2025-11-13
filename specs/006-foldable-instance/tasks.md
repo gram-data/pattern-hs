@@ -231,15 +231,15 @@
 
 **Purpose**: Final documentation, examples, validation, and cross-cutting improvements
 
-- [ ] T067 [P] Update module-level Haddock documentation in `src/Pattern/Core.hs` to mention Foldable instance and flatten function
-- [ ] T068 [P] Add Foldable instance and flatten function to main Pattern module exports in `src/Pattern.hs` (if needed)
+- [x] T067 [P] Update module-level Haddock documentation in `src/Pattern/Core.hs` to mention Foldable instance and flatten function
+- [x] T068 [P] Add Foldable instance and flatten function to main Pattern module exports in `src/Pattern.hs` (if needed)
 - [ ] T069 [P] Verify all examples in `specs/006-foldable-instance/quickstart.md` work correctly (when created)
-- [ ] T070 [P] Run all tests and verify 100% pass rate for foldable instance tests
-- [ ] T071 [P] Verify foldable laws hold for all test cases (property-based tests should pass)
-- [ ] T072 [P] Verify test performance: property-based tests complete in <10ms using quickProperty helper
-- [ ] T073 Review and update any related documentation that references Pattern typeclass instances
-- [ ] T074 Code review: verify Foldable instance and flatten function follow Haskell best practices
-- [ ] T075 Final validation: run full test suite and verify no regressions
+- [x] T070 [P] Run all tests and verify 100% pass rate for foldable instance tests
+- [x] T071 [P] Verify foldable laws hold for all test cases (property-based tests should pass)
+- [x] T072 [P] Verify test performance: property-based tests complete in <10ms using quickProperty helper
+- [x] T073 Review and update any related documentation that references Pattern typeclass instances
+- [x] T074 Code review: verify Foldable instance and flatten function follow Haskell best practices
+- [x] T075 Final validation: run full test suite and verify no regressions
 
 ---
 
