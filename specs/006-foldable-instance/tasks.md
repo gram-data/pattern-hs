@@ -159,15 +159,15 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T041 [P] [US5] Write unit test for foldMap with Sum monoid on integer pattern in `tests/Spec/Pattern/CoreSpec.hs`
-- [ ] T042 [P] [US5] Write unit test for foldMap with list monoid on string pattern in `tests/Spec/Pattern/CoreSpec.hs`
-- [ ] T043 [P] [US5] Write unit test for foldMap with All monoid on boolean pattern in `tests/Spec/Pattern/CoreSpec.hs`
-- [ ] T044 [P] [US5] Write unit test for foldMap processing nested pattern values correctly in `tests/Spec/Pattern/CoreSpec.hs`
+- [x] T041 [P] [US5] Write unit test for foldMap with Sum monoid on integer pattern in `tests/Spec/Pattern/CoreSpec.hs`
+- [x] T042 [P] [US5] Write unit test for foldMap with list monoid on string pattern in `tests/Spec/Pattern/CoreSpec.hs`
+- [x] T043 [P] [US5] Write unit test for foldMap with All monoid on boolean pattern in `tests/Spec/Pattern/CoreSpec.hs`
+- [x] T044 [P] [US5] Write unit test for foldMap processing nested pattern values correctly in `tests/Spec/Pattern/CoreSpec.hs`
 
 ### Implementation for User Story 5
 
-- [ ] T045 [US5] Verify foldMap is correctly derived from foldr (or implement explicitly if needed) in `src/Pattern/Core.hs`
-- [ ] T046 [US5] Add Haddock documentation examples for foldMap usage with monoids in `src/Pattern/Core.hs`
+- [x] T045 [US5] Verify foldMap is correctly derived from foldr (or implement explicitly if needed) in `src/Pattern/Core.hs`
+- [x] T046 [US5] Add Haddock documentation examples for foldMap usage with monoids in `src/Pattern/Core.hs`
 
 **Checkpoint**: At this point, all user stories should be independently functional. foldMap should work correctly with monoids.
 

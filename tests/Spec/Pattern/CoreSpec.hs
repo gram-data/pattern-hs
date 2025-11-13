@@ -2,7 +2,8 @@
 module Spec.Pattern.CoreSpec where
 
 import Data.Char (toUpper)
-import Data.Foldable (foldl, toList)
+import Data.Foldable (foldl, foldMap, toList)
+import Data.Monoid (All(..), Sum(..))
 import Test.Hspec
 import Pattern.Core (Pattern(..), pattern, patternWith, fromList, toTuple)
 
@@ -1521,3 +1522,118 @@ spec = do
           foldl (-) 0 pattern `shouldBe` (-18 :: Int)
           -- Verify by checking intermediate steps
           foldl (-) 0 (Pattern { value = 10, elements = [] }) `shouldBe` (-10 :: Int)
+    
+    describe "Map Values to Monoids and Combine (User Story 5)" $ do
+      
+      describe "foldMap with Sum monoid on integer pattern" $ do
+        
+        it "foldMap with Sum monoid on atomic pattern with integer value" $ do
+          let atom = Pattern { value = 5, elements = [] }
+          getSum (foldMap Sum atom) `shouldBe` (5 :: Int)
+        
+        it "foldMap with Sum monoid on pattern with multiple integer values" $ do
+          let elem1 = Pattern { value = 10, elements = [] }
+          let elem2 = Pattern { value = 20, elements = [] }
+          let elem3 = Pattern { value = 30, elements = [] }
+          let pattern = Pattern { value = 100, elements = [elem1, elem2, elem3] }
+          -- Should sum: 100 + 10 + 20 + 30 = 160
+          getSum (foldMap Sum pattern) `shouldBe` (160 :: Int)
+        
+        it "foldMap with Sum monoid on pattern with negative integer values" $ do
+          let elem1 = Pattern { value = -5, elements = [] }
+          let elem2 = Pattern { value = -10, elements = [] }
+          let pattern = Pattern { value = 100, elements = [elem1, elem2] }
+          -- Should sum: 100 + (-5) + (-10) = 85
+          getSum (foldMap Sum pattern) `shouldBe` (85 :: Int)
+      
+      describe "foldMap with list monoid on string pattern" $ do
+        
+        it "foldMap with list monoid on atomic pattern with string value" $ do
+          let atom = Pattern { value = "test", elements = [] }
+          foldMap (: []) atom `shouldBe` ["test"]
+        
+        it "foldMap with list monoid on pattern with multiple string values" $ do
+          let elem1 = Pattern { value = "hello", elements = [] }
+          let elem2 = Pattern { value = "world", elements = [] }
+          let pattern = Pattern { value = "greeting", elements = [elem1, elem2] }
+          -- Should concatenate: ["greeting", "hello", "world"]
+          foldMap (: []) pattern `shouldBe` ["greeting", "hello", "world"]
+        
+        it "foldMap with list monoid concatenates string values correctly" $ do
+          let elem1 = Pattern { value = "a", elements = [] }
+          let elem2 = Pattern { value = "b", elements = [] }
+          let elem3 = Pattern { value = "c", elements = [] }
+          let pattern = Pattern { value = "root", elements = [elem1, elem2, elem3] }
+          -- Should produce: ["root", "a", "b", "c"]
+          foldMap (: []) pattern `shouldBe` ["root", "a", "b", "c"]
+      
+      describe "foldMap with All monoid on boolean pattern" $ do
+        
+        it "foldMap with All monoid on atomic pattern with boolean value" $ do
+          let atom = Pattern { value = True, elements = [] }
+          getAll (foldMap All atom) `shouldBe` True
+        
+        it "foldMap with All monoid on pattern with multiple boolean values (all True)" $ do
+          let elem1 = Pattern { value = True, elements = [] }
+          let elem2 = Pattern { value = True, elements = [] }
+          let pattern = Pattern { value = True, elements = [elem1, elem2] }
+          -- Should produce: True && True && True = True
+          getAll (foldMap All pattern) `shouldBe` True
+        
+        it "foldMap with All monoid on pattern with multiple boolean values (one False)" $ do
+          let elem1 = Pattern { value = True, elements = [] }
+          let elem2 = Pattern { value = False, elements = [] }
+          let pattern = Pattern { value = True, elements = [elem1, elem2] }
+          -- Should produce: True && True && False = False
+          getAll (foldMap All pattern) `shouldBe` False
+        
+        it "foldMap with All monoid on pattern with multiple boolean values (all False)" $ do
+          let elem1 = Pattern { value = False, elements = [] }
+          let elem2 = Pattern { value = False, elements = [] }
+          let pattern = Pattern { value = False, elements = [elem1, elem2] }
+          -- Should produce: False && False && False = False
+          getAll (foldMap All pattern) `shouldBe` False
+      
+      describe "foldMap processing nested pattern values correctly" $ do
+        
+        it "foldMap with Sum monoid processes nested pattern values correctly" $ do
+          let inner = Pattern { value = 1, elements = [] }
+          let middle = Pattern { value = 2, elements = [inner] }
+          let outer = Pattern { value = 3, elements = [middle] }
+          let pattern = Pattern { value = 4, elements = [outer] }
+          -- Should sum: 4 + 3 + 2 + 1 = 10
+          getSum (foldMap Sum pattern) `shouldBe` (10 :: Int)
+        
+        it "foldMap with list monoid processes nested pattern values correctly" $ do
+          let inner = Pattern { value = "inner", elements = [] }
+          let middle = Pattern { value = "middle", elements = [inner] }
+          let outer = Pattern { value = "outer", elements = [middle] }
+          let pattern = Pattern { value = "root", elements = [outer] }
+          -- Should produce: ["root", "outer", "middle", "inner"]
+          foldMap (: []) pattern `shouldBe` ["root", "outer", "middle", "inner"]
+        
+        it "foldMap with All monoid processes nested pattern values correctly" $ do
+          let inner = Pattern { value = True, elements = [] }
+          let middle = Pattern { value = True, elements = [inner] }
+          let outer = Pattern { value = True, elements = [middle] }
+          let pattern = Pattern { value = True, elements = [outer] }
+          -- Should produce: True && True && True && True = True
+          getAll (foldMap All pattern) `shouldBe` True
+        
+        it "foldMap processes deeply nested pattern values correctly" $ do
+          let level4 = Pattern { value = 1, elements = [] }
+          let level3 = Pattern { value = 2, elements = [level4] }
+          let level2 = Pattern { value = 3, elements = [level3] }
+          let level1 = Pattern { value = 4, elements = [level2] }
+          let pattern = Pattern { value = 5, elements = [level1] }
+          -- Should sum: 5 + 4 + 3 + 2 + 1 = 15
+          getSum (foldMap Sum pattern) `shouldBe` (15 :: Int)
+        
+        it "foldMap processes multiple nested elements correctly" $ do
+          let inner1 = Pattern { value = 1, elements = [] }
+          let inner2 = Pattern { value = 2, elements = [] }
+          let middle1 = Pattern { value = 10, elements = [inner1] }
+          let middle2 = Pattern { value = 20, elements = [inner2] }
+          let pattern = Pattern { value = 100, elements = [middle1, middle2] }
+          -- Should sum: 100 + 10 + 1 + 20 + 2 = 133
+          getSum (foldMap Sum pattern) `shouldBe` (133 :: Int)

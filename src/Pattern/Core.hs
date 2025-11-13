@@ -117,9 +117,9 @@
 -- The Pattern type has a Foldable instance that enables value aggregation over pattern
 -- structures. This supports operations like summing values, concatenating strings, counting
 -- elements, and computing statistics without manually traversing the pattern tree. The instance
--- provides @foldr@ for right-associative folding, @foldl@ for left-associative folding, and
--- @toList@ for extracting all values as a flat list. See the Foldable instance documentation
--- below for details on value aggregation and folding operations.
+-- provides @foldr@ for right-associative folding, @foldl@ for left-associative folding,
+-- @foldMap@ for monoid-based aggregation, and @toList@ for extracting all values as a flat list.
+-- See the Foldable instance documentation below for details on value aggregation and folding operations.
 --
 -- == Examples
 --
@@ -738,6 +738,84 @@ instance Foldable Pattern where
   -- -18
   --
   foldl f z (Pattern v els) = Prelude.foldl (\acc e -> foldl f acc e) (f z v) els
+  
+  -- | Map values to monoids and combine them efficiently.
+  --
+  -- Maps each value in the pattern structure to a monoid and combines them
+  -- using monoid operations. This provides a declarative approach for common
+  -- aggregation patterns like summing, concatenating, or counting without
+  -- explicitly writing fold functions.
+  --
+  -- The @foldMap@ operation processes all values in the pattern structure,
+  -- including the pattern's own value and all element values at all nesting
+  -- levels. Values are mapped to monoids and combined using the monoid's
+  -- @mappend@ operation (or @<>@).
+  --
+  -- === Examples
+  --
+  -- Summing integer values with Sum monoid:
+  --
+  -- >>> elem1 = Pattern { value = 10, elements = [] }
+  -- >>> elem2 = Pattern { value = 20, elements = [] }
+  -- >>> pattern = Pattern { value = 100, elements = [elem1, elem2] }
+  -- >>> getSum (foldMap Sum pattern)
+  -- 130
+  --
+  -- Concatenating string values with list monoid:
+  --
+  -- >>> elem1 = Pattern { value = "hello", elements = [] }
+  -- >>> elem2 = Pattern { value = "world", elements = [] }
+  -- >>> pattern = Pattern { value = "greeting", elements = [elem1, elem2] }
+  -- >>> foldMap (: []) pattern
+  -- ["greeting", "hello", "world"]
+  --
+  -- Logical AND with All monoid:
+  --
+  -- >>> elem1 = Pattern { value = True, elements = [] }
+  -- >>> elem2 = Pattern { value = True, elements = [] }
+  -- >>> pattern = Pattern { value = True, elements = [elem1, elem2] }
+  -- >>> getAll (foldMap All pattern)
+  -- True
+  --
+  -- Nested pattern structure:
+  --
+  -- >>> inner = Pattern { value = 1, elements = [] }
+  -- >>> middle = Pattern { value = 2, elements = [inner] }
+  -- >>> pattern = Pattern { value = 3, elements = [middle] }
+  -- >>> getSum (foldMap Sum pattern)
+  -- 6
+  --
+  -- === Monoid Operations
+  --
+  -- The @foldMap@ operation uses monoid operations to combine mapped values:
+  --
+  -- * @Sum@ monoid: Addition for numeric values
+  -- * @Product@ monoid: Multiplication for numeric values
+  -- * @All@ monoid: Logical AND for boolean values
+  -- * @Any@ monoid: Logical OR for boolean values
+  -- * List monoid: Concatenation for lists
+  -- * Custom monoids: Any type with a Monoid instance
+  --
+  -- === Efficiency
+  --
+  -- The @foldMap@ operation is implemented efficiently using the pattern's
+  -- @foldr@ implementation. For monoids that support efficient combination,
+  -- this provides optimal performance for aggregation operations.
+  --
+  -- Example with Sum monoid (efficient):
+  --
+  -- >>> getSum (foldMap Sum (Pattern { value = 5, elements = [] }))
+  -- 5
+  --
+  -- Example with list monoid (efficient concatenation):
+  --
+  -- >>> foldMap (: []) (Pattern { value = "test", elements = [] })
+  -- ["test"]
+  --
+  -- Note: @foldMap@ is automatically derived from @foldr@ and works correctly
+  -- for all pattern structures. The default implementation processes all values
+  -- in the pattern structure, including the pattern's own value and all element
+  -- values at all nesting levels.
   
   -- Note: @toList@ is automatically derived from @foldr@ and extracts all values
   -- as a flat list. The pattern's own value and all element values at all
