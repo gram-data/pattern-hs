@@ -1,8 +1,12 @@
 -- | Unit tests for Pattern.Core module.
 module Spec.Pattern.CoreSpec where
 
+import Control.Monad.State (State, get, put, runState)
 import Data.Char (toUpper)
+import Data.Either (Either(..))
 import Data.Foldable (foldl, foldMap, toList)
+import Data.Functor.Identity (Identity(..))
+import Data.Maybe (fromJust)
 import Data.Monoid (All(..), Sum(..))
 import Test.Hspec
 import Pattern.Core (Pattern(..), pattern, patternWith, fromList, toTuple)
@@ -1934,3 +1938,490 @@ spec = do
           foldr (++) "" pattern `shouldBe` "rootlevel1level2level3"
           foldl (++) "" pattern `shouldBe` "rootlevel1level2level3"
           foldMap (: []) pattern `shouldBe` ["root", "level1", "level2", "level3"]
+    
+    describe "Traversable Instance (User Story 1)" $ do
+      
+      describe "Traversing atomic patterns with Identity" $ do
+        
+        it "traverses atomic pattern with Identity" $ do
+          -- T009: Unit test for traversing atomic pattern with Identity
+          let atom = pattern "test"
+              result = traverse Identity atom
+          runIdentity result `shouldBe` atom
+      
+      describe "Traversing atomic patterns with Maybe" $ do
+        
+        it "traverses atomic pattern with Maybe (Just value)" $ do
+          -- T010: Unit test for traversing atomic pattern with Maybe (Just value)
+          let validate x = if x > 0 then Just x else Nothing
+              atom = pattern 5
+              result = traverse validate atom
+          result `shouldBe` Just atom
+        
+        it "traverses atomic pattern with Maybe (Nothing on failure)" $ do
+          -- T011: Unit test for traversing atomic pattern with Maybe (Nothing on failure)
+          let validate x = if x > 0 then Just x else Nothing
+              atom = pattern (-3)
+              result = traverse validate atom
+          result `shouldBe` Nothing
+      
+      describe "Traversing atomic patterns with Either" $ do
+        
+        it "traverses atomic pattern with Either (Right value)" $ do
+          -- T012: Unit test for traversing atomic pattern with Either (Right value)
+          let validate x = if x > 0 then Right x else Left ("Invalid: " ++ show x)
+              atom = pattern 5
+              result = traverse validate atom
+          result `shouldBe` Right atom
+        
+        it "traverses atomic pattern with Either (Left error)" $ do
+          -- T013: Unit test for traversing atomic pattern with Either (Left error)
+          let validate x = if x > 0 then Right x else Left ("Invalid: " ++ show x)
+              atom = pattern (-3)
+              result = traverse validate atom
+          result `shouldBe` Left "Invalid: -3"
+      
+      describe "Traversing patterns with multiple elements using Identity" $ do
+        
+        it "traverses pattern with multiple elements using Identity" $ do
+          -- T014: Unit test for traversing pattern with multiple elements using Identity
+          let elem1 = pattern "elem1"
+              elem2 = pattern "elem2"
+              p = patternWith "root" [elem1, elem2]
+              result = traverse Identity p
+          runIdentity result `shouldBe` p
+      
+      describe "Traversing patterns with multiple elements using Maybe" $ do
+        
+        it "traverses pattern with multiple elements using Maybe (all succeed)" $ do
+          -- T015: Unit test for traversing pattern with multiple elements using Maybe (all succeed)
+          let validate x = if x > 0 then Just x else Nothing
+              elem1 = pattern 5
+              elem2 = pattern 10
+              p = patternWith 20 [elem1, elem2]
+              result = traverse validate p
+          result `shouldBe` Just p
+        
+        it "traverses pattern with multiple elements using Maybe (one fails)" $ do
+          -- T016: Unit test for traversing pattern with multiple elements using Maybe (one fails)
+          let validate x = if x > 0 then Just x else Nothing
+              elem1 = pattern 5
+              elem2 = pattern (-3)
+              p = patternWith 20 [elem1, elem2]
+              result = traverse validate p
+          result `shouldBe` Nothing
+      
+      describe "Traversing patterns with multiple elements using Either" $ do
+        
+        it "traverses pattern with multiple elements using Either (all succeed)" $ do
+          -- T017: Unit test for traversing pattern with multiple elements using Either (all succeed)
+          let validate x = if x > 0 then Right x else Left ("Invalid: " ++ show x)
+              elem1 = pattern 5
+              elem2 = pattern 10
+              p = patternWith 20 [elem1, elem2]
+              result = traverse validate p
+          result `shouldBe` Right p
+        
+        it "traverses pattern with multiple elements using Either (one fails)" $ do
+          -- T018: Unit test for traversing pattern with multiple elements using Either (one fails)
+          let validate x = if x > 0 then Right x else Left ("Invalid: " ++ show x)
+              elem1 = pattern 5
+              elem2 = pattern (-3)
+              p = patternWith 20 [elem1, elem2]
+              result = traverse validate p
+          result `shouldBe` Left "Invalid: -3"
+      
+      describe "Traversing nested pattern structures with Identity" $ do
+        
+        it "traverses nested pattern structure with Identity" $ do
+          -- T019: Unit test for traversing nested pattern structure with Identity
+          let inner = pattern "inner"
+              middle = patternWith "middle" [inner]
+              outer = patternWith "outer" [middle]
+              p = patternWith "root" [outer]
+              result = traverse Identity p
+          runIdentity result `shouldBe` p
+      
+      describe "Traversing nested pattern structures with Maybe" $ do
+        
+        it "traverses nested pattern structure with Maybe (all succeed)" $ do
+          -- T020: Unit test for traversing nested pattern structure with Maybe (all succeed)
+          let validate x = if x > 0 then Just x else Nothing
+              inner = pattern 1
+              middle = patternWith 2 [inner]
+              outer = patternWith 3 [middle]
+              p = patternWith 4 [outer]
+              result = traverse validate p
+          result `shouldBe` Just p
+        
+        it "traverses nested pattern structure with Maybe (one fails)" $ do
+          -- T021: Unit test for traversing nested pattern structure with Maybe (one fails)
+          let validate x = if x > 0 then Just x else Nothing
+              inner = pattern (-1)
+              middle = patternWith 2 [inner]
+              outer = patternWith 3 [middle]
+              p = patternWith 4 [outer]
+              result = traverse validate p
+          result `shouldBe` Nothing
+      
+      describe "Traversing nested pattern structures with Either" $ do
+        
+        it "traverses nested pattern structure with Either (all succeed)" $ do
+          -- T022: Unit test for traversing nested pattern structure with Either (all succeed)
+          let validate x = if x > 0 then Right x else Left ("Invalid: " ++ show x)
+              inner = pattern 1
+              middle = patternWith 2 [inner]
+              outer = patternWith 3 [middle]
+              p = patternWith 4 [outer]
+              result = traverse validate p
+          result `shouldBe` Right p
+        
+        it "traverses nested pattern structure with Either (one fails)" $ do
+          -- T023: Unit test for traversing nested pattern structure with Either (one fails)
+          let validate x = if x > 0 then Right x else Left ("Invalid: " ++ show x)
+              inner = pattern (-1)
+              middle = patternWith 2 [inner]
+              outer = patternWith 3 [middle]
+              p = patternWith 4 [outer]
+              result = traverse validate p
+          result `shouldBe` Left "Invalid: -1"
+      
+      describe "Structure preservation in traverse" $ do
+        
+        it "traverse preserves pattern structure (element count, nesting depth, element order)" $ do
+          -- T024: Unit test verifying traverse preserves pattern structure
+          let elem1 = pattern "a"
+              elem2 = pattern "b"
+              elem3 = pattern "c"
+              p = patternWith "root" [elem1, elem2, elem3]
+              result = traverse Identity p
+              p' = runIdentity result
+          length (elements p') `shouldBe` 3
+          value (elements p' !! 0) `shouldBe` "a"
+          value (elements p' !! 1) `shouldBe` "b"
+          value (elements p' !! 2) `shouldBe` "c"
+        
+        it "traverse processes pattern's own value" $ do
+          -- T025: Unit test verifying traverse processes pattern's own value
+          let validate x = if x > 0 then Just (x * 2) else Nothing
+              atom = pattern 5
+              result = traverse validate atom
+          result `shouldBe` Just (pattern 10)
+        
+        it "traverse processes all element values recursively" $ do
+          -- T026: Unit test verifying traverse processes all element values recursively
+          let validate x = if x > 0 then Just (x * 2) else Nothing
+              elem1 = pattern 5
+              elem2 = pattern 10
+              p = patternWith 20 [elem1, elem2]
+              result = traverse validate p
+          result `shouldBe` Just (patternWith 40 [pattern 10, pattern 20])
+      
+      describe "Traversing patterns with different value types" $ do
+        
+        it "traverses pattern with string values using Identity" $ do
+          -- T027: Unit test for traversing pattern with string values using Identity
+          let elem1 = pattern "hello"
+              elem2 = pattern "world"
+              p = patternWith "greeting" [elem1, elem2]
+              result = traverse Identity p
+          runIdentity result `shouldBe` p
+        
+        it "traverses pattern with integer values using Maybe" $ do
+          -- T028: Unit test for traversing pattern with integer values using Maybe
+          let validate x = if x > 0 then Just x else Nothing
+              elem1 = pattern 5
+              elem2 = pattern 10
+              p = patternWith 20 [elem1, elem2]
+              result = traverse validate p
+          result `shouldBe` Just p
+        
+        it "traverses pattern with custom type values using Either" $ do
+          -- T029: Unit test for traversing pattern with custom type values using Either
+          let validate (Person name age) = 
+                if name /= "" && age /= Nothing 
+                then Right (Person name age)
+                else Left "Invalid person"
+              person1 = Person "Alice" (Just 30)
+              person2 = Person "Bob" (Just 25)
+              elem1 = pattern person1
+              elem2 = pattern person2
+              rootPerson = Person "Root" (Just 40)
+              p = patternWith rootPerson [elem1, elem2]
+              result = traverse validate p
+          result `shouldBe` Right p
+    
+    describe "Sequence Applicative Effects (User Story 2)" $ do
+      
+      describe "sequenceA on patterns containing Identity values" $ do
+        
+        it "sequences pattern containing Identity values" $ do
+          -- T037: Unit test for sequenceA on pattern containing Identity values
+          let atom = pattern (Identity "test")
+              result = sequenceA atom
+          runIdentity result `shouldBe` pattern "test"
+      
+      describe "sequenceA on patterns containing Maybe values" $ do
+        
+        it "sequences pattern containing Maybe values (all Just)" $ do
+          -- T038: Unit test for sequenceA on pattern containing Maybe values (all Just)
+          let elem1 = pattern (Just 5)
+              elem2 = pattern (Just 10)
+              p = patternWith (Just 20) [elem1, elem2]
+              result = sequenceA p
+          result `shouldBe` Just (patternWith 20 [pattern 5, pattern 10])
+        
+        it "sequences pattern containing Maybe values (one Nothing)" $ do
+          -- T039: Unit test for sequenceA on pattern containing Maybe values (one Nothing)
+          let elem1 = pattern (Just 5)
+              elem2 = pattern Nothing
+              p = patternWith (Just 20) [elem1, elem2]
+              result = sequenceA p
+          result `shouldBe` Nothing
+      
+      describe "sequenceA on patterns containing Either values" $ do
+        
+        it "sequences pattern containing Either values (all Right)" $ do
+          -- T040: Unit test for sequenceA on pattern containing Either values (all Right)
+          let elem1 = pattern (Right 5 :: Either String Int)
+              elem2 = pattern (Right 10 :: Either String Int)
+              p = patternWith (Right 20 :: Either String Int) [elem1, elem2]
+              result = sequenceA p
+          result `shouldBe` (Right (patternWith 20 [pattern 5, pattern 10]) :: Either String (Pattern Int))
+        
+        it "sequences pattern containing Either values (one Left)" $ do
+          -- T041: Unit test for sequenceA on pattern containing Either values (one Left)
+          let elem1 = pattern (Right 5 :: Either String Int)
+              elem2 = pattern (Left "error" :: Either String Int)
+              p = patternWith (Right 20 :: Either String Int) [elem1, elem2]
+              result = sequenceA p
+          result `shouldBe` (Left "error" :: Either String (Pattern Int))
+      
+      describe "sequenceA on nested pattern structures with Maybe values" $ do
+        
+        it "sequences nested pattern structure with Maybe values (all Just)" $ do
+          -- T042: Unit test for sequenceA on nested pattern structure with Maybe values (all Just)
+          let inner = pattern (Just 1)
+              middle = patternWith (Just 2) [inner]
+              outer = patternWith (Just 3) [middle]
+              p = patternWith (Just 4) [outer]
+              result = sequenceA p
+          result `shouldBe` Just (patternWith 4 [patternWith 3 [patternWith 2 [pattern 1]]])
+        
+        it "sequences nested pattern structure with Maybe values (one Nothing)" $ do
+          -- T043: Unit test for sequenceA on nested pattern structure with Maybe values (one Nothing)
+          let inner = pattern Nothing
+              middle = patternWith (Just 2) [inner]
+              outer = patternWith (Just 3) [middle]
+              p = patternWith (Just 4) [outer]
+              result = sequenceA p
+          result `shouldBe` Nothing
+      
+      describe "sequenceA on nested pattern structures with Either values" $ do
+        
+        it "sequences nested pattern structure with Either values (all Right)" $ do
+          -- T044: Unit test for sequenceA on nested pattern structure with Either values (all Right)
+          let inner = pattern (Right 1 :: Either String Int)
+              middle = patternWith (Right 2 :: Either String Int) [inner]
+              outer = patternWith (Right 3 :: Either String Int) [middle]
+              p = patternWith (Right 4 :: Either String Int) [outer]
+              result = sequenceA p
+          result `shouldBe` (Right (patternWith 4 [patternWith 3 [patternWith 2 [pattern 1]]]) :: Either String (Pattern Int))
+        
+        it "sequences nested pattern structure with Either values (one Left)" $ do
+          -- T045: Unit test for sequenceA on nested pattern structure with Either values (one Left)
+          let inner = pattern (Left "error" :: Either String Int)
+              middle = patternWith (Right 2 :: Either String Int) [inner]
+              outer = patternWith (Right 3 :: Either String Int) [middle]
+              p = patternWith (Right 4 :: Either String Int) [outer]
+              result = sequenceA p
+          result `shouldBe` (Left "error" :: Either String (Pattern Int))
+      
+      describe "Structure preservation in sequenceA" $ do
+        
+        it "sequenceA preserves pattern structure" $ do
+          -- T046: Unit test verifying sequenceA preserves pattern structure
+          let elem1 = pattern (Just "a")
+              elem2 = pattern (Just "b")
+              elem3 = pattern (Just "c")
+              p = patternWith (Just "root") [elem1, elem2, elem3]
+              result = sequenceA p
+              p' = fromJust result
+          length (elements p') `shouldBe` 3
+          value (elements p' !! 0) `shouldBe` "a"
+          value (elements p' !! 1) `shouldBe` "b"
+          value (elements p' !! 2) `shouldBe` "c"
+        
+        it "sequenceA collects effects from all values" $ do
+          -- T047: Unit test verifying sequenceA collects effects from all values
+          let elem1 = pattern (Just 5)
+              elem2 = pattern (Just 10)
+              p = patternWith (Just 20) [elem1, elem2]
+              result = sequenceA p
+          result `shouldBe` Just (patternWith 20 [pattern 5, pattern 10])
+      
+      describe "Short-circuiting behavior in sequenceA" $ do
+        
+        it "sequenceA short-circuits for Maybe (returns Nothing on first Nothing)" $ do
+          -- T048: Unit test verifying sequenceA short-circuits for Maybe (returns Nothing on first Nothing)
+          let elem1 = pattern Nothing
+              elem2 = pattern (Just 10)
+              p = patternWith (Just 20) [elem1, elem2]
+              result = sequenceA p
+          result `shouldBe` Nothing
+        
+        it "sequenceA short-circuits for Either (returns Left on first Left)" $ do
+          -- T049: Unit test verifying sequenceA short-circuits for Either (returns Left on first Left)
+          let elem1 = pattern (Left "first error" :: Either String Int)
+              elem2 = pattern (Right 10 :: Either String Int)
+              p = patternWith (Right 20 :: Either String Int) [elem1, elem2]
+              result = sequenceA p
+          result `shouldBe` (Left "first error" :: Either String (Pattern Int))
+    
+    describe "Validate Pattern Values with Error Handling (User Story 3)" $ do
+      
+      describe "Validation with Maybe" $ do
+        
+        it "validates pattern with Maybe (all values valid)" $ do
+          -- T055: Unit test for validation with Maybe (all values valid)
+          let validate x = if x > 0 then Just x else Nothing
+              elem1 = pattern 5
+              elem2 = pattern 10
+              p = patternWith 20 [elem1, elem2]
+              result = traverse validate p
+          result `shouldBe` Just p
+        
+        it "validates pattern with Maybe (some values invalid)" $ do
+          -- T056: Unit test for validation with Maybe (some values invalid)
+          let validate x = if x > 0 then Just x else Nothing
+              elem1 = pattern 5
+              elem2 = pattern (-3)
+              p = patternWith 20 [elem1, elem2]
+              result = traverse validate p
+          result `shouldBe` Nothing
+      
+      describe "Validation with Either" $ do
+        
+        it "validates pattern with Either (all values valid)" $ do
+          -- T057: Unit test for validation with Either (all values valid)
+          let validate x = if x > 0 then Right x else Left ("Invalid: " ++ show x)
+              elem1 = pattern 5
+              elem2 = pattern 10
+              p = patternWith 20 [elem1, elem2]
+              result = traverse validate p
+          result `shouldBe` Right p
+        
+        it "validates pattern with Either (some values invalid, first error returned)" $ do
+          -- T058: Unit test for validation with Either (some values invalid, first error returned)
+          let validate x = if x > 0 then Right x else Left ("Invalid: " ++ show x)
+              elem1 = pattern 5
+              elem2 = pattern (-3)
+              p = patternWith 20 [elem1, elem2]
+              result = traverse validate p
+          result `shouldBe` Left "Invalid: -3"
+      
+      describe "Validation on nested pattern structures with Maybe" $ do
+        
+        it "validates nested pattern structure with Maybe (all valid)" $ do
+          -- T059: Unit test for validation on nested pattern structure with Maybe (all valid)
+          let validate x = if x > 0 then Just x else Nothing
+              inner = pattern 1
+              middle = patternWith 2 [inner]
+              outer = patternWith 3 [middle]
+              p = patternWith 4 [outer]
+              result = traverse validate p
+          result `shouldBe` Just p
+        
+        it "validates nested pattern structure with Maybe (one invalid at any level)" $ do
+          -- T060: Unit test for validation on nested pattern structure with Maybe (one invalid at any level)
+          let validate x = if x > 0 then Just x else Nothing
+              inner = pattern (-1)
+              middle = patternWith 2 [inner]
+              outer = patternWith 3 [middle]
+              p = patternWith 4 [outer]
+              result = traverse validate p
+          result `shouldBe` Nothing
+      
+      describe "Validation on nested pattern structures with Either" $ do
+        
+        it "validates nested pattern structure with Either (all valid)" $ do
+          -- T061: Unit test for validation on nested pattern structure with Either (all valid)
+          let validate x = if x > 0 then Right x else Left ("Invalid: " ++ show x)
+              inner = pattern 1
+              middle = patternWith 2 [inner]
+              outer = patternWith 3 [middle]
+              p = patternWith 4 [outer]
+              result = traverse validate p
+          result `shouldBe` Right p
+        
+        it "validates nested pattern structure with Either (one invalid at any level)" $ do
+          -- T062: Unit test for validation on nested pattern structure with Either (one invalid at any level)
+          let validate x = if x > 0 then Right x else Left ("Invalid: " ++ show x)
+              inner = pattern (-1)
+              middle = patternWith 2 [inner]
+              outer = patternWith 3 [middle]
+              p = patternWith 4 [outer]
+              result = traverse validate p
+          result `shouldBe` Left "Invalid: -1"
+      
+      describe "Validation failure behavior" $ do
+        
+        it "validation fails if any value at any nesting level is invalid" $ do
+          -- T063: Unit test verifying validation fails if any value at any nesting level is invalid
+          let validate x = if x > 0 then Just x else Nothing
+              -- Test with invalid value at root level
+              p1 = patternWith (-1) [pattern 5, pattern 10]
+              result1 = traverse validate p1
+              -- Test with invalid value at element level
+              p2 = patternWith 20 [pattern (-3), pattern 10]
+              result2 = traverse validate p2
+              -- Test with invalid value at nested level
+              inner = pattern (-1)
+              middle = patternWith 2 [inner]
+              p3 = patternWith 4 [middle]
+              result3 = traverse validate p3
+          result1 `shouldBe` Nothing
+          result2 `shouldBe` Nothing
+          result3 `shouldBe` Nothing
+    
+    describe "IO and State Support (Phase 6)" $ do
+      
+      describe "IO applicative functor support" $ do
+        
+        it "traverse works with IO applicative functor" $ do
+          -- T079: Verify traversable instance works with IO applicative functor
+          let readValue :: String -> IO Int
+              readValue = readIO
+              p = patternWith "10" [pattern "5", pattern "3"]
+              ioResult = traverse readValue p
+          -- Execute IO and verify result
+          result <- ioResult
+          value result `shouldBe` (10 :: Int)
+          length (elements result) `shouldBe` 2
+          value (elements result !! 0) `shouldBe` (5 :: Int)
+          value (elements result !! 1) `shouldBe` (3 :: Int)
+      
+      describe "State applicative functor support" $ do
+        
+        it "traverse works with State applicative functor" $ do
+          -- T080: Verify traversable instance works with State applicative functor
+          let addState :: Int -> State Int Int
+              addState x = do
+                s <- get
+                put (s + x)
+                return (s + x)
+              p = patternWith 10 [pattern 5, pattern 3]
+              stateResult = traverse addState p
+              (result, finalState) = runState stateResult 0
+          -- Verify result pattern structure
+          -- State processes: pattern value (10) first, then elements (5, 3)
+          -- Initial state: 0
+          -- Pattern value 10: state 0 -> 10, return 10
+          -- Element 5: state 10 -> 15, return 15
+          -- Element 3: state 15 -> 18, return 18
+          value result `shouldBe` (10 :: Int)  -- Pattern value processed with state 0
+          length (elements result) `shouldBe` 2
+          value (elements result !! 0) `shouldBe` (15 :: Int)  -- First element processed with state 10
+          value (elements result !! 1) `shouldBe` (18 :: Int)  -- Second element processed with state 15
+          -- Verify final state (0 + 10 + 5 + 3 = 18)
+          finalState `shouldBe` (18 :: Int)

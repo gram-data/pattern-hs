@@ -123,6 +123,13 @@
 -- list, equivalent to @toList@. See the Foldable instance documentation below for details on
 -- value aggregation and folding operations.
 --
+-- The Pattern type has a Traversable instance that enables effectful traversal over pattern
+-- structures while preserving pattern structure. This supports operations like validation,
+-- state threading, IO operations, and error handling over pattern values. The instance provides
+-- @traverse@ for applying effectful functions to all values and @sequenceA@ for sequencing
+-- applicative effects. See the Traversable instance documentation below for details on effectful
+-- traversal and structure preservation.
+--
 -- == Examples
 --
 -- Atomic pattern:
@@ -179,6 +186,7 @@
 module Pattern.Core where
 
 import Data.Foldable (toList)
+import Data.Traversable (Traversable(..))
 
 -- | A recursive structure representing a decorated sequence pattern.
 --
@@ -1003,6 +1011,409 @@ instance Foldable Pattern where
   -- Note: @toList@ is automatically derived from @foldr@ and extracts all values
   -- as a flat list. The pattern's own value and all element values at all
   -- nesting levels are included in the result.
+
+-- | Traversable instance for Pattern.
+--
+-- Enables effectful traversal over all values in a pattern structure while
+-- preserving pattern structure (element count, nesting depth, element order).
+-- The Traversable instance provides the @traverse@ operation that applies
+-- effectful functions to all values in the pattern structure, combining effects
+-- using applicative semantics.
+--
+-- === Effectful Traversal
+--
+-- The Traversable instance processes all values in the pattern structure:
+--
+-- * The pattern's own value is processed first
+-- * All element values are processed recursively
+-- * Values from all nesting levels are included
+-- * Effects are combined using applicative semantics
+--
+-- This enables operations like validation, state threading, IO operations, and
+-- error handling over pattern values while maintaining pattern structure.
+--
+-- === Structure Preservation
+--
+-- The Traversable instance preserves pattern structure during traversal:
+--
+-- * Element count: The number of elements remains unchanged
+-- * Nesting depth: The nesting structure is preserved
+-- * Element order: The order of elements is maintained
+--
+-- Only the values are transformed; the pattern structure itself remains identical.
+--
+-- === Effect Combination
+--
+-- Effects are combined using standard applicative semantics for each applicative functor:
+--
+-- * **Maybe**: Short-circuits to Nothing if any value produces Nothing
+-- * **Either**: Short-circuits to Left with first error if any value produces Left
+-- * **[]**: Collects all results from all values
+-- * **Identity**: Preserves structure without effects
+-- * **IO**: Performs all IO operations and combines results
+-- * **State**: Threads state through all values
+--
+-- === Traversable Laws
+--
+-- The Traversable instance satisfies the standard traversable laws, which are verified
+-- through property-based testing in the test suite:
+--
+-- **Naturality Law**: For any applicative transformation @t@ and function @f@,
+--
+-- @
+-- t . traverse f = traverse (t . f)
+-- @
+--
+-- This law ensures that applicative transformations commute with traversal.
+--
+-- **Identity Law**: For all patterns @p :: Pattern a@,
+--
+-- @
+-- traverse Identity p = Identity p
+-- @
+--
+-- This law states that traversing with the Identity applicative functor produces
+-- the same pattern wrapped in Identity.
+--
+-- **Composition Law**: For all patterns @p :: Pattern a@ and functions @f@ and @g@,
+--
+-- @
+-- traverse (Compose . fmap g . f) p = Compose . fmap (traverse g) . traverse f $ p
+-- @
+--
+-- This law ensures that composition of traversals equals sequential traversal.
+--
+-- All laws hold for all pattern structures (atomic, with elements, nested) and all
+-- value types, as verified by property-based tests.
+--
+-- === Examples
+--
+-- Traversing atomic pattern with Identity (no effects):
+--
+-- >>> atom = Pattern { value = "test", elements = [] }
+-- >>> traverse Identity atom
+-- Identity (Pattern {value = "test", elements = []})
+--
+-- Traversing atomic pattern with Maybe (validation):
+--
+-- >>> let validate x = if x > 0 then Just x else Nothing
+-- >>> traverse validate (Pattern { value = 5, elements = [] })
+-- Just (Pattern {value = 5, elements = []})
+--
+-- >>> traverse validate (Pattern { value = -3, elements = [] })
+-- Nothing
+--
+-- Traversing atomic pattern with Either (error handling):
+--
+-- >>> let validate x = if x > 0 then Right x else Left ("Invalid: " ++ show x)
+-- >>> traverse validate (Pattern { value = 5, elements = [] })
+-- Right (Pattern {value = 5, elements = []})
+--
+-- >>> traverse validate (Pattern { value = -3, elements = [] })
+-- Left "Invalid: -3"
+--
+-- Traversing pattern with multiple elements:
+--
+-- >>> let validate x = if x > 0 then Just x else Nothing
+-- >>> elem1 = Pattern { value = 5, elements = [] }
+-- >>> elem2 = Pattern { value = 10, elements = [] }
+-- >>> pattern = Pattern { value = 20, elements = [elem1, elem2] }
+-- >>> traverse validate pattern
+-- Just (Pattern {value = 20, elements = [Pattern {value = 5, elements = []},Pattern {value = 10, elements = []}]})
+--
+-- Traversing nested pattern structure:
+--
+-- >>> let validate x = if x > 0 then Just x else Nothing
+-- >>> inner = Pattern { value = 1, elements = [] }
+-- >>> middle = Pattern { value = 2, elements = [inner] }
+-- >>> outer = Pattern { value = 3, elements = [middle] }
+-- >>> pattern = Pattern { value = 4, elements = [outer] }
+-- >>> traverse validate pattern
+-- Just (Pattern {value = 4, elements = [Pattern {value = 3, elements = [Pattern {value = 2, elements = [Pattern {value = 1, elements = []}]}]}]})
+--
+-- === Edge Cases
+--
+-- The Traversable instance handles all pattern structures correctly:
+--
+-- **Atomic patterns** (no elements):
+--
+-- >>> traverse Identity (Pattern { value = "atom", elements = [] })
+-- Identity (Pattern {value = "atom", elements = []})
+--
+-- **Singular patterns** (one element):
+--
+-- >>> elem = Pattern { value = "elem", elements = [] }
+-- >>> pattern = Pattern { value = "singular", elements = [elem] }
+-- >>> traverse Identity pattern
+-- Identity (Pattern {value = "singular", elements = [Pattern {value = "elem", elements = []}]})
+--
+-- **Patterns with many elements**:
+--
+-- >>> elems = [Pattern { value = "a", elements = [] }, Pattern { value = "b", elements = [] }]
+-- >>> pattern = Pattern { value = "root", elements = elems }
+-- >>> traverse Identity pattern
+-- Identity (Pattern {value = "root", elements = [Pattern {value = "a", elements = []},Pattern {value = "b", elements = []}]})
+--
+-- **Deep nesting** (3+ levels):
+--
+-- >>> level3 = Pattern { value = "level3", elements = [] }
+-- >>> level2 = Pattern { value = "level2", elements = [level3] }
+-- >>> level1 = Pattern { value = "level1", elements = [level2] }
+-- >>> pattern = Pattern { value = "root", elements = [level1] }
+-- >>> traverse Identity pattern
+-- Identity (Pattern {value = "root", elements = [Pattern {value = "level1", elements = [Pattern {value = "level2", elements = [Pattern {value = "level3", elements = []}]}]}]})
+--
+-- === Validation Use Cases
+--
+-- The Traversable instance enables validation of pattern values using Maybe or Either
+-- applicative functors. Validation functions can check values and return success or
+-- failure, with effects combined using applicative semantics.
+--
+-- **Validation with Maybe** (simple success/failure):
+--
+-- >>> let validate x = if x > 0 then Just x else Nothing
+-- >>> elem1 = Pattern { value = 5, elements = [] }
+-- >>> elem2 = Pattern { value = 10, elements = [] }
+-- >>> pattern = Pattern { value = 20, elements = [elem1, elem2] }
+-- >>> traverse validate pattern
+-- Just (Pattern {value = 20, elements = [Pattern {value = 5, elements = []},Pattern {value = 10, elements = []}]})
+--
+-- >>> let validate x = if x > 0 then Just x else Nothing
+-- >>> elem1 = Pattern { value = 5, elements = [] }
+-- >>> elem2 = Pattern { value = -3, elements = [] }
+-- >>> pattern = Pattern { value = 20, elements = [elem1, elem2] }
+-- >>> traverse validate pattern
+-- Nothing
+--
+-- **Validation with Either** (success with error messages):
+--
+-- >>> let validate x = if x > 0 then Right x else Left ("Invalid: " ++ show x)
+-- >>> elem1 = Pattern { value = 5, elements = [] }
+-- >>> elem2 = Pattern { value = 10, elements = [] }
+-- >>> pattern = Pattern { value = 20, elements = [elem1, elem2] }
+-- >>> traverse validate pattern
+-- Right (Pattern {value = 20, elements = [Pattern {value = 5, elements = []},Pattern {value = 10, elements = []}]})
+--
+-- >>> let validate x = if x > 0 then Right x else Left ("Invalid: " ++ show x)
+-- >>> elem1 = Pattern { value = 5, elements = [] }
+-- >>> elem2 = Pattern { value = -3, elements = [] }
+-- >>> pattern = Pattern { value = 20, elements = [elem1, elem2] }
+-- >>> traverse validate pattern
+-- Left "Invalid: -3"
+--
+-- **Validation on nested patterns**:
+--
+-- >>> let validate x = if x > 0 then Just x else Nothing
+-- >>> inner = Pattern { value = 1, elements = [] }
+-- >>> middle = Pattern { value = 2, elements = [inner] }
+-- >>> outer = Pattern { value = 3, elements = [middle] }
+-- >>> pattern = Pattern { value = 4, elements = [outer] }
+-- >>> traverse validate pattern
+-- Just (Pattern {value = 4, elements = [Pattern {value = 3, elements = [Pattern {value = 2, elements = [Pattern {value = 1, elements = []}]}]}]})
+--
+-- >>> let validate x = if x > 0 then Just x else Nothing
+-- >>> inner = Pattern { value = -1, elements = [] }
+-- >>> middle = Pattern { value = 2, elements = [inner] }
+-- >>> outer = Pattern { value = 3, elements = [middle] }
+-- >>> pattern = Pattern { value = 4, elements = [outer] }
+-- >>> traverse validate pattern
+-- Nothing
+--
+-- === Error Handling Patterns
+--
+-- The Traversable instance supports two error handling patterns:
+--
+-- **Maybe pattern**: Use when you only need to know if validation succeeded or failed.
+-- Short-circuits to Nothing on first failure. Useful for simple validation where error
+-- messages are not needed.
+--
+-- **Either pattern**: Use when you need error messages explaining why validation failed.
+-- Short-circuits to Left with first error encountered. Useful for validation where
+-- detailed error reporting is required.
+--
+-- Both patterns ensure that validation fails if any value at any nesting level is invalid,
+-- providing comprehensive validation coverage for entire pattern structures.
+--
+instance Traversable Pattern where
+  -- | Effectful traversal over pattern values.
+  --
+  -- Applies an effectful function to all values in the pattern structure while
+  -- preserving pattern structure. The function is applied to the pattern's own
+  -- value first, then recursively to all element values at all nesting levels.
+  -- Effects are combined using applicative semantics.
+  --
+  -- === Processing Order
+  --
+  -- The @traverse@ operation processes values in a specific order:
+  --
+  -- 1. The pattern's own value is processed first
+  -- 2. Element values are processed recursively from left to right
+  --
+  -- This order ensures that when building data structures or applying operations
+  -- that depend on processing order, the pattern's own value is processed first,
+  -- followed by element values in their natural order.
+  --
+  -- === Examples
+  --
+  -- Atomic pattern:
+  --
+  -- >>> traverse Identity (Pattern { value = 5, elements = [] })
+  -- Identity (Pattern {value = 5, elements = []})
+  --
+  -- Pattern with multiple elements:
+  --
+  -- >>> let validate x = if x > 0 then Just x else Nothing
+  -- >>> elem1 = Pattern { value = 5, elements = [] }
+  -- >>> elem2 = Pattern { value = 10, elements = [] }
+  -- >>> pattern = Pattern { value = 20, elements = [elem1, elem2] }
+  -- >>> traverse validate pattern
+  -- Just (Pattern {value = 20, elements = [Pattern {value = 5, elements = []},Pattern {value = 10, elements = []}]})
+  --
+  -- Nested pattern structure:
+  --
+  -- >>> let validate x = if x > 0 then Just x else Nothing
+  -- >>> inner = Pattern { value = 1, elements = [] }
+  -- >>> middle = Pattern { value = 2, elements = [inner] }
+  -- >>> pattern = Pattern { value = 3, elements = [middle] }
+  -- >>> traverse validate pattern
+  -- Just (Pattern {value = 3, elements = [Pattern {value = 2, elements = [Pattern {value = 1, elements = []}]}]})
+  --
+  traverse f (Pattern v els) = 
+    Pattern <$> f v <*> traverse (traverse f) els
+  
+  -- | Sequence applicative effects from a pattern.
+  --
+  -- Converts a pattern containing applicative values into an applicative
+  -- value containing a pattern. Effects are combined using applicative semantics.
+  -- This is equivalent to @traverse id@.
+  --
+  -- === Effect Sequencing
+  --
+  -- The @sequenceA@ operation processes all values in the pattern structure:
+  --
+  -- * The pattern's own value is processed first
+  -- * All element values are processed recursively
+  -- * Values from all nesting levels are included
+  -- * Effects are combined using applicative semantics
+  --
+  -- This enables collecting effects from pattern values and working with
+  -- effectful patterns in a structured way.
+  --
+  -- === Structure Preservation
+  --
+  -- The @sequenceA@ operation preserves pattern structure during sequencing:
+  --
+  -- * Element count: The number of elements remains unchanged
+  -- * Nesting depth: The nesting structure is preserved
+  -- * Element order: The order of elements is maintained
+  --
+  -- Only the values are unwrapped from their applicative contexts; the pattern
+  -- structure itself remains identical.
+  --
+  -- === Effect Combination
+  --
+  -- Effects are combined using standard applicative semantics for each applicative functor:
+  --
+  -- * **Maybe**: Returns Just pattern if all values are Just, Nothing otherwise (short-circuits on first Nothing)
+  -- * **Either**: Returns Right pattern if all values are Right, Left with first error otherwise (short-circuits on first Left)
+  -- * **[]**: Collects all combinations of values
+  -- * **Identity**: Unwraps Identity values
+  -- * **IO**: Performs all IO operations and combines results
+  -- * **State**: Threads state through all values
+  --
+  -- === Relationship to traverse
+  --
+  -- The @sequenceA@ operation is equivalent to @traverse id@:
+  --
+  -- @
+  -- sequenceA = traverse id
+  -- @
+  --
+  -- This relationship ensures that sequencing effects is consistent with
+  -- effectful traversal operations.
+  --
+  -- === Examples
+  --
+  -- Sequencing pattern containing Identity values:
+  --
+  -- >>> atom = Pattern { value = Identity "test", elements = [] }
+  -- >>> sequenceA atom
+  -- Identity (Pattern {value = "test", elements = []})
+  --
+  -- Sequencing pattern containing Maybe values (all Just):
+  --
+  -- >>> elem1 = Pattern { value = Just 5, elements = [] }
+  -- >>> elem2 = Pattern { value = Just 10, elements = [] }
+  -- >>> pattern = Pattern { value = Just 20, elements = [elem1, elem2] }
+  -- >>> sequenceA pattern
+  -- Just (Pattern {value = 20, elements = [Pattern {value = 5, elements = []},Pattern {value = 10, elements = []}]})
+  --
+  -- Sequencing pattern containing Maybe values (one Nothing):
+  --
+  -- >>> elem1 = Pattern { value = Just 5, elements = [] }
+  -- >>> elem2 = Pattern { value = Nothing, elements = [] }
+  -- >>> pattern = Pattern { value = Just 20, elements = [elem1, elem2] }
+  -- >>> sequenceA pattern
+  -- Nothing
+  --
+  -- Sequencing pattern containing Either values (all Right):
+  --
+  -- >>> elem1 = Pattern { value = Right 5, elements = [] }
+  -- >>> elem2 = Pattern { value = Right 10, elements = [] }
+  -- >>> pattern = Pattern { value = Right 20, elements = [elem1, elem2] }
+  -- >>> sequenceA pattern
+  -- Right (Pattern {value = 20, elements = [Pattern {value = 5, elements = []},Pattern {value = 10, elements = []}]})
+  --
+  -- Sequencing pattern containing Either values (one Left):
+  --
+  -- >>> elem1 = Pattern { value = Right 5, elements = [] }
+  -- >>> elem2 = Pattern { value = Left "error", elements = [] }
+  -- >>> pattern = Pattern { value = Right 20, elements = [elem1, elem2] }
+  -- >>> sequenceA pattern
+  -- Left "error"
+  --
+  -- Sequencing nested pattern structure:
+  --
+  -- >>> inner = Pattern { value = Just 1, elements = [] }
+  -- >>> middle = Pattern { value = Just 2, elements = [inner] }
+  -- >>> outer = Pattern { value = Just 3, elements = [middle] }
+  -- >>> pattern = Pattern { value = Just 4, elements = [outer] }
+  -- >>> sequenceA pattern
+  -- Just (Pattern {value = 4, elements = [Pattern {value = 3, elements = [Pattern {value = 2, elements = [Pattern {value = 1, elements = []}]}]}]})
+  --
+  -- === Edge Cases
+  --
+  -- The @sequenceA@ operation handles all pattern structures correctly:
+  --
+  -- **Atomic patterns** (no elements):
+  --
+  -- >>> sequenceA (Pattern { value = Just 5, elements = [] })
+  -- Just (Pattern {value = 5, elements = []})
+  --
+  -- **Singular patterns** (one element):
+  --
+  -- >>> elem = Pattern { value = Just 5, elements = [] }
+  -- >>> pattern = Pattern { value = Just 10, elements = [elem] }
+  -- >>> sequenceA pattern
+  -- Just (Pattern {value = 10, elements = [Pattern {value = 5, elements = []}]})
+  --
+  -- **Patterns with many elements**:
+  --
+  -- >>> elems = [Pattern { value = Just 1, elements = [] }, Pattern { value = Just 2, elements = [] }]
+  -- >>> pattern = Pattern { value = Just 100, elements = elems }
+  -- >>> sequenceA pattern
+  -- Just (Pattern {value = 100, elements = [Pattern {value = 1, elements = []},Pattern {value = 2, elements = []}]})
+  --
+  -- **Deep nesting** (3+ levels):
+  --
+  -- >>> level3 = Pattern { value = Just 1, elements = [] }
+  -- >>> level2 = Pattern { value = Just 2, elements = [level3] }
+  -- >>> level1 = Pattern { value = Just 3, elements = [level2] }
+  -- >>> pattern = Pattern { value = Just 4, elements = [level1] }
+  -- >>> sequenceA pattern
+  -- Just (Pattern {value = 4, elements = [Pattern {value = 3, elements = [Pattern {value = 2, elements = [Pattern {value = 1, elements = []}]}]}]})
+  --
+  sequenceA = traverse id
 
 -- | Create an atomic pattern (pattern with no elements) from a value.
 --
