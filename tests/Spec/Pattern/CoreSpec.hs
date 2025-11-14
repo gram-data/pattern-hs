@@ -4018,6 +4018,22 @@ spec = do
           let pat = pattern 5
           allValues (> 0) pat `shouldBe` True
           allValues (> 10) pat `shouldBe` False
+        
+        it "T007: allValues with empty pattern (vacuous truth)" $ do
+          let pat = pattern 0
+          -- For atomic pattern, predicate is evaluated on the value
+          allValues (> 0) pat `shouldBe` False
+          allValues (>= 0) pat `shouldBe` True
+        
+        it "T008: anyValue and allValues with deeply nested patterns" $ do
+          let level3 = pattern 1
+          let level2 = patternWith 2 [level3]
+          let level1 = patternWith 3 [level2]
+          let pat = patternWith 4 [level1]
+          anyValue (> 0) pat `shouldBe` True
+          allValues (> 0) pat `shouldBe` True
+          anyValue (> 10) pat `shouldBe` False
+          allValues (> 10) pat `shouldBe` False
     
     describe "Pattern Predicate Functions (User Story 2)" $ do
       
@@ -4195,19 +4211,3 @@ spec = do
           allValues (>= 0) pat `shouldBe` True
           allValues (> 0) pat `shouldBe` False  -- root value is 0
           length (filterPatterns (\p -> length (elements p) == 0) pat) `shouldBe` 1000
-        
-        it "T007: allValues with empty pattern (vacuous truth)" $ do
-          let pat = pattern 0
-          -- For atomic pattern, predicate is evaluated on the value
-          allValues (> 0) pat `shouldBe` False
-          allValues (>= 0) pat `shouldBe` True
-        
-        it "T008: anyValue and allValues with deeply nested patterns" $ do
-          let level3 = pattern 1
-          let level2 = patternWith 2 [level3]
-          let level1 = patternWith 3 [level2]
-          let pat = patternWith 4 [level1]
-          anyValue (> 0) pat `shouldBe` True
-          allValues (> 0) pat `shouldBe` True
-          anyValue (> 10) pat `shouldBe` False
-          allValues (> 10) pat `shouldBe` False
