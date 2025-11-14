@@ -87,15 +87,15 @@
 
 ### Implementation for User Story 2
 
-- [ ] T032 [US2] Implement `filterPatterns :: (Pattern v -> Bool) -> Pattern v -> [Pattern v]` with recursive traversal in src/Pattern/Core.hs
-- [ ] T033 [US2] Implement `findPattern :: (Pattern v -> Bool) -> Pattern v -> Maybe (Pattern v)` with recursive traversal in src/Pattern/Core.hs
-- [ ] T034 [US2] Implement `findAllPatterns :: (Pattern v -> Bool) -> Pattern v -> [Pattern v]` (same as `filterPatterns`) in src/Pattern/Core.hs
-- [ ] T035 [US2] Add Haddock documentation for `filterPatterns` with examples in src/Pattern/Core.hs
-- [ ] T036 [US2] Add Haddock documentation for `findPattern` with examples in src/Pattern/Core.hs
-- [ ] T037 [US2] Add Haddock documentation for `findAllPatterns` with examples in src/Pattern/Core.hs
-- [ ] T038 [US2] Export `filterPatterns`, `findPattern`, and `findAllPatterns` from Pattern.Core module in src/Pattern/Core.hs
-- [ ] T039 [US2] Run tests with timeout: `timeout 60 cabal test` to verify all User Story 2 tests pass
-- [ ] T040 [US2] Git commit: "feat: implement pattern predicate functions (filterPatterns, findPattern, findAllPatterns) - US2"
+- [x] T032 [US2] Implement `filterPatterns :: (Pattern v -> Bool) -> Pattern v -> [Pattern v]` with recursive traversal in src/Pattern/Core.hs
+- [x] T033 [US2] Implement `findPattern :: (Pattern v -> Bool) -> Pattern v -> Maybe (Pattern v)` with recursive traversal in src/Pattern/Core.hs
+- [x] T034 [US2] Implement `findAllPatterns :: (Pattern v -> Bool) -> Pattern v -> [Pattern v]` (same as `filterPatterns`) in src/Pattern/Core.hs
+- [x] T035 [US2] Add Haddock documentation for `filterPatterns` with examples in src/Pattern/Core.hs
+- [x] T036 [US2] Add Haddock documentation for `findPattern` with examples in src/Pattern/Core.hs
+- [x] T037 [US2] Add Haddock documentation for `findAllPatterns` with examples in src/Pattern/Core.hs
+- [x] T038 [US2] Export `filterPatterns`, `findPattern`, and `findAllPatterns` from Pattern.Core module in src/Pattern/Core.hs
+- [x] T039 [US2] Run tests with timeout: `timeout 60 cabal test` to verify all User Story 2 tests pass
+- [x] T040 [US2] Git commit: "feat: implement pattern predicate functions (filterPatterns, findPattern, findAllPatterns) - US2"
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently. Pattern predicate functions enable finding and filtering subpatterns based on structural criteria.
 
@@ -113,29 +113,29 @@
 > 
 > **PERFORMANCE**: Always use timeouts when running tests (`timeout 60 cabal test` or equivalent). Tests should complete in <1 minute total.
 
-- [ ] T041 [P] [US3] Write unit test for `matches` with identical patterns in tests/Spec/Pattern/CoreSpec.hs
-- [ ] T042 [P] [US3] Write unit test for `matches` with patterns having different values in tests/Spec/Pattern/CoreSpec.hs
-- [ ] T043 [P] [US3] Write unit test for `matches` with patterns having different element counts in tests/Spec/Pattern/CoreSpec.hs
-- [ ] T044 [P] [US3] Write unit test for `matches` with patterns having same flattened values but different structures in tests/Spec/Pattern/CoreSpec.hs
-- [ ] T045 [P] [US3] Write unit test for `matches` with atomic patterns in tests/Spec/Pattern/CoreSpec.hs
-- [ ] T046 [P] [US3] Write unit test for `contains` with pattern containing subpattern in tests/Spec/Pattern/CoreSpec.hs
-- [ ] T047 [P] [US3] Write unit test for `contains` with pattern not containing subpattern in tests/Spec/Pattern/CoreSpec.hs
-- [ ] T048 [P] [US3] Write unit test for `contains` with pattern containing itself (self-containment) in tests/Spec/Pattern/CoreSpec.hs
-- [ ] T049 [P] [US3] Write unit test for `contains` with atomic patterns in tests/Spec/Pattern/CoreSpec.hs
-- [ ] T050 [P] [US3] Write unit test for structural matching on deeply nested patterns in tests/Spec/Pattern/CoreSpec.hs
-- [ ] T051 [P] [US3] Write property-based test for `matches` reflexivity: `matches p p = True` in tests/Spec/Pattern/Properties.hs
-- [ ] T052 [P] [US3] Write property-based test for `matches` symmetry: `matches p1 p2 = matches p2 p1` in tests/Spec/Pattern/Properties.hs
-- [ ] T053 [P] [US3] Write property-based test for `contains` reflexivity: `contains p p = True` in tests/Spec/Pattern/Properties.hs
-- [ ] T054 [P] [US3] Write property-based test for `contains` transitivity in tests/Spec/Pattern/Properties.hs
+- [x] T041 [P] [US3] Write unit test for `matches` with identical patterns in tests/Spec/Pattern/CoreSpec.hs
+- [x] T042 [P] [US3] Write unit test for `matches` with patterns having different values in tests/Spec/Pattern/CoreSpec.hs
+- [x] T043 [P] [US3] Write unit test for `matches` with patterns having different element counts in tests/Spec/Pattern/CoreSpec.hs
+- [x] T044 [P] [US3] Write unit test for `matches` with patterns having same flattened values but different structures in tests/Spec/Pattern/CoreSpec.hs
+- [x] T045 [P] [US3] Write unit test for `matches` with atomic patterns in tests/Spec/Pattern/CoreSpec.hs
+- [x] T046 [P] [US3] Write unit test for `contains` with pattern containing subpattern in tests/Spec/Pattern/CoreSpec.hs
+- [x] T047 [P] [US3] Write unit test for `contains` with pattern not containing subpattern in tests/Spec/Pattern/CoreSpec.hs
+- [x] T048 [P] [US3] Write unit test for `contains` with pattern containing itself (self-containment) in tests/Spec/Pattern/CoreSpec.hs
+- [x] T049 [P] [US3] Write unit test for `contains` with atomic patterns in tests/Spec/Pattern/CoreSpec.hs
+- [x] T050 [P] [US3] Write unit test for structural matching on deeply nested patterns in tests/Spec/Pattern/CoreSpec.hs
+- [x] T051 [P] [US3] Write property-based test for `matches` reflexivity: `matches p p = True` in tests/Spec/Pattern/Properties.hs
+- [x] T052 [P] [US3] Write property-based test for `matches` symmetry: `matches p1 p2 = matches p2 p1` in tests/Spec/Pattern/Properties.hs
+- [x] T053 [P] [US3] Write property-based test for `contains` reflexivity: `contains p p = True` in tests/Spec/Pattern/Properties.hs
+- [x] T054 [P] [US3] Write property-based test for `contains` transitivity in tests/Spec/Pattern/Properties.hs
 
 ### Implementation for User Story 3
 
-- [ ] T055 [US3] Implement `matches :: (Eq v) => Pattern v -> Pattern v -> Bool` with recursive structural comparison in src/Pattern/Core.hs
-- [ ] T056 [US3] Implement `contains :: (Eq v) => Pattern v -> Pattern v -> Bool` with recursive search in src/Pattern/Core.hs
-- [ ] T057 [US3] Add Haddock documentation for `matches` with examples in src/Pattern/Core.hs
-- [ ] T058 [US3] Add Haddock documentation for `contains` with examples in src/Pattern/Core.hs
-- [ ] T059 [US3] Export `matches` and `contains` from Pattern.Core module in src/Pattern/Core.hs
-- [ ] T060 [US3] Run tests with timeout: `timeout 60 cabal test` to verify all User Story 3 tests pass
+- [x] T055 [US3] Implement `matches :: (Eq v) => Pattern v -> Pattern v -> Bool` with recursive structural comparison in src/Pattern/Core.hs
+- [x] T056 [US3] Implement `contains :: (Eq v) => Pattern v -> Pattern v -> Bool` with recursive search in src/Pattern/Core.hs
+- [x] T057 [US3] Add Haddock documentation for `matches` with examples in src/Pattern/Core.hs
+- [x] T058 [US3] Add Haddock documentation for `contains` with examples in src/Pattern/Core.hs
+- [x] T059 [US3] Export `matches` and `contains` from Pattern.Core module in src/Pattern/Core.hs
+- [x] T060 [US3] Run tests with timeout: `timeout 60 cabal test` to verify all User Story 3 tests pass
 - [ ] T061 [US3] Git commit: "feat: implement structural matching functions (matches, contains) - US3"
 
 **Checkpoint**: All user stories should now be independently functional. Structural matching functions enable pattern comparison and containment checking.

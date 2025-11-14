@@ -172,6 +172,8 @@
 -- * @filterPatterns@ - Filters all subpatterns (including root) matching a pattern predicate (O(n))
 -- * @findPattern@ - Finds the first subpattern (including root) matching a pattern predicate (O(n))
 -- * @findAllPatterns@ - Finds all subpatterns (including root) matching a pattern predicate (O(n))
+-- * @matches@ - Checks if two patterns match structurally (O(n))
+-- * @contains@ - Checks if a pattern contains a subpattern (O(n))
 --
 -- These query functions enable pattern introspection, validation, and analysis operations.
 -- See individual function documentation for details on usage and performance characteristics.
@@ -3509,3 +3511,193 @@ findPattern pred pat
 --
 findAllPatterns :: (Pattern v -> Bool) -> Pattern v -> [Pattern v]
 findAllPatterns = filterPatterns
+
+-- | Check if two patterns match structurally.
+--
+-- Returns `True` if the two patterns have the same structure (same values at
+-- corresponding positions and same element structure), `False` otherwise.
+-- The function performs recursive structural comparison, distinguishing patterns
+-- based on their structure, not just flattened values.
+--
+-- The @matches@ function is equivalent to structural equality (`==`):
+--
+-- @
+-- matches p1 p2 = p1 == p2
+-- @
+--
+-- However, @matches@ provides explicit, intentional structural matching semantics,
+-- making it clear that the comparison is based on pattern structure rather than
+-- value-based equality.
+--
+-- === Structural Comparison
+--
+-- Two patterns match if and only if:
+--
+-- 1. Their values are equal (using `Eq` for the value type)
+-- 2. Their element lists have the same length
+-- 3. Corresponding elements match recursively
+--
+-- This ensures that patterns with the same flattened values but different
+-- structures are distinguished. For example, a pattern with two direct
+-- elements does not match a pattern with one element containing another element,
+-- even if the flattened values are the same.
+--
+-- === Relationship to Eq
+--
+-- The @matches@ function is equivalent to the `Eq` instance:
+--
+-- @
+-- matches p1 p2 = p1 == p2
+-- @
+--
+-- Use @matches@ when you want explicit structural matching semantics, or use
+-- `==` for standard equality checking.
+--
+-- === Examples
+--
+-- Identical patterns match:
+--
+-- >>> pat1 = patternWith "root" [pattern "a", pattern "b"]
+-- >>> pat2 = patternWith "root" [pattern "a", pattern "b"]
+-- >>> matches pat1 pat2
+-- True
+--
+-- Patterns with different values don't match:
+--
+-- >>> pat1 = patternWith "root1" [pattern "a", pattern "b"]
+-- >>> pat2 = patternWith "root2" [pattern "a", pattern "b"]
+-- >>> matches pat1 pat2
+-- False
+--
+-- Patterns with different element counts don't match:
+--
+-- >>> pat1 = patternWith "root" [pattern "a", pattern "b"]
+-- >>> pat2 = patternWith "root" [pattern "a"]
+-- >>> matches pat1 pat2
+-- False
+--
+-- Patterns with same flattened values but different structures don't match:
+--
+-- >>> pat1 = patternWith "root" [pattern "a", pattern "b"]
+-- >>> pat2 = patternWith "a" [patternWith "b" [pattern "root"]]
+-- >>> matches pat1 pat2
+-- False
+--
+-- Atomic patterns:
+--
+-- >>> matches (pattern "a") (pattern "a")
+-- True
+-- >>> matches (pattern "a") (pattern "b")
+-- False
+--
+-- === Performance
+--
+-- The @matches@ function completes in O(n) time where n is the total number
+-- of nodes in the smaller pattern. For patterns with up to 1000 nodes, the
+-- function should complete in under 10 milliseconds.
+--
+-- === Type Safety
+--
+-- The @matches@ function requires that the value type @v@ has an `Eq` instance:
+--
+-- @
+-- matches :: (Eq v) => Pattern v -> Pattern v -> Bool
+-- @
+--
+-- This ensures that pattern values can be compared for equality, which is
+-- necessary for structural matching.
+--
+matches :: (Eq v) => Pattern v -> Pattern v -> Bool
+matches = (==)
+
+-- | Check if a pattern contains a subpattern.
+--
+-- Returns `True` if the pattern contains the subpattern anywhere in its structure
+-- (including the pattern itself), `False` otherwise. The function recursively
+-- searches through all subpatterns in the pattern structure, checking for
+-- structural equality with the target subpattern.
+--
+-- The @contains@ function checks for structural containment:
+--
+-- * A pattern always contains itself (reflexivity)
+-- * A pattern contains all its direct elements
+-- * A pattern contains all nested subpatterns recursively
+--
+-- This enables pattern analysis operations like "does this pattern contain a
+-- specific subpattern?" or "is this pattern structure present in another pattern?"
+--
+-- === Relationship to filterPatterns
+--
+-- The @contains@ function can be implemented using @filterPatterns@:
+--
+-- @
+-- contains p subpat = not (null (filterPatterns (== subpat) p))
+-- @
+--
+-- However, @contains@ provides a more efficient implementation that short-circuits
+-- on the first match, and provides explicit containment semantics.
+--
+-- === Relationship to matches
+--
+-- The @contains@ function uses @matches@ internally to check for structural
+-- equality between the pattern and subpatterns:
+--
+-- @
+-- contains p subpat = any (matches subpat) (allSubpatterns p)
+-- @
+--
+-- This ensures that containment is based on structural matching, not just
+-- value-based equality.
+--
+-- === Examples
+--
+-- Pattern containing a subpattern:
+--
+-- >>> subpat = pattern "a"
+-- >>> pat = patternWith "root" [subpat, pattern "b"]
+-- >>> contains pat subpat
+-- True
+--
+-- Pattern not containing a subpattern:
+--
+-- >>> subpat = pattern "x"
+-- >>> pat = patternWith "root" [pattern "a", pattern "b"]
+-- >>> contains pat subpat
+-- False
+--
+-- Pattern containing itself (self-containment):
+--
+-- >>> pat = patternWith "root" [pattern "a", pattern "b"]
+-- >>> contains pat pat
+-- True
+--
+-- Atomic patterns:
+--
+-- >>> pat1 = pattern "a"
+-- >>> pat2 = pattern "b"
+-- >>> contains pat1 pat1
+-- True
+-- >>> contains pat1 pat2
+-- False
+--
+-- === Performance
+--
+-- The @contains@ function completes in O(n) time where n is the total number
+-- of subpatterns in the pattern structure, but may short-circuit earlier if
+-- the subpattern is found. For patterns with up to 1000 nodes, the function
+-- should complete in under 10 milliseconds.
+--
+-- === Type Safety
+--
+-- The @contains@ function requires that the value type @v@ has an `Eq` instance:
+--
+-- @
+-- contains :: (Eq v) => Pattern v -> Pattern v -> Bool
+-- @
+--
+-- This ensures that pattern values can be compared for equality, which is
+-- necessary for structural matching during containment checking.
+--
+contains :: (Eq v) => Pattern v -> Pattern v -> Bool
+contains p subpat = 
+  matches p subpat || any (\elemPat -> contains elemPat subpat) (elements p)

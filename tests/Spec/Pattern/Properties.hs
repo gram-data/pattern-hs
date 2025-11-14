@@ -19,7 +19,7 @@ import Data.Monoid (All(..), Product(..), Sum(..))
 import Data.List (nub, sort)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import Pattern.Core (Pattern(..), pattern, patternWith, fromList, flatten, size, depth, values, toTuple, anyValue, allValues, filterPatterns, findPattern, findAllPatterns)
+import Pattern.Core (Pattern(..), pattern, patternWith, fromList, flatten, size, depth, values, toTuple, anyValue, allValues, filterPatterns, findPattern, findAllPatterns, matches, contains)
 import qualified Pattern.Core as PC
 import Test.Hspec
 import Test.QuickCheck hiding (elements)
@@ -1249,4 +1249,30 @@ spec = do
           in if null filtered
              then found == Nothing
              else found == Just (head filtered)
+  
+  describe "Structural Matching Functions Properties (User Story 3)" $ do
+    
+    describe "matches properties" $ do
+      
+      it "T051: matches reflexivity: matches p p = True" $ do
+        -- Property: matches is reflexive - every pattern matches itself
+        quickProperty $ \(p :: Pattern Int) -> 
+          matches p p == True
+      
+      it "T052: matches symmetry: matches p1 p2 = matches p2 p1" $ do
+        -- Property: matches is symmetric - if p1 matches p2, then p2 matches p1
+        quickProperty $ \(p1 :: Pattern Int) (p2 :: Pattern Int) -> 
+          matches p1 p2 == matches p2 p1
+      
+      it "T053: contains reflexivity: contains p p = True" $ do
+        -- Property: contains is reflexive - every pattern contains itself
+        quickProperty $ \(p :: Pattern Int) -> 
+          contains p p == True
+      
+      it "T054: contains transitivity" $ do
+        -- Property: If p1 contains p2 and p2 contains p3, then p1 contains p3
+        quickProperty $ \(p1 :: Pattern Int) (p2 :: Pattern Int) (p3 :: Pattern Int) -> 
+          if contains p1 p2 && contains p2 p3
+          then contains p1 p3
+          else True  -- If premise is false, property holds vacuously
 

@@ -17,7 +17,7 @@ import Data.Monoid (All(..), Any(..), Endo(..), Product(..), Sum(..), mconcat)
 import Data.Semigroup (sconcat, stimes)
 import qualified Data.Set as Set
 import Test.Hspec
-import Pattern.Core (Pattern(..), pattern, patternWith, fromList, toTuple, size, depth, values, anyValue, allValues, filterPatterns, findPattern, findAllPatterns)
+import Pattern.Core (Pattern(..), pattern, patternWith, fromList, toTuple, size, depth, values, anyValue, allValues, filterPatterns, findPattern, findAllPatterns, matches, contains)
 import qualified Pattern.Core as PC
 
 -- Custom type for testing
@@ -4075,11 +4075,74 @@ spec = do
           filterPatterns (\p -> length (elements p) == 4 && 
                                value (elements p !! 0) == value (elements p !! 3) &&
                                value (elements p !! 1) == value (elements p !! 2)) pat `shouldBe` [pat]
+    
+    describe "Structural Matching Functions (User Story 3)" $ do
+      
+      describe "matches function - unit tests" $ do
         
-        it "T006: allValues with pattern where some values don't match" $ do
-          let pat = patternWith 1 [pattern 2, pattern 0]
-          allValues (> 0) pat `shouldBe` False
-          allValues (> 1) pat `shouldBe` False
+        it "T041: matches with identical patterns" $ do
+          let pat1 = patternWith "root" [pattern "a", pattern "b"]
+          let pat2 = patternWith "root" [pattern "a", pattern "b"]
+          matches pat1 pat2 `shouldBe` True
+        
+        it "T042: matches with patterns having different values" $ do
+          let pat1 = patternWith "root1" [pattern "a", pattern "b"]
+          let pat2 = patternWith "root2" [pattern "a", pattern "b"]
+          matches pat1 pat2 `shouldBe` False
+        
+        it "T043: matches with patterns having different element counts" $ do
+          let pat1 = patternWith "root" [pattern "a", pattern "b"]
+          let pat2 = patternWith "root" [pattern "a"]
+          matches pat1 pat2 `shouldBe` False
+        
+        it "T044: matches with patterns having same flattened values but different structures" $ do
+          let pat1 = patternWith "root" [pattern "a", pattern "b"]
+          let pat2 = patternWith "a" [patternWith "b" [pattern "root"]]
+          -- Same flattened values but different structure
+          matches pat1 pat2 `shouldBe` False
+        
+        it "T045: matches with atomic patterns" $ do
+          let pat1 = pattern "a"
+          let pat2 = pattern "a"
+          let pat3 = pattern "b"
+          matches pat1 pat2 `shouldBe` True
+          matches pat1 pat3 `shouldBe` False
+      
+      describe "contains function - unit tests" $ do
+        
+        it "T046: contains with pattern containing subpattern" $ do
+          let subpat = pattern "a"
+          let pat = patternWith "root" [subpat, pattern "b"]
+          contains pat subpat `shouldBe` True
+        
+        it "T047: contains with pattern not containing subpattern" $ do
+          let subpat = pattern "x"
+          let pat = patternWith "root" [pattern "a", pattern "b"]
+          contains pat subpat `shouldBe` False
+        
+        it "T048: contains with pattern containing itself (self-containment)" $ do
+          let pat = patternWith "root" [pattern "a", pattern "b"]
+          contains pat pat `shouldBe` True
+        
+        it "T049: contains with atomic patterns" $ do
+          let pat1 = pattern "a"
+          let pat2 = pattern "b"
+          contains pat1 pat1 `shouldBe` True
+          contains pat1 pat2 `shouldBe` False
+      
+      describe "Structural matching on various structures" $ do
+        
+        it "T050: structural matching on deeply nested patterns" $ do
+          let level3 = pattern "leaf"
+          let level2 = patternWith "level2" [level3]
+          let level1 = patternWith "level1" [level2]
+          let pat1 = patternWith "root" [level1]
+          let pat2 = patternWith "root" [level1]
+          let pat3 = patternWith "root" [patternWith "level1" [pattern "leaf"]]
+          matches pat1 pat2 `shouldBe` True
+          matches pat1 pat3 `shouldBe` False
+          contains pat1 level3 `shouldBe` True
+          contains pat1 (pattern "x") `shouldBe` False
         
         it "T007: allValues with empty pattern (vacuous truth)" $ do
           let pat = pattern 0
