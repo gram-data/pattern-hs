@@ -3802,3 +3802,82 @@ spec = do
           -- mempty <> p should have same hash as p (identity)
           let p = pattern "test" :: Pattern String
           hash (mempty <> p) `shouldBe` hash p
+    
+    describe "Applicative Instance (User Story 1)" $ do
+      
+      describe "pure function" $ do
+        
+        it "T005: pure with integer value creates atomic pattern" $ do
+          let p = pure 5 :: Pattern Int
+          value p `shouldBe` 5
+          elements p `shouldBe` ([] :: [Pattern Int])
+        
+        it "T006: pure with string value creates atomic pattern" $ do
+          let p = pure "hello" :: Pattern String
+          value p `shouldBe` "hello"
+          elements p `shouldBe` ([] :: [Pattern String])
+        
+        it "T007: pure with function value creates atomic pattern" $ do
+          let f = (+1) :: Int -> Int
+              p = pure f :: Pattern (Int -> Int)
+          -- Verify function is stored correctly by applying it
+          (value p) 5 `shouldBe` 6
+          length (elements p) `shouldBe` 0
+      
+      describe "<*> operator" $ do
+        
+        it "T008: <*> with atomic patterns (function and value)" $ do
+          let f = pure ((+1) :: Int -> Int)
+              x = pure 5 :: Pattern Int
+              result = f <*> x
+          value result `shouldBe` 6
+          elements result `shouldBe` ([] :: [Pattern Int])
+        
+        it "T009: <*> with patterns having multiple elements" $ do
+          let fs = patternWith (id :: Int -> Int) [pure (*2), pure (+10)]
+              xs = patternWith 5 [pure 3, pure 7]
+              result = fs <*> xs
+          value result `shouldBe` 5
+          length (elements result) `shouldBe` 2
+          value (head (elements result)) `shouldBe` 6
+          value (last (elements result)) `shouldBe` 17
+        
+        it "T010: <*> with nested patterns" $ do
+          let fs = patternWith (id :: Int -> Int) 
+                [ patternWith (*2) [pure (*3)]
+                , patternWith (+1) []
+                ]
+              xs = patternWith 1
+                [ patternWith 2 [pure 3]
+                , patternWith 4 []
+                ]
+              result = fs <*> xs
+          value result `shouldBe` 1
+          length (elements result) `shouldBe` 2
+          -- First nested element: (*2) applied to 2 = 4, (*3) applied to 3 = 9
+          let firstElem = head (elements result)
+          value firstElem `shouldBe` 4
+          length (elements firstElem) `shouldBe` 1
+          value (head (elements firstElem)) `shouldBe` 9
+          -- Second nested element: (+1) applied to 4 = 5
+          let secondElem = last (elements result)
+          value secondElem `shouldBe` 5
+          elements secondElem `shouldBe` ([] :: [Pattern Int])
+        
+        it "T011: <*> with pure function and pattern value" $ do
+          let f = pure ((+1) :: Int -> Int)
+              x = patternWith 5 [pure 3, pure 7]
+              result = f <*> x
+          value result `shouldBe` 6
+          length (elements result) `shouldBe` 2
+          value (head (elements result)) `shouldBe` 4
+          value (last (elements result)) `shouldBe` 8
+        
+        it "T012: <*> with pattern function and pure value" $ do
+          let f = patternWith ((+1) :: Int -> Int) [pure (*2), pure (+10)]
+              x = pure 5 :: Pattern Int
+              result = f <*> x
+          value result `shouldBe` 6
+          length (elements result) `shouldBe` 2
+          value (head (elements result)) `shouldBe` 10
+          value (last (elements result)) `shouldBe` 15
