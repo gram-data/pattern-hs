@@ -169,6 +169,9 @@
 -- * @value@ - Field accessor for accessing a pattern's decoration value (O(1))
 -- * @anyValue@ - Checks if any value in a pattern satisfies a predicate (O(n))
 -- * @allValues@ - Checks if all values in a pattern satisfy a predicate (O(n))
+-- * @filterPatterns@ - Filters all subpatterns (including root) matching a pattern predicate (O(n))
+-- * @findPattern@ - Finds the first subpattern (including root) matching a pattern predicate (O(n))
+-- * @findAllPatterns@ - Finds all subpatterns (including root) matching a pattern predicate (O(n))
 --
 -- These query functions enable pattern introspection, validation, and analysis operations.
 -- See individual function documentation for details on usage and performance characteristics.
@@ -3300,3 +3303,209 @@ anyValue p = any p . toList
 --
 allValues :: (v -> Bool) -> Pattern v -> Bool
 allValues p = all p . toList
+
+-- | Filter all subpatterns (including root) that match a pattern predicate.
+--
+-- Returns a list of all subpatterns in the pattern structure (including the
+-- root pattern itself) that satisfy the predicate. The function recursively
+-- traverses the entire pattern structure, examining each subpattern at all
+-- nesting levels.
+--
+-- The @filterPatterns@ function operates on pattern structures, not just
+-- flattened values. This enables structural queries like "find all patterns
+-- with exactly 3 elements" or "find all patterns where elements form a
+-- palindrome sequence" regardless of the internal content of individual
+-- elements.
+--
+-- === Traversal Order
+--
+-- The function traverses patterns in a depth-first, pre-order fashion:
+--
+-- 1. The root pattern is checked first
+-- 2. Then each element pattern is checked recursively
+-- 3. Results are collected in traversal order
+--
+-- This ensures that the root pattern appears first in the result list,
+-- followed by element patterns in their order of appearance.
+--
+-- === Relationship to findAllPatterns
+--
+-- The @filterPatterns@ and @findAllPatterns@ functions are equivalent:
+--
+-- @
+-- filterPatterns p = findAllPatterns p
+-- @
+--
+-- Both functions return all matching subpatterns. Use @filterPatterns@ for
+-- consistency with standard filtering operations, or @findAllPatterns@ for
+-- explicit "find all" semantics.
+--
+-- === Examples
+--
+-- Filter atomic patterns (patterns with no elements):
+--
+-- >>> pat = patternWith "root" [pattern "a", pattern "b", patternWith "c" [pattern "d"]]
+-- >>> filterPatterns (\p -> length (elements p) == 0) pat
+-- [pattern "a", pattern "b", pattern "d"]
+--
+-- Filter patterns matching a value:
+--
+-- >>> pat = patternWith "root" [pattern "a", pattern "b"]
+-- >>> filterPatterns (\p -> value p == "root") pat
+-- [pat]
+--
+-- Filter patterns with no matches:
+--
+-- >>> pat = patternWith "root" [pattern "a", pattern "b"]
+-- >>> filterPatterns (\p -> value p == "x") pat
+-- []
+--
+-- Filter patterns matching element sequence structure:
+--
+-- >>> pat = patternWith "root" [pattern "a", pattern "b", pattern "b", pattern "a"]
+-- >>> filterPatterns (\p -> length (elements p) == 4 && 
+-- ...                      value (elements p !! 0) == value (elements p !! 3) &&
+-- ...                      value (elements p !! 1) == value (elements p !! 2)) pat
+-- [pat]
+--
+-- === Performance
+--
+-- The @filterPatterns@ function completes in O(n) time where n is the total
+-- number of subpatterns (nodes) in the pattern structure. For patterns with up
+-- to 1000 nodes, the function should complete in under 10 milliseconds.
+--
+-- === Type Safety
+--
+-- The @filterPatterns@ function works with patterns of any value type @v@:
+--
+-- >>> filterPatterns (\p -> value p == "test") (pattern "test" :: Pattern String)
+-- [pattern "test"]
+-- >>> filterPatterns (\p -> value p > 0) (pattern 42 :: Pattern Int)
+-- [pattern 42]
+--
+filterPatterns :: (Pattern v -> Bool) -> Pattern v -> [Pattern v]
+filterPatterns pred pat = 
+  let matches = if pred pat then [pat] else []
+      elementMatches = concatMap (filterPatterns pred) (elements pat)
+  in matches ++ elementMatches
+
+-- | Find the first subpattern (including root) that matches a pattern predicate.
+--
+-- Returns `Just` the first subpattern in the pattern structure (including the
+-- root pattern itself) that satisfies the predicate, or `Nothing` if no
+-- subpattern matches. The function recursively traverses the pattern structure
+-- in depth-first, pre-order fashion, returning the first match found.
+--
+-- The @findPattern@ function operates on pattern structures, not just
+-- flattened values. This enables structural queries like "find the first
+-- pattern with exactly 3 elements" or "find the first pattern where elements
+-- form a palindrome sequence" regardless of the internal content of individual
+-- elements.
+--
+-- === Traversal Order
+--
+-- The function traverses patterns in a depth-first, pre-order fashion:
+--
+-- 1. The root pattern is checked first
+-- 2. Then each element pattern is checked recursively
+-- 3. The first match is returned immediately (short-circuit behavior)
+--
+-- This ensures that the root pattern is checked before any element patterns,
+-- and matches are found in traversal order.
+--
+-- === Relationship to filterPatterns
+--
+-- The @findPattern@ function returns the first match from @filterPatterns@:
+--
+-- @
+-- findPattern p pat = listToMaybe (filterPatterns p pat)
+-- @
+--
+-- Use @findPattern@ when you only need the first match, or @filterPatterns@
+-- when you need all matches.
+--
+-- === Examples
+--
+-- Find first atomic pattern:
+--
+-- >>> pat = patternWith "root" [pattern "a", pattern "b"]
+-- >>> findPattern (\p -> length (elements p) == 0) pat
+-- Just (pattern "a")
+--
+-- Find root pattern:
+--
+-- >>> pat = patternWith "root" [pattern "a", pattern "b"]
+-- >>> findPattern (\p -> value p == "root") pat
+-- Just pat
+--
+-- Find pattern with no matches:
+--
+-- >>> pat = patternWith "root" [pattern "a", pattern "b"]
+-- >>> findPattern (\p -> value p == "x") pat
+-- Nothing
+--
+-- === Performance
+--
+-- The @findPattern@ function completes in O(n) time where n is the total
+-- number of subpatterns (nodes) in the pattern structure, but may short-circuit
+-- earlier if a match is found. For patterns with up to 1000 nodes, the function
+-- should complete in under 10 milliseconds.
+--
+-- === Type Safety
+--
+-- The @findPattern@ function works with patterns of any value type @v@:
+--
+-- >>> findPattern (\p -> value p == "test") (pattern "test" :: Pattern String)
+-- Just (pattern "test")
+-- >>> findPattern (\p -> value p > 0) (pattern 42 :: Pattern Int)
+-- Just (pattern 42)
+--
+findPattern :: (Pattern v -> Bool) -> Pattern v -> Maybe (Pattern v)
+findPattern pred pat
+  | pred pat = Just pat
+  | otherwise = foldr (\elemPat acc -> case acc of
+      Just _ -> acc  -- Already found a match, keep it
+      Nothing -> findPattern pred elemPat) Nothing (elements pat)
+
+-- | Find all subpatterns (including root) that match a pattern predicate.
+--
+-- Returns a list of all subpatterns in the pattern structure (including the
+-- root pattern itself) that satisfy the predicate. The function recursively
+-- traverses the entire pattern structure, examining each subpattern at all
+-- nesting levels.
+--
+-- The @findAllPatterns@ function is equivalent to @filterPatterns@:
+--
+-- @
+-- findAllPatterns p = filterPatterns p
+-- @
+--
+-- Both functions return all matching subpatterns. Use @filterPatterns@ for
+-- consistency with standard filtering operations, or @findAllPatterns@ for
+-- explicit "find all" semantics.
+--
+-- === Examples
+--
+-- Find all atomic patterns:
+--
+-- >>> pat = patternWith "root" [pattern "a", pattern "b"]
+-- >>> findAllPatterns (\p -> length (elements p) == 0) pat
+-- [pattern "a", pattern "b"]
+--
+-- === Performance
+--
+-- The @findAllPatterns@ function completes in O(n) time where n is the total
+-- number of subpatterns (nodes) in the pattern structure. For patterns with up
+-- to 1000 nodes, the function should complete in under 10 milliseconds.
+--
+-- === Type Safety
+--
+-- The @findAllPatterns@ function works with patterns of any value type @v@:
+--
+-- >>> findAllPatterns (\p -> value p == "test") (pattern "test" :: Pattern String)
+-- [pattern "test"]
+-- >>> findAllPatterns (\p -> value p > 0) (pattern 42 :: Pattern Int)
+-- [pattern 42]
+--
+findAllPatterns :: (Pattern v -> Bool) -> Pattern v -> [Pattern v]
+findAllPatterns = filterPatterns

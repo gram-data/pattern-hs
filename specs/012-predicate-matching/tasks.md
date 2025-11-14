@@ -53,7 +53,7 @@
 - [x] T015 [US1] Add Haddock documentation for `allValues` with examples in src/Pattern/Core.hs
 - [x] T016 [US1] Export `anyValue` and `allValues` from Pattern.Core module in src/Pattern/Core.hs
 - [x] T017 [US1] Run tests with timeout: `timeout 60 cabal test` to verify all User Story 1 tests pass
-- [ ] T018 [US1] Git commit: "feat: implement value predicate functions (anyValue, allValues) - US1"
+- [x] T018 [US1] Git commit: "feat: implement value predicate functions (anyValue, allValues) - US1"
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently. Value predicate functions enable querying patterns by value properties.
 

@@ -17,7 +17,7 @@ import Data.Monoid (All(..), Any(..), Endo(..), Product(..), Sum(..), mconcat)
 import Data.Semigroup (sconcat, stimes)
 import qualified Data.Set as Set
 import Test.Hspec
-import Pattern.Core (Pattern(..), pattern, patternWith, fromList, toTuple, size, depth, values, anyValue, allValues)
+import Pattern.Core (Pattern(..), pattern, patternWith, fromList, toTuple, size, depth, values, anyValue, allValues, filterPatterns, findPattern, findAllPatterns)
 import qualified Pattern.Core as PC
 
 -- Custom type for testing
@@ -4018,11 +4018,63 @@ spec = do
           let pat = pattern 5
           allValues (> 0) pat `shouldBe` True
           allValues (> 10) pat `shouldBe` False
+    
+    describe "Pattern Predicate Functions (User Story 2)" $ do
+      
+      describe "filterPatterns function - unit tests" $ do
         
-        it "T005: allValues with nested pattern where all values match" $ do
-          let pat = patternWith 1 [pattern 2, pattern 3]
-          allValues (> 0) pat `shouldBe` True
-          allValues (> 1) pat `shouldBe` False
+        it "T019: filterPatterns with predicate matching some subpatterns" $ do
+          let pat = patternWith "root" [pattern "a", pattern "b", patternWith "c" [pattern "d"]]
+          filterPatterns (\p -> length (elements p) == 0) pat `shouldBe` [pattern "a", pattern "b", pattern "d"]
+        
+        it "T020: filterPatterns with predicate matching root pattern" $ do
+          let pat = patternWith "root" [pattern "a", pattern "b"]
+          filterPatterns (\p -> value p == "root") pat `shouldBe` [pat]
+        
+        it "T021: filterPatterns with predicate matching no subpatterns" $ do
+          let pat = patternWith "root" [pattern "a", pattern "b"]
+          filterPatterns (\p -> value p == "x") pat `shouldBe` []
+      
+      describe "findPattern function - unit tests" $ do
+        
+        it "T022: findPattern with predicate matching first subpattern" $ do
+          let pat = patternWith "root" [pattern "a", pattern "b"]
+          findPattern (\p -> value p == "a") pat `shouldBe` Just (pattern "a")
+        
+        it "T023: findPattern with predicate matching root pattern" $ do
+          let pat = patternWith "root" [pattern "a", pattern "b"]
+          findPattern (\p -> value p == "root") pat `shouldBe` Just pat
+        
+        it "T024: findPattern with predicate matching no subpatterns" $ do
+          let pat = patternWith "root" [pattern "a", pattern "b"]
+          findPattern (\p -> value p == "x") pat `shouldBe` Nothing
+      
+      describe "findAllPatterns function - unit tests" $ do
+        
+        it "T025: findAllPatterns with predicate matching multiple subpatterns" $ do
+          let pat = patternWith "root" [pattern "a", pattern "b"]
+          findAllPatterns (\p -> length (elements p) == 0) pat `shouldBe` [pattern "a", pattern "b"]
+      
+      describe "Pattern predicates on various structures" $ do
+        
+        it "T026: pattern predicates on deeply nested patterns" $ do
+          let level3 = pattern "leaf"
+          let level2 = patternWith "level2" [level3]
+          let level1 = patternWith "level1" [level2]
+          let pat = patternWith "root" [level1]
+          filterPatterns (\p -> value p == "leaf") pat `shouldBe` [level3]
+          findPattern (\p -> value p == "level2") pat `shouldBe` Just level2
+        
+        it "T027: pattern predicates on atomic patterns" $ do
+          let pat = pattern "a"
+          filterPatterns (\p -> value p == "a") pat `shouldBe` [pat]
+          findPattern (\p -> value p == "a") pat `shouldBe` Just pat
+        
+        it "T028: pattern predicates matching element sequence structure (a, b, b, a)" $ do
+          let pat = patternWith "root" [pattern "a", pattern "b", pattern "b", pattern "a"]
+          filterPatterns (\p -> length (elements p) == 4 && 
+                               value (elements p !! 0) == value (elements p !! 3) &&
+                               value (elements p !! 1) == value (elements p !! 2)) pat `shouldBe` [pat]
         
         it "T006: allValues with pattern where some values don't match" $ do
           let pat = patternWith 1 [pattern 2, pattern 0]

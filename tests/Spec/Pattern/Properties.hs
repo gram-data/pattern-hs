@@ -19,7 +19,7 @@ import Data.Monoid (All(..), Product(..), Sum(..))
 import Data.List (nub, sort)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import Pattern.Core (Pattern(..), pattern, patternWith, fromList, flatten, size, depth, values, toTuple, anyValue, allValues)
+import Pattern.Core (Pattern(..), pattern, patternWith, fromList, flatten, size, depth, values, toTuple, anyValue, allValues, filterPatterns, findPattern, findAllPatterns)
 import qualified Pattern.Core as PC
 import Test.Hspec
 import Test.QuickCheck hiding (elements)
@@ -1223,4 +1223,30 @@ spec = do
           in if isEmpty
              then True  -- Vacuous truth for empty patterns
              else allValues (const False) p == False
+  
+  describe "Pattern Predicate Functions Properties (User Story 2)" $ do
+    
+    describe "filterPatterns properties" $ do
+      
+      it "T029: filterPatterns (const True) returns all subpatterns" $ do
+        -- Property: filterPatterns with always-true predicate returns all subpatterns (including root)
+        quickProperty $ \(p :: Pattern Int) -> 
+          let allSubpatterns = filterPatterns (const True) p
+              expectedCount = size p  -- All nodes are subpatterns
+          in length allSubpatterns == expectedCount
+      
+      it "T030: filterPatterns (const False) returns empty list" $ do
+        -- Property: filterPatterns with always-false predicate returns empty list
+        quickProperty $ \(p :: Pattern Int) -> 
+          filterPatterns (const False) p == []
+      
+      it "T031: findPattern p returns Just first match from filterPatterns p" $ do
+        -- Property: findPattern returns the first match from filterPatterns results
+        quickProperty $ \(p :: Pattern Int) -> 
+          let pred = (\pat -> size pat > 0)  -- Always true for non-empty patterns
+              filtered = filterPatterns pred p
+              found = findPattern pred p
+          in if null filtered
+             then found == Nothing
+             else found == Just (head filtered)
 
