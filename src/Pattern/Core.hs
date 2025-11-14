@@ -137,6 +137,14 @@
 -- type @v@ has an Ord instance. See the Ord instance documentation below for details on
 -- ordering rules and consistency with equality.
 --
+-- The Pattern type has a Semigroup instance that enables combining patterns by concatenating
+-- their elements and combining their values using the value type's Semigroup instance. This
+-- enables incremental pattern construction using standard Haskell combinators like `<>`,
+-- `sconcat`, and `stimes`. The instance preserves the decorated sequence model where elements
+-- form the pattern and values provide decoration. The Semigroup instance requires that the
+-- value type @v@ has a Semigroup instance. See the Semigroup instance documentation below
+-- for details on combination semantics and associativity.
+--
 -- The Pattern type provides query functions for introspecting pattern structure:
 --
 -- * @length@ - Returns the number of direct elements in a pattern's sequence (O(1))
@@ -524,6 +532,194 @@ instance Show v => Show (Pattern v) where
 instance Ord v => Ord (Pattern v) where
   compare (Pattern v1 els1) (Pattern v2 els2) =
     compare v1 v2 `mappend` compare els1 els2
+
+-- | Semigroup instance for Pattern.
+--
+-- Enables combining patterns by concatenating their elements and combining their
+-- values using the value type's Semigroup instance. This enables incremental pattern
+-- construction using standard Haskell combinators like `<>`, `sconcat`, and `stimes`.
+--
+-- === Combination Semantics
+--
+-- The Semigroup instance combines patterns following the decorated sequence model:
+--
+-- * **Value combination**: Values are combined using the value type's Semigroup instance:
+--   @value (p1 <> p2) = value p1 <> value p2@
+--
+-- * **Element concatenation**: Elements are concatenated in order, preserving sequence semantics:
+--   @elements (p1 <> p2) = elements p1 ++ elements p2@
+--
+-- * **Structure preservation**: The decorated sequence model is preserved - elements form the
+--   pattern, value is decoration. Combining patterns extends the pattern sequence while
+--   combining decorations.
+--
+-- === Semigroup Laws
+--
+-- The Semigroup instance satisfies the associativity law, which is verified through
+-- property-based testing in the test suite:
+--
+-- **Associativity Law**: For all patterns @p1@, @p2@, @p3 :: Pattern v@ where @Semigroup v@,
+--
+-- @
+-- (p1 <> p2) <> p3 = p1 <> (p2 <> p3)
+-- @
+--
+-- This law ensures that pattern combination is associative, enabling safe use of
+-- standard Semigroup combinators like `sconcat` and `stimes`.
+--
+-- === Type Constraint
+--
+-- The Semigroup instance requires that the value type @v@ has a Semigroup instance:
+--
+-- @
+-- instance Semigroup v => Semigroup (Pattern v)
+-- @
+--
+-- This ensures that pattern values can be combined, which is necessary for pattern
+-- combination. Attempting to use `<>` on patterns with non-semigroup value types will
+-- result in a compile-time error.
+--
+-- === Examples
+--
+-- Combining atomic patterns with String values (concatenation):
+--
+-- >>> p1 = pattern "hello"
+-- >>> p2 = pattern "world"
+-- >>> p1 <> p2
+-- Pattern {value = "helloworld", elements = []}
+--
+-- Combining patterns with elements:
+--
+-- >>> elem1 = pattern "a"
+-- >>> elem2 = pattern "b"
+-- >>> p1 = patternWith "prefix" [elem1, elem2]
+-- >>> p2 = patternWith "suffix" [pattern "c"]
+-- >>> p1 <> p2
+-- Pattern {value = "prefixsuffix", elements = [Pattern {value = "a", elements = []},Pattern {value = "b", elements = []},Pattern {value = "c", elements = []}]}
+--
+-- Combining patterns with Sum Int values (addition):
+--
+-- >>> p1 = pattern (Sum 5)
+-- >>> p2 = pattern (Sum 3)
+-- >>> getSum (value (p1 <> p2))
+-- 8
+--
+-- Combining patterns with Product Int values (multiplication):
+--
+-- >>> p1 = pattern (Product 5)
+-- >>> p2 = pattern (Product 3)
+-- >>> getProduct (value (p1 <> p2))
+-- 15
+--
+-- Using standard Semigroup combinators:
+--
+-- >>> sconcat (pattern "a" :| [pattern "b", pattern "c"])
+-- Pattern {value = "abc", elements = []}
+--
+-- >>> stimes 3 (patternWith "x" [pattern "y"])
+-- Pattern {value = "xxx", elements = [Pattern {value = "y", elements = []},Pattern {value = "y", elements = []},Pattern {value = "y", elements = []}]}
+--
+-- Combining nested patterns:
+--
+-- >>> inner1 = pattern "inner1"
+-- >>> inner2 = pattern "inner2"
+-- >>> middle1 = patternWith "middle1" [inner1]
+-- >>> middle2 = patternWith "middle2" [inner2]
+-- >>> p1 = patternWith "root1" [middle1]
+-- >>> p2 = patternWith "root2" [middle2]
+-- >>> result = p1 <> p2
+-- >>> value result
+-- "root1root2"
+-- >>> length (elements result)
+-- 2
+--
+-- === Edge Cases
+--
+-- The Semigroup instance handles all pattern structures correctly:
+--
+-- **Atomic patterns** (no elements):
+--
+-- >>> pattern "a" <> pattern "b"
+-- Pattern {value = "ab", elements = []}
+--
+-- **Patterns with different element counts**:
+--
+-- >>> patternWith "a" [pattern "e1"] <> patternWith "b" [pattern "e2", pattern "e3"]
+-- Pattern {value = "ab", elements = [Pattern {value = "e1", elements = []},Pattern {value = "e2", elements = []},Pattern {value = "e3", elements = []}]}
+--
+-- **Patterns with different nesting depths**:
+--
+-- >>> patternWith "a" [pattern "leaf"] <> patternWith "b" [patternWith "middle" [pattern "inner"]]
+-- Pattern {value = "ab", elements = [Pattern {value = "leaf", elements = []},Pattern {value = "middle", elements = [Pattern {value = "inner", elements = []}]}]}
+--
+-- **Deeply nested patterns**:
+--
+-- The instance correctly handles patterns with arbitrary nesting depth, preserving
+-- the nested structure in the combined result.
+--
+-- === Performance
+--
+-- The Semigroup instance has O(n+m) time complexity where n and m are the number of
+-- elements in the two patterns being combined. Value combination is O(1) for most
+-- Semigroup instances, and element concatenation is O(n+m) for list concatenation.
+--
+-- === Relationship to Decorated Sequence Model
+--
+-- The Semigroup instance aligns with the decorated sequence conceptual model:
+--
+-- * **Elements form the pattern**: Concatenation extends the pattern sequence by
+--   appending elements from the right pattern to elements from the left pattern
+--
+-- * **Value is decoration**: Value combination provides decoration about the combined
+--   pattern, using the value type's Semigroup semantics
+--
+-- This ensures that pattern combination maintains the semantic that elements form
+-- the pattern itself while values provide decoration about that pattern.
+--
+-- === Integration with Standard Semigroup Combinators
+--
+-- The Semigroup instance enables standard Semigroup combinators:
+--
+-- * `sconcat :: NonEmpty (Pattern v) -> Pattern v`: Combines a non-empty list of patterns
+-- * `stimes :: Integral n => n -> Pattern v -> Pattern v`: Repeats a pattern n times
+--
+-- These combinators work correctly with Pattern types and follow standard Semigroup
+-- semantics.
+--
+instance Semigroup v => Semigroup (Pattern v) where
+  -- | Combine two patterns by combining their values and concatenating their elements.
+  --
+  -- The combination operation:
+  --
+  -- 1. Combines values using the value type's Semigroup instance: @v1 <> v2@
+  -- 2. Concatenates elements in order: @els1 ++ els2@
+  --
+  -- This preserves the decorated sequence model where elements form the pattern
+  -- and values provide decoration.
+  --
+  -- === Examples
+  --
+  -- Combining atomic patterns:
+  --
+  -- >>> pattern "a" <> pattern "b"
+  -- Pattern {value = "ab", elements = []}
+  --
+  -- Combining patterns with elements:
+  --
+  -- >>> patternWith "a" [pattern "e1"] <> patternWith "b" [pattern "e2"]
+  -- Pattern {value = "ab", elements = [Pattern {value = "e1", elements = []},Pattern {value = "e2", elements = []}]}
+  --
+  -- === Associativity
+  --
+  -- The operation is associative:
+  --
+  -- @
+  -- (p1 <> p2) <> p3 = p1 <> (p2 <> p3)
+  -- @
+  --
+  -- This is verified through property-based testing.
+  --
+  Pattern v1 els1 <> Pattern v2 els2 = Pattern (v1 <> v2) (els1 ++ els2)
 
 -- | Functor instance for Pattern.
 --

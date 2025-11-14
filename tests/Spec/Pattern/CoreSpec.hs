@@ -9,7 +9,9 @@ import Data.Functor.Identity (Identity(..))
 import Data.List (sort)
 import qualified Data.Map as Map
 import Data.Maybe (fromJust)
-import Data.Monoid (All(..), Sum(..))
+import Data.List.NonEmpty (NonEmpty((:|)))
+import Data.Monoid (All(..), Endo(..), Product(..), Sum(..))
+import Data.Semigroup (sconcat, stimes)
 import qualified Data.Set as Set
 import Test.Hspec
 import Pattern.Core (Pattern(..), pattern, patternWith, fromList, toTuple, size, depth, values)
@@ -3117,3 +3119,277 @@ spec = do
               outer1 = patternWith (100 :: Int) [inner1]
               outer2 = patternWith (100 :: Int) [inner2]
           compare outer1 outer2 `shouldBe` LT
+    
+    describe "Semigroup Instance (User Story 3)" $ do
+      
+      describe "Combining atomic patterns" $ do
+        
+        it "T001: combining two atomic patterns" $ do
+          let p1 = pattern "a"
+              p2 = pattern "b"
+              result = p1 <> p2
+          value result `shouldBe` "ab"
+          elements result `shouldBe` ([] :: [Pattern String])
+        
+        it "T002: combining atomic pattern with pattern having elements" $ do
+          let p1 = pattern "a"
+              elem1 = pattern "elem1"
+              elem2 = pattern "elem2"
+              p2 = patternWith "b" [elem1, elem2]
+              result = p1 <> p2
+          value result `shouldBe` "ab"
+          length (elements result) `shouldBe` 2
+          value (head (elements result)) `shouldBe` "elem1"
+          value (last (elements result)) `shouldBe` "elem2"
+      
+      describe "Combining patterns with elements" $ do
+        
+        it "T003: combining two patterns with elements" $ do
+          let elem1 = pattern "e1"
+              elem2 = pattern "e2"
+              p1 = patternWith "a" [elem1, elem2]
+              elem3 = pattern "e3"
+              elem4 = pattern "e4"
+              p2 = patternWith "b" [elem3, elem4]
+              result = p1 <> p2
+          value result `shouldBe` "ab"
+          length (elements result) `shouldBe` 4
+          map value (elements result) `shouldBe` ["e1", "e2", "e3", "e4"]
+        
+        it "T004: combining patterns with different element counts" $ do
+          let elem1 = pattern "e1"
+              p1 = patternWith "a" [elem1]
+              elem2 = pattern "e2"
+              elem3 = pattern "e3"
+              elem4 = pattern "e4"
+              p2 = patternWith "b" [elem2, elem3, elem4]
+              result = p1 <> p2
+          value result `shouldBe` "ab"
+          length (elements result) `shouldBe` 4
+          map value (elements result) `shouldBe` ["e1", "e2", "e3", "e4"]
+      
+      describe "Value combination with different Semigroup types" $ do
+        
+        it "T005: combining patterns with String values (concatenation)" $ do
+          let p1 = pattern "hello"
+              p2 = pattern "world"
+              result = p1 <> p2
+          value result `shouldBe` "helloworld"
+        
+        it "T006: combining patterns with Sum Int values (addition)" $ do
+          let p1 = pattern (Sum 5)
+              p2 = pattern (Sum 3)
+              result = p1 <> p2
+          getSum (value result) `shouldBe` 8
+        
+        it "T007: combining patterns with Product Int values (multiplication)" $ do
+          let p1 = pattern (Product 5)
+              p2 = pattern (Product 3)
+              result = p1 <> p2
+          getProduct (value result) `shouldBe` 15
+      
+      describe "Element order preservation" $ do
+        
+        it "T008: element order preservation" $ do
+          let elem1 = pattern "first"
+              elem2 = pattern "second"
+              elem3 = pattern "third"
+              p1 = patternWith "a" [elem1, elem2]
+              p2 = patternWith "b" [elem3]
+              result = p1 <> p2
+          map value (elements result) `shouldBe` ["first", "second", "third"]
+          -- Verify order: p1 elements first, then p2 elements
+          value (head (elements result)) `shouldBe` "first"
+          value (elements result !! 1) `shouldBe` "second"
+          value (last (elements result)) `shouldBe` "third"
+      
+      describe "Value combination semantics" $ do
+        
+        it "T009: value combination using value type's Semigroup" $ do
+          let p1 = patternWith "prefix" [pattern "elem1"]
+              p2 = patternWith "suffix" [pattern "elem2"]
+              result = p1 <> p2
+          -- Value should combine using String's Semigroup (concatenation)
+          value result `shouldBe` "prefixsuffix"
+          -- Elements should concatenate
+          length (elements result) `shouldBe` 2
+      
+      describe "Type constraint" $ do
+        
+        it "T010: type constraint: Semigroup v requirement" $ do
+          -- This test verifies that Semigroup instance requires Semigroup v constraint
+          -- We test with types that have Semigroup instances
+          let p1 = pattern ("a" :: String)
+              p2 = pattern ("b" :: String)
+          value (p1 <> p2) `shouldBe` "ab"
+          -- Test with Sum Int (has Semigroup instance)
+          let p3 = pattern (Sum 1 :: Sum Int)
+              p4 = pattern (Sum 2 :: Sum Int)
+          getSum (value (p3 <> p4)) `shouldBe` 3
+          -- Test with Product Int (has Semigroup instance)
+          let p5 = pattern (Product 2 :: Product Int)
+              p6 = pattern (Product 3 :: Product Int)
+          getProduct (value (p5 <> p6)) `shouldBe` 6
+    
+    describe "Semigroup Instance - Edge Cases (User Story 4)" $ do
+      
+      describe "Nested patterns" $ do
+        
+        it "T020: combining nested patterns (preserving nested structure)" $ do
+          let inner1 = pattern "inner1"
+              inner2 = pattern "inner2"
+              middle1 = patternWith "middle1" [inner1]
+              middle2 = patternWith "middle2" [inner2]
+              p1 = patternWith "root1" [middle1]
+              p2 = patternWith "root2" [middle2]
+              result = p1 <> p2
+          value result `shouldBe` "root1root2"
+          length (elements result) `shouldBe` 2
+          -- Verify nested structure is preserved
+          let firstElem = head (elements result)
+              secondElem = last (elements result)
+          value firstElem `shouldBe` "middle1"
+          value secondElem `shouldBe` "middle2"
+          length (elements firstElem) `shouldBe` 1
+          length (elements secondElem) `shouldBe` 1
+          value (head (elements firstElem)) `shouldBe` "inner1"
+          value (head (elements secondElem)) `shouldBe` "inner2"
+        
+        it "T021: combining patterns with different nesting depths" $ do
+          let p1 = patternWith "a" [pattern "leaf"]
+              inner = pattern "inner"
+              middle = patternWith "middle" [inner]
+              p2 = patternWith "b" [middle]
+              result = p1 <> p2
+          value result `shouldBe` "ab"
+          length (elements result) `shouldBe` 2
+          -- First element has depth 1, second has depth 2
+          let firstElem = head (elements result)
+              secondElem = last (elements result)
+          value firstElem `shouldBe` "leaf"
+          value secondElem `shouldBe` "middle"
+          length (elements firstElem) `shouldBe` 0
+          length (elements secondElem) `shouldBe` 1
+        
+        it "T022: combining patterns with deeply nested structures (10+ levels)" $ do
+          -- Create a deeply nested pattern (10 levels)
+          let createDeep n = if n <= 0
+                            then pattern "leaf"
+                            else patternWith ("level" ++ show n) [createDeep (n - 1)]
+              p1 = createDeep 10
+              p2 = patternWith "simple" [pattern "elem"]
+              result = p1 <> p2
+          value result `shouldBe` ("level10" ++ "simple")
+          length (elements result) `shouldBe` 2
+          -- Verify deep nesting is preserved in first element
+          let deepElem = head (elements result)
+          value deepElem `shouldBe` "level9"
+          -- Verify we can traverse to the leaf
+          let traverseToLeaf p = if null (elements p) then p else traverseToLeaf (head (elements p))
+              leaf = traverseToLeaf deepElem
+          value leaf `shouldBe` "leaf"
+          -- Verify second element is preserved
+          let simpleElem = last (elements result)
+          value simpleElem `shouldBe` "elem"
+        
+        it "T023: combining patterns with many elements (100+ elements)" $ do
+          let elems1 = map (\i -> pattern ("e1_" ++ show i)) [1..50]
+              elems2 = map (\i -> pattern ("e2_" ++ show i)) [1..50]
+              p1 = patternWith "prefix" elems1
+              p2 = patternWith "suffix" elems2
+              result = p1 <> p2
+          value result `shouldBe` "prefixsuffix"
+          length (elements result) `shouldBe` 100
+          -- Verify order: first 50 from p1, then 50 from p2
+          value (head (elements result)) `shouldBe` "e1_1"
+          value (elements result !! 49) `shouldBe` "e1_50"
+          value (elements result !! 50) `shouldBe` "e2_1"
+          value (last (elements result)) `shouldBe` "e2_50"
+    
+    describe "Semigroup Instance - Integration (Phase 4)" $ do
+      
+      describe "Standard Semigroup combinators" $ do
+        
+        it "T026: integration test for sconcat with list of patterns" $ do
+          let p1 = pattern "a"
+              p2 = pattern "b"
+              p3 = pattern "c"
+              patterns = p1 :| [p2, p3]
+              result = sconcat patterns
+          value result `shouldBe` "abc"
+          elements result `shouldBe` ([] :: [Pattern String])
+        
+        it "T027: integration test for stimes to repeat a pattern" $ do
+          let elem1 = pattern "e1"
+              elem2 = pattern "e2"
+              p = patternWith "root" [elem1, elem2]
+              result = stimes 3 p
+          value result `shouldBe` "rootrootroot"
+          length (elements result) `shouldBe` 6
+          -- Verify elements are repeated in order
+          map value (take 2 (elements result)) `shouldBe` ["e1", "e2"]
+          map value (drop 2 (take 4 (elements result))) `shouldBe` ["e1", "e2"]
+          map value (drop 4 (elements result)) `shouldBe` ["e1", "e2"]
+      
+      describe "Integration with pattern constructors" $ do
+        
+        it "T028: Semigroup instance with pattern constructors" $ do
+          -- Test with pattern function
+          let p1 = pattern "a"
+              p2 = pattern "b"
+              result1 = p1 <> p2
+          value result1 `shouldBe` "ab"
+          -- Test with patternWith function
+          let elem1 = pattern "e1"
+              elem2 = pattern "e2"
+              p3 = patternWith "c" [elem1, elem2]
+              p4 = patternWith "d" [pattern "e3"]
+              result2 = p3 <> p4
+          value result2 `shouldBe` "cd"
+          length (elements result2) `shouldBe` 3
+          -- Test with fromList function
+          let p5 = fromList "list1" ["a", "b"]
+              p6 = fromList "list2" ["c", "d"]
+              result3 = p5 <> p6
+          value result3 `shouldBe` "list1list2"
+          length (elements result3) `shouldBe` 4
+          map value (elements result3) `shouldBe` ["a", "b", "c", "d"]
+      
+      describe "Integration with type class instances" $ do
+        
+        it "T029: Semigroup instance with type class instances" $ do
+          let elem1 = pattern "e1"
+              elem2 = pattern "e2"
+              p1 = patternWith "a" [elem1, elem2]
+              p2 = patternWith "b" [pattern "e3"]
+              result = p1 <> p2
+          -- Test with Functor
+          let fmapResult = fmap (map toUpper) result
+          value fmapResult `shouldBe` "AB"
+          -- Test with Foldable
+          let foldResult = foldr (++) "" result
+          foldResult `shouldBe` "abe1e2e3"
+          -- Test with Traversable
+          let traverseResult = traverse Identity result
+              unwrapped = runIdentity traverseResult
+          unwrapped `shouldBe` result
+      
+      describe "Non-commutative value type Semigroup" $ do
+        
+        it "T030: combining patterns with non-commutative value type Semigroup" $ do
+          -- Use Endo as a non-commutative Semigroup
+          -- Endo f <> Endo g = Endo (f . g) (composition is non-commutative)
+          let f = Endo ((+1) :: Int -> Int)
+              g = Endo ((*2) :: Int -> Int)
+              p1 = pattern f
+              p2 = pattern g
+              result = p1 <> p2
+          -- Verify composition order: (f . g) x = f (g x) = (x * 2) + 1
+          let composed = appEndo (value result) 5
+          composed `shouldBe` 11  -- (5 * 2) + 1 = 11
+          -- Verify reverse order is different: (g . f) x = g (f x) = (x + 1) * 2
+          let reverseResult = p2 <> p1
+              reverseComposed = appEndo (value reverseResult) 5
+          reverseComposed `shouldBe` 12  -- (5 + 1) * 2 = 12
+          -- This demonstrates non-commutativity - verify they produce different results
+          composed `shouldNotBe` reverseComposed

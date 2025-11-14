@@ -181,12 +181,69 @@ See [README.md](README.md#development-workflow) for complete workflow details.
 **Goal**: Patterns can be ordered and used in standard library collections. ✅ **COMPLETE**
 
 ### 8.2 Other Instances
-- [ ] Evaluate if other standard typeclasses are needed (e.g., `Semigroup`, `Monoid`)
-- [ ] Implement only if clearly needed for core functionality
+- [x] Evaluate if other standard typeclasses are needed (e.g., `Semigroup`, `Monoid`)
+- [x] Implement only if clearly needed for core functionality
 
 **Goal**: Complete basic typeclass coverage.
 
 **Status**: Ord instance complete ✅. Other instances (Semigroup, Monoid) can be evaluated as needed.
+
+### 8.3 Semigroup Instance
+- [ ] **STOP and REVIEW**: Identify clear use cases for combining patterns
+- [ ] Evaluate semantics: should `p1 <> p2` combine values and concatenate elements?
+- [ ] Consider: does this align with the decorated sequence model?
+- [ ] Document use cases before proceeding
+- [ ] If proceeding: implement `Semigroup` instance (requires `Semigroup v` constraint)
+- [ ] Write tests: verify combination semantics
+- [ ] Write tests: verify associativity law
+- [ ] Write tests: edge cases (empty patterns, single elements, nested patterns)
+
+**Goal**: Enable incremental pattern construction through combination, if use cases are clear.
+
+**Status**: Pending use case evaluation.
+
+### 8.4 Monoid Instance
+- [ ] **STOP and REVIEW**: Identify clear use cases for identity pattern
+- [ ] Evaluate semantics: what should `mempty` be? (pattern with `mempty` value and empty elements?)
+- [ ] Consider: does this naturally extend Semigroup semantics?
+- [ ] Document use cases before proceeding
+- [ ] If proceeding: implement `Monoid` instance (requires `Monoid v` constraint)
+- [ ] Write tests: verify identity laws (`mempty <> p = p`, `p <> mempty = p`)
+- [ ] Write tests: verify consistency with Semigroup
+- [ ] Write tests: edge cases (combining with identity, nested patterns)
+
+**Goal**: Provide identity pattern for Semigroup operations, if use cases are clear.
+
+**Status**: Pending use case evaluation and Semigroup completion.
+
+### 8.5 Hashable Instance
+- [ ] **STOP and REVIEW**: Identify clear use cases for hash-based containers
+- [ ] Evaluate: do we need `HashMap`/`HashSet` beyond `Data.Set`/`Data.Map` (which use Ord)?
+- [ ] Consider: performance requirements for lookups and deduplication
+- [ ] Document use cases before proceeding
+- [ ] If proceeding: implement `Hashable` instance (requires `Hashable v` constraint)
+- [ ] Write tests: verify hash consistency with `Eq` (equal patterns have same hash)
+- [ ] Write tests: verify hash distribution (avoid collisions)
+- [ ] Write tests: integration with `HashMap` and `HashSet`
+- [ ] Write tests: edge cases (nested patterns, large structures)
+
+**Goal**: Enable efficient hash-based lookups and deduplication, if use cases are clear.
+
+**Status**: Pending use case evaluation.
+
+### 8.6 Applicative Instance
+- [ ] **STOP and REVIEW**: Identify clear use cases for applying patterns of functions to patterns of values
+- [ ] Evaluate semantics: how should `pure` and `<*>` work for Pattern?
+- [ ] Consider: does this fit the decorated sequence model, or is Functor sufficient?
+- [ ] Document use cases before proceeding
+- [ ] If proceeding: design and implement `Applicative` instance
+- [ ] Write tests: verify applicative laws (identity, composition, homomorphism, interchange)
+- [ ] Write tests: verify consistency with Functor (`fmap f x = pure f <*> x`)
+- [ ] Write tests: edge cases (empty patterns, nested patterns, function application)
+
+**Goal**: Enable applicative-style pattern operations, if use cases are clear and semantics are well-defined.
+
+**Status**: Pending use case evaluation and semantic design.
 
 ---
 
@@ -256,7 +313,7 @@ See [README.md](README.md#development-workflow) for complete workflow details.
 
 ## Current Status
 
-**Current Phase**: Phase 8.1 (Ord Instance) - Complete ✅
+**Current Phase**: Phase 8.2 (Other Instances Evaluation) - Evaluating candidates (8.3-8.6)
 
 **Completed**:
 - ✅ Phase 1: Core Pattern type fully implemented with comprehensive tests (25 test cases)
@@ -324,9 +381,12 @@ See [README.md](README.md#development-workflow) for complete workflow details.
   - All 47 tasks (T001-T047) completed across 4 phases (3 user stories + edge cases)
 
 **Next Steps**: 
-1. Move to Phase 8.2 (Other Instances) if needed (e.g., `Semigroup`, `Monoid`)
-2. Or proceed to Feature 9 (Graph Views) or Feature 10 (Pattern Morphisms) if needed
-3. Or proceed to Feature 11 (Integration and Polish)
+1. Evaluate Phase 8.3 (Semigroup Instance) - identify use cases before proceeding
+2. Evaluate Phase 8.4 (Monoid Instance) - identify use cases before proceeding
+3. Evaluate Phase 8.5 (Hashable Instance) - identify use cases before proceeding
+4. Evaluate Phase 8.6 (Applicative Instance) - identify use cases and design semantics before proceeding
+5. Or proceed to Feature 9 (Graph Views) or Feature 10 (Pattern Morphisms) if needed
+6. Or proceed to Feature 11 (Integration and Polish)
 
 ---
 

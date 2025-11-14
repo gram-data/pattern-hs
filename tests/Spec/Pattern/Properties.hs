@@ -14,7 +14,7 @@ import Data.Char (toUpper)
 import Data.Foldable (foldl, foldMap, foldr, toList)
 import Data.Functor.Compose (Compose(..))
 import Data.Functor.Identity (Identity(..))
-import Data.Monoid (All(..), Sum(..))
+import Data.Monoid (All(..), Product(..), Sum(..))
 import Data.List (sort)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
@@ -118,6 +118,36 @@ instance Arbitrary (Pattern (Either String Int)) where
         -- Limit to 2 elements max and smaller size to keep tests fast
         numElems <- choose (0, min 2 (max 1 (n `div` 3)))
         elems <- vectorOf numElems (genPatternEither (max 0 (n - 2)))
+        return $ Pattern { value = v, elements = elems }
+
+-- | Arbitrary instance for Pattern with Sum Int values.
+-- Generates patterns of varying structure with Sum Int values for Semigroup testing.
+instance Arbitrary (Pattern (Sum Int)) where
+  arbitrary = sized genPatternSumInt
+    where
+      genPatternSumInt 0 = do
+        v <- fmap Sum arbitrary
+        return $ Pattern { value = v, elements = [] }
+      genPatternSumInt n = do
+        v <- fmap Sum arbitrary
+        -- Limit to 2 elements max and smaller size to keep tests fast
+        numElems <- choose (0, min 2 (max 1 (n `div` 3)))
+        elems <- vectorOf numElems (genPatternSumInt (max 0 (n - 2)))
+        return $ Pattern { value = v, elements = elems }
+
+-- | Arbitrary instance for Pattern with Product Int values.
+-- Generates patterns of varying structure with Product Int values for Semigroup testing.
+instance Arbitrary (Pattern (Product Int)) where
+  arbitrary = sized genPatternProductInt
+    where
+      genPatternProductInt 0 = do
+        v <- fmap Product arbitrary
+        return $ Pattern { value = v, elements = [] }
+      genPatternProductInt n = do
+        v <- fmap Product arbitrary
+        -- Limit to 2 elements max and smaller size to keep tests fast
+        numElems <- choose (0, min 2 (max 1 (n `div` 3)))
+        elems <- vectorOf numElems (genPatternProductInt (max 0 (n - 2)))
         return $ Pattern { value = v, elements = elems }
 
 -- | Helper to create a property with reduced test cases for faster execution.
@@ -755,4 +785,119 @@ spec = do
                                 then compare p1Str p2Str == compare els1 els2
                                 else True
           in valueOrdering && elementOrdering
+  
+  describe "Semigroup Laws (User Story 4)" $ do
+    
+    describe "Associativity Law" $ do
+      
+      it "T015: associativity law: (p1 <> p2) <> p3 = p1 <> (p2 <> p3) for Pattern String" $ do
+        -- Property: Semigroup associativity law must hold for all patterns
+        quickProperty $ \p1 p2 p3 -> 
+          let p1Str = p1 :: Pattern String
+              p2Str = p2 :: Pattern String
+              p3Str = p3 :: Pattern String
+              leftAssoc = (p1Str <> p2Str) <> p3Str
+              rightAssoc = p1Str <> (p2Str <> p3Str)
+          in leftAssoc == rightAssoc
+      
+      it "T016: associativity with different value types (String, Sum Int, Product Int)" $ do
+        -- Property: Associativity holds for different Semigroup types
+        quickProperty $ \p1 p2 p3 -> 
+          let p1Str = p1 :: Pattern String
+              p2Str = p2 :: Pattern String
+              p3Str = p3 :: Pattern String
+          in ((p1Str <> p2Str) <> p3Str) == (p1Str <> (p2Str <> p3Str))
+      
+      it "T016: associativity with Sum Int values" $ do
+        -- Property: Associativity holds for Sum Int patterns
+        quickProperty $ \p1 p2 p3 -> 
+          let p1Sum = p1 :: Pattern (Sum Int)
+              p2Sum = p2 :: Pattern (Sum Int)
+              p3Sum = p3 :: Pattern (Sum Int)
+              leftAssoc = (p1Sum <> p2Sum) <> p3Sum
+              rightAssoc = p1Sum <> (p2Sum <> p3Sum)
+          in leftAssoc == rightAssoc
+      
+      it "T016: associativity with Product Int values" $ do
+        -- Property: Associativity holds for Product Int patterns
+        quickProperty $ \p1 p2 p3 -> 
+          let p1Prod = p1 :: Pattern (Product Int)
+              p2Prod = p2 :: Pattern (Product Int)
+              p3Prod = p3 :: Pattern (Product Int)
+              leftAssoc = (p1Prod <> p2Prod) <> p3Prod
+              rightAssoc = p1Prod <> (p2Prod <> p3Prod)
+          in leftAssoc == rightAssoc
+    
+    describe "Element Order Preservation" $ do
+      
+      it "T017: element order preservation: elements (p1 <> p2) = elements p1 ++ elements p2 for Pattern String" $ do
+        -- Property: Elements are concatenated in order
+        quickProperty $ \p1 p2 -> 
+          let p1Str = p1 :: Pattern String
+              p2Str = p2 :: Pattern String
+              combined = p1Str <> p2Str
+          in elements combined == elements p1Str ++ elements p2Str
+      
+      it "T017: element order preservation for Pattern (Sum Int)" $ do
+        -- Property: Elements are concatenated in order for Sum Int patterns
+        quickProperty $ \p1 p2 -> 
+          let p1Sum = p1 :: Pattern (Sum Int)
+              p2Sum = p2 :: Pattern (Sum Int)
+              combined = p1Sum <> p2Sum
+          in elements combined == elements p1Sum ++ elements p2Sum
+    
+    describe "Value Combination" $ do
+      
+      it "T018: value combination: value (p1 <> p2) = value p1 <> value p2 for Pattern String" $ do
+        -- Property: Values are combined using value type's Semigroup
+        quickProperty $ \p1 p2 -> 
+          let p1Str = p1 :: Pattern String
+              p2Str = p2 :: Pattern String
+              combined = p1Str <> p2Str
+          in value combined == value p1Str <> value p2Str
+      
+      it "T018: value combination for Pattern (Sum Int)" $ do
+        -- Property: Values are combined using Sum's Semigroup (addition)
+        quickProperty $ \p1 p2 -> 
+          let p1Sum = p1 :: Pattern (Sum Int)
+              p2Sum = p2 :: Pattern (Sum Int)
+              combined = p1Sum <> p2Sum
+          in value combined == value p1Sum <> value p2Sum
+      
+      it "T018: value combination for Pattern (Product Int)" $ do
+        -- Property: Values are combined using Product's Semigroup (multiplication)
+        quickProperty $ \p1 p2 -> 
+          let p1Prod = p1 :: Pattern (Product Int)
+              p2Prod = p2 :: Pattern (Product Int)
+              combined = p1Prod <> p2Prod
+          in value combined == value p1Prod <> value p2Prod
+    
+    describe "Structure Preservation" $ do
+      
+      it "T019: structure preservation in Semigroup combination for Pattern String" $ do
+        -- Property: Combining patterns preserves structure (element count, nesting depth, element order)
+        quickProperty $ \p1 p2 -> 
+          let p1Str = p1 :: Pattern String
+              p2Str = p2 :: Pattern String
+              combined = p1Str <> p2Str
+              -- Helper to count elements recursively
+              countElems (Pattern _ els) = length els + sum (map countElems els)
+              -- Helper to get depth
+              getDepth (Pattern _ els) = case els of
+                [] -> 0
+                _  -> 1 + maximum (map getDepth els)
+          in length (elements combined) == length (elements p1Str) + length (elements p2Str)
+             && countElems combined == countElems p1Str + countElems p2Str
+             && getDepth combined == max (getDepth p1Str) (getDepth p2Str)
+      
+      it "T019: structure preservation for Pattern (Sum Int)" $ do
+        -- Property: Combining patterns preserves structure for Sum Int patterns
+        quickProperty $ \p1 p2 -> 
+          let p1Sum = p1 :: Pattern (Sum Int)
+              p2Sum = p2 :: Pattern (Sum Int)
+              combined = p1Sum <> p2Sum
+              -- Helper to count elements recursively
+              countElems (Pattern _ els) = length els + sum (map countElems els)
+          in length (elements combined) == length (elements p1Sum) + length (elements p2Sum)
+             && countElems combined == countElems p1Sum + countElems p2Sum
 
