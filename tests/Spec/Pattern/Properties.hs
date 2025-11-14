@@ -1143,3 +1143,61 @@ spec = do
               rightSide = (pure (\f -> f y) <*> u) :: Pattern Int
           in leftSide == rightSide
 
+  describe "Applicative Consistency with Functor (User Story 3)" $ do
+    
+    describe "Functor Consistency Property" $ do
+      
+      it "T036: fmap f x = pure f <*> x for Pattern Int" $ do
+        -- Property: Functor operations are consistent with Applicative operations
+        quickProperty $ \x -> 
+          let f = (+1) :: Int -> Int
+              p = x :: Pattern Int
+              functorResult = fmap f p
+              applicativeResult = pure f <*> p
+          in functorResult == applicativeResult
+      
+      it "T036: fmap f x = pure f <*> x for Pattern String" $ do
+        -- Property: Functor operations are consistent with Applicative operations
+        quickProperty $ \x -> 
+          let f = map toUpper :: String -> String
+              p = x :: Pattern String
+              functorResult = fmap f p
+              applicativeResult = pure f <*> p
+          in functorResult == applicativeResult
+      
+      it "T037: consistency with atomic patterns" $ do
+        -- Property: Consistency holds for atomic patterns
+        quickProperty $ \x -> 
+          let f = (*2) :: Int -> Int
+              p = pure x :: Pattern Int
+              functorResult = fmap f p
+              applicativeResult = pure f <*> p
+          in functorResult == applicativeResult
+      
+      it "T038: consistency with patterns having elements" $ do
+        -- Property: Consistency holds for patterns with elements
+        quickProperty $ \x -> 
+          let f = (+10) :: Int -> Int
+              p = patternWith x [pure (x + 1), pure (x + 2)]
+              functorResult = fmap f p
+              applicativeResult = pure f <*> p
+          in functorResult == applicativeResult
+      
+      it "T039: consistency with nested patterns" $ do
+        -- Property: Consistency holds for nested patterns
+        quickProperty $ \x -> 
+          let f = (*3) :: Int -> Int
+              p = patternWith x [patternWith (x + 1) [pure (x + 2)]]
+              functorResult = fmap f p
+              applicativeResult = pure f <*> p
+          in functorResult == applicativeResult
+      
+      it "T040: consistency with type transformations (String -> Int)" $ do
+        -- Property: Consistency holds for type transformations
+        quickProperty $ \x -> 
+          let f = length :: String -> Int
+              p = x :: Pattern String
+              functorResult = fmap f p
+              applicativeResult = pure f <*> p
+          in functorResult == applicativeResult
+

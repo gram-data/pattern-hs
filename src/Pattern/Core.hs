@@ -1257,7 +1257,9 @@ instance Functor Pattern where
 -- @
 --
 -- This relationship ensures that Functor operations can be expressed using
--- Applicative operations, maintaining categorical consistency.
+-- Applicative operations, maintaining categorical consistency. This consistency
+-- is verified through property-based testing to ensure it holds for all pattern
+-- structures (atomic, with elements, nested) and all value type transformations.
 --
 -- === Examples
 --

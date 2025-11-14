@@ -3881,3 +3881,35 @@ spec = do
           length (elements result) `shouldBe` 2
           value (head (elements result)) `shouldBe` 10
           value (last (elements result)) `shouldBe` 15
+    
+    describe "Applicative Consistency with Functor (User Story 3)" $ do
+      
+      describe "Functor Consistency" $ do
+        
+        it "T037: consistency with atomic patterns" $ do
+          let f = (+1) :: Int -> Int
+              p = pure 5 :: Pattern Int
+              functorResult = fmap f p
+              applicativeResult = pure f <*> p
+          functorResult `shouldBe` applicativeResult
+        
+        it "T038: consistency with patterns having elements" $ do
+          let f = (*2) :: Int -> Int
+              p = patternWith 5 [pure 3, pure 7]
+              functorResult = fmap f p
+              applicativeResult = pure f <*> p
+          functorResult `shouldBe` applicativeResult
+        
+        it "T039: consistency with nested patterns" $ do
+          let f = (+10) :: Int -> Int
+              p = patternWith 1 [patternWith 2 [pure 3]]
+              functorResult = fmap f p
+              applicativeResult = pure f <*> p
+          functorResult `shouldBe` applicativeResult
+        
+        it "T040: consistency with type transformations (String -> Int)" $ do
+          let f = length :: String -> Int
+              p = patternWith "hello" [pure "world", pure "test"]
+              functorResult = fmap f p
+              applicativeResult = pure f <*> p
+          functorResult `shouldBe` applicativeResult

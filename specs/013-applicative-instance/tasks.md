@@ -137,29 +137,29 @@
 > 
 > **PERFORMANCE**: Always use timeouts when running tests (`timeout 60 cabal test` or equivalent). Tests should complete in <1 minute total.
 
-- [ ] T036 [P] [US3] Add property-based test for Functor consistency (`fmap f x = pure f <*> x`) in tests/Spec/Pattern/Properties.hs
-- [ ] T037 [P] [US3] Add unit test for Functor consistency with atomic patterns in tests/Spec/Pattern/CoreSpec.hs
-- [ ] T038 [P] [US3] Add unit test for Functor consistency with patterns having elements in tests/Spec/Pattern/CoreSpec.hs
-- [ ] T039 [P] [US3] Add unit test for Functor consistency with nested patterns in tests/Spec/Pattern/CoreSpec.hs
-- [ ] T040 [P] [US3] Add unit test for Functor consistency with type transformations (e.g., String -> Int) in tests/Spec/Pattern/CoreSpec.hs
-- [ ] T041 [US3] Run consistency tests to verify: `timeout 60 cabal test` in project root
+- [x] T036 [P] [US3] Add property-based test for Functor consistency (`fmap f x = pure f <*> x`) in tests/Spec/Pattern/Properties.hs
+- [x] T037 [P] [US3] Add unit test for Functor consistency with atomic patterns in tests/Spec/Pattern/CoreSpec.hs
+- [x] T038 [P] [US3] Add unit test for Functor consistency with patterns having elements in tests/Spec/Pattern/CoreSpec.hs
+- [x] T039 [P] [US3] Add unit test for Functor consistency with nested patterns in tests/Spec/Pattern/CoreSpec.hs
+- [x] T040 [P] [US3] Add unit test for Functor consistency with type transformations (e.g., String -> Int) in tests/Spec/Pattern/CoreSpec.hs
+- [x] T041 [US3] Run consistency tests to verify: `timeout 60 cabal test` in project root
 
 ### Implementation for User Story 3
 
 **Note**: If the implementation from User Story 1 already satisfies consistency, these tests should pass. If not, fix the implementation.
 
-- [ ] T042 [US3] Verify consistency holds for all pattern structures (atomic, with elements, nested)
-- [ ] T043 [US3] Verify consistency holds for all value type transformations
-- [ ] T044 [US3] Fix any consistency violations in src/Pattern/Core.hs if tests fail
-- [ ] T045 [US3] Add documentation note about Functor consistency in src/Pattern/Core.hs
-- [ ] T046 [US3] Run all consistency tests: `timeout 60 cabal test` in project root
-- [ ] T047 [US3] Verify all User Story 3 tests pass independently
+- [x] T042 [US3] Verify consistency holds for all pattern structures (atomic, with elements, nested)
+- [x] T043 [US3] Verify consistency holds for all value type transformations
+- [x] T044 [US3] Fix any consistency violations in src/Pattern/Core.hs if tests fail
+- [x] T045 [US3] Add documentation note about Functor consistency in src/Pattern/Core.hs
+- [x] T046 [US3] Run all consistency tests: `timeout 60 cabal test` in project root
+- [x] T047 [US3] Verify all User Story 3 tests pass independently
 
 **Checkpoint**: At this point, Applicative operations should be consistent with Functor operations. The relationship `fmap f x = pure f <*> x` should hold for all functions and patterns.
 
 ### Git Commit for User Story 3
 
-- [ ] T048 [US3] Commit User Story 3: `git add -A && git commit -m "test: add tests for Functor consistency (User Story 3)
+- [x] T048 [US3] Commit User Story 3: `git add -A && git commit -m "test: add tests for Functor consistency (User Story 3)
 
 - Add property-based tests for fmap f x = pure f <*> x
 - Add unit tests for consistency across pattern structures
