@@ -136,7 +136,7 @@
 - [x] T058 [US3] Add Haddock documentation for `contains` with examples in src/Pattern/Core.hs
 - [x] T059 [US3] Export `matches` and `contains` from Pattern.Core module in src/Pattern/Core.hs
 - [x] T060 [US3] Run tests with timeout: `timeout 60 cabal test` to verify all User Story 3 tests pass
-- [ ] T061 [US3] Git commit: "feat: implement structural matching functions (matches, contains) - US3"
+- [x] T061 [US3] Git commit: "feat: implement structural matching functions (matches, contains) - US3"
 
 **Checkpoint**: All user stories should now be independently functional. Structural matching functions enable pattern comparison and containment checking.
 
@@ -146,13 +146,13 @@
 
 **Purpose**: Improvements that affect multiple user stories and final integration
 
-- [ ] T062 [P] Update module-level documentation in src/Pattern/Core.hs to include predicate and matching functions
-- [ ] T063 [P] Add integration tests verifying predicate functions work with existing Pattern operations in tests/Spec/Pattern/CoreSpec.hs
-- [ ] T064 [P] Add integration tests verifying predicate functions work with typeclass instances (Functor, Foldable) in tests/Spec/Pattern/CoreSpec.hs
-- [ ] T065 [P] Add edge case tests for all functions (100+ nesting levels, 1000+ nodes) in tests/Spec/Pattern/CoreSpec.hs
-- [ ] T066 [P] Verify performance targets (1000 nodes, 100 levels depth) for all functions
-- [ ] T067 Run full test suite with timeout: `timeout 60 cabal test` to verify all tests pass
-- [ ] T068 Run quickstart.md validation to ensure examples work correctly
+- [x] T062 [P] Update module-level documentation in src/Pattern/Core.hs to include predicate and matching functions
+- [x] T063 [P] Add integration tests verifying predicate functions work with existing Pattern operations in tests/Spec/Pattern/CoreSpec.hs
+- [x] T064 [P] Add integration tests verifying predicate functions work with typeclass instances (Functor, Foldable) in tests/Spec/Pattern/CoreSpec.hs
+- [x] T065 [P] Add edge case tests for all functions (100+ nesting levels, 1000+ nodes) in tests/Spec/Pattern/CoreSpec.hs
+- [x] T066 [P] Verify performance targets (1000 nodes, 100 levels depth) for all functions
+- [x] T067 Run full test suite with timeout: `timeout 60 cabal test` to verify all tests pass
+- [x] T068 Run quickstart.md validation to ensure examples work correctly
 - [ ] T069 Git commit: "docs: finalize predicate-based pattern matching feature"
 
 ---

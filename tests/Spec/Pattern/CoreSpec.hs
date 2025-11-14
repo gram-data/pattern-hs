@@ -4143,6 +4143,58 @@ spec = do
           matches pat1 pat3 `shouldBe` False
           contains pat1 level3 `shouldBe` True
           contains pat1 (pattern "x") `shouldBe` False
+    
+    describe "Integration Tests - Predicate Functions with Existing Operations" $ do
+      
+      describe "Predicate functions with Functor operations" $ do
+        
+        it "T063: anyValue and allValues work with fmap" $ do
+          let pat = patternWith 1 [pattern 2, pattern 3]
+          let pat' = fmap (+1) pat
+          anyValue (> 0) pat' `shouldBe` True
+          allValues (> 0) pat' `shouldBe` True
+          anyValue (> 5) pat' `shouldBe` False
+      
+      describe "Predicate functions with Foldable operations" $ do
+        
+        it "T064: anyValue and allValues are consistent with toList" $ do
+          let pat = patternWith 1 [pattern 2, pattern 3]
+          let valuesList = toList pat
+          anyValue (> 0) pat `shouldBe` any (> 0) valuesList
+          allValues (> 0) pat `shouldBe` all (> 0) valuesList
+      
+      describe "Pattern predicates with existing query functions" $ do
+        
+        it "T064: filterPatterns works with size and depth" $ do
+          let pat = patternWith "root" [pattern "a", pattern "b"]
+          let largePatterns = filterPatterns (\p -> size p >= 2) pat
+          length largePatterns `shouldBe` 1  -- only root has size >= 2 (size 3)
+          let deepPatterns = filterPatterns (\p -> depth p == 0) pat
+          length deepPatterns `shouldBe` 2  -- two atomic elements
+    
+    describe "Edge Case Tests - Extreme Patterns" $ do
+      
+      describe "Very deeply nested patterns (100+ levels)" $ do
+        
+        it "T065: predicate functions work with 100+ nesting levels" $ do
+          let createDeep n = if n <= 0
+                             then pattern 1
+                             else patternWith n [createDeep (n - 1)]
+          let deepPat = createDeep 100
+          anyValue (> 0) deepPat `shouldBe` True
+          allValues (> 0) deepPat `shouldBe` True
+          filterPatterns (\p -> depth p == 0) deepPat `shouldBe` [pattern 1]
+          contains deepPat (pattern 1) `shouldBe` True
+      
+      describe "Patterns with many nodes (1000+)" $ do
+        
+        it "T065: predicate functions work with 1000+ nodes" $ do
+          let manyElems = map pattern [1..1000]
+          let pat = patternWith 0 manyElems
+          anyValue (> 500) pat `shouldBe` True
+          allValues (>= 0) pat `shouldBe` True
+          allValues (> 0) pat `shouldBe` False  -- root value is 0
+          length (filterPatterns (\p -> length (elements p) == 0) pat) `shouldBe` 1000
         
         it "T007: allValues with empty pattern (vacuous truth)" $ do
           let pat = pattern 0
