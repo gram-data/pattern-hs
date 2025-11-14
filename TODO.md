@@ -186,7 +186,7 @@ See [README.md](README.md#development-workflow) for complete workflow details.
 
 **Goal**: Complete basic typeclass coverage.
 
-**Status**: Ord instance complete ✅. Semigroup instance complete ✅. Other instances (Monoid, Hashable, Applicative) can be evaluated as needed.
+**Status**: Ord instance complete ✅. Semigroup instance complete ✅. Monoid instance complete ✅. Other instances (Hashable, Applicative) can be evaluated as needed.
 
 ### 8.3 Semigroup Instance ✅
 - [x] **STOP and REVIEW**: Identify clear use cases for combining patterns
@@ -214,19 +214,33 @@ See [README.md](README.md#development-workflow) for complete workflow details.
 7. **Type constraint** - Requires `Semigroup v` constraint, ensuring type safety
 8. **All 33 tasks (T001-T033) completed** across 4 phases (3 user stories + integration)
 
-### 8.4 Monoid Instance
-- [ ] **STOP and REVIEW**: Identify clear use cases for identity pattern
-- [ ] Evaluate semantics: what should `mempty` be? (pattern with `mempty` value and empty elements?)
-- [ ] Consider: does this naturally extend Semigroup semantics?
-- [ ] Document use cases before proceeding
-- [ ] If proceeding: implement `Monoid` instance (requires `Monoid v` constraint)
-- [ ] Write tests: verify identity laws (`mempty <> p = p`, `p <> mempty = p`)
-- [ ] Write tests: verify consistency with Semigroup
-- [ ] Write tests: edge cases (combining with identity, nested patterns)
+### 8.4 Monoid Instance ✅
+- [x] **STOP and REVIEW**: Identify clear use cases for identity pattern
+- [x] Evaluate semantics: what should `mempty` be? (pattern with `mempty` value and empty elements?)
+- [x] Consider: does this naturally extend Semigroup semantics?
+- [x] Document use cases before proceeding
+- [x] If proceeding: implement `Monoid` instance (requires `Monoid v` constraint)
+- [x] Write tests: verify identity laws (`mempty <> p = p`, `p <> mempty = p`)
+- [x] Write tests: verify consistency with Semigroup
+- [x] Write tests: edge cases (combining with identity, nested patterns)
 
-**Goal**: Provide identity pattern for Semigroup operations, if use cases are clear.
+**Goal**: Provide identity pattern for Semigroup operations, if use cases are clear. ✅ **COMPLETE**
 
-**Status**: Pending use case evaluation. Semigroup instance is now complete, enabling evaluation of Monoid extension.
+**Monoid Instance Added**:
+1. **`Monoid` instance** - Extends the Semigroup instance by providing an identity element (`mempty`)
+2. **Identity pattern** - `mempty = pattern mempty` (pattern with `mempty` value and empty elements list)
+3. **Identity laws** - Verified through property-based testing: `mempty <> p = p` and `p <> mempty = p`
+4. **Consistency with Semigroup** - Uses same `<>` implementation, naturally extending Semigroup semantics
+5. **Standard library integration** - Works with `mconcat` for combining lists of patterns (returns `mempty` for empty list)
+6. **Comprehensive tests** - All tests passing (437 examples, 0 failures):
+   - Unit tests for identity pattern structure and laws (T007-T011, T021-T026)
+   - Property-based tests for identity laws across various value types (T017-T020)
+   - Edge case tests (various pattern structures, value types, mconcat behavior)
+   - Consistency tests with Semigroup instance
+7. **Complete Haddock documentation** - Module-level and instance-level documentation with examples
+8. **Type constraint** - Requires `Monoid v` constraint, ensuring type safety
+9. **All 32 tasks (T001-T032) completed** across 7 phases (setup, foundational, user stories, polish)
+10. **Documentation examples updated** - All examples use constructor functions (`pattern`, `patternWith`) instead of record syntax
 
 ### 8.5 Hashable Instance
 - [ ] **STOP and REVIEW**: Identify clear use cases for hash-based containers
@@ -325,7 +339,7 @@ See [README.md](README.md#development-workflow) for complete workflow details.
 
 ## Current Status
 
-**Current Phase**: Phase 8.2 (Other Instances Evaluation) - Semigroup complete ✅, evaluating remaining candidates (8.4-8.6)
+**Current Phase**: Phase 8.2 (Other Instances Evaluation) - Semigroup complete ✅, Monoid complete ✅, evaluating remaining candidates (8.5-8.6)
 
 **Completed**:
 - ✅ Phase 1: Core Pattern type fully implemented with comprehensive tests (25 test cases)
@@ -400,13 +414,24 @@ See [README.md](README.md#development-workflow) for complete workflow details.
   - Complete Haddock documentation with examples
   - Module-level documentation updated
   - All 33 tasks (T001-T033) completed across 4 phases (3 user stories + integration)
+- ✅ Phase 8.4: Monoid Instance implemented with comprehensive tests:
+  - `Monoid` instance for `Pattern` extending Semigroup with identity element (`mempty`)
+  - Identity pattern: `mempty = pattern mempty` (pattern with `mempty` value and empty elements)
+  - Property-based tests for identity laws (`mempty <> p = p`, `p <> mempty = p`)
+  - Unit tests for identity pattern structure, laws, and edge cases
+  - Integration tests for standard Monoid combinators (`mconcat`)
+  - Consistency tests with Semigroup instance
+  - All tests passing (437 examples, 0 failures)
+  - Complete Haddock documentation with examples
+  - Module-level documentation updated
+  - All examples use constructor functions (`pattern`, `patternWith`) instead of record syntax
+  - All 32 tasks (T001-T032) completed across 7 phases (setup, foundational, user stories, polish)
 
 **Next Steps**: 
-1. Evaluate Phase 8.4 (Monoid Instance) - identify use cases before proceeding (Semigroup now complete, enabling evaluation)
-2. Evaluate Phase 8.5 (Hashable Instance) - identify use cases before proceeding
-3. Evaluate Phase 8.6 (Applicative Instance) - identify use cases and design semantics before proceeding
-4. Or proceed to Feature 9 (Graph Views) or Feature 10 (Pattern Morphisms) if needed
-5. Or proceed to Feature 11 (Integration and Polish)
+1. Evaluate Phase 8.5 (Hashable Instance) - identify use cases before proceeding
+2. Evaluate Phase 8.6 (Applicative Instance) - identify use cases and design semantics before proceeding
+3. Or proceed to Feature 9 (Graph Views) or Feature 10 (Pattern Morphisms) if needed
+4. Or proceed to Feature 11 (Integration and Polish)
 
 ---
 
