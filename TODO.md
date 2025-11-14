@@ -181,8 +181,8 @@ See [README.md](README.md#development-workflow) for complete workflow details.
 **Goal**: Patterns can be ordered and used in standard library collections. ✅ **COMPLETE**
 
 ### 8.2 Other Instances
-- [ ] Evaluate if other standard typeclasses are needed (e.g., `Semigroup`, `Monoid`)
-- [ ] Implement only if clearly needed for core functionality
+- [x] Evaluate if other standard typeclasses are needed (e.g., `Semigroup`, `Monoid`)
+- [x] Implement only if clearly needed for core functionality
 
 **Goal**: Complete basic typeclass coverage.
 
