@@ -3354,7 +3354,7 @@ allValues p = all p . toList
 --
 -- >>> pat = patternWith "root" [pattern "a", pattern "b"]
 -- >>> filterPatterns (\p -> value p == "root") pat
--- [pat]
+-- [Pattern {value = "root", elements = [Pattern {value = "a", elements = []},Pattern {value = "b", elements = []}]}]
 --
 -- Filter patterns with no matches:
 --
@@ -3365,10 +3365,10 @@ allValues p = all p . toList
 -- Filter patterns matching element sequence structure:
 --
 -- >>> pat = patternWith "root" [pattern "a", pattern "b", pattern "b", pattern "a"]
--- >>> filterPatterns (\p -> length (elements p) == 4 && 
--- ...                      value (elements p !! 0) == value (elements p !! 3) &&
--- ...                      value (elements p !! 1) == value (elements p !! 2)) pat
--- [pat]
+-- >>> length (filterPatterns (\p -> length (elements p) == 4 && 
+-- ...                              value (elements p !! 0) == value (elements p !! 3) &&
+-- ...                              value (elements p !! 1) == value (elements p !! 2)) pat)
+-- 1
 --
 -- === Performance
 --
@@ -3438,7 +3438,7 @@ filterPatterns pred pat =
 --
 -- >>> pat = patternWith "root" [pattern "a", pattern "b"]
 -- >>> findPattern (\p -> value p == "root") pat
--- Just pat
+-- Just (Pattern {value = "root", elements = [Pattern {value = "a", elements = []},Pattern {value = "b", elements = []}]})
 --
 -- Find pattern with no matches:
 --
@@ -3640,10 +3640,11 @@ matches = (==)
 -- === Relationship to matches
 --
 -- The @contains@ function uses @matches@ internally to check for structural
--- equality between the pattern and subpatterns:
+-- equality between the pattern and subpatterns. It checks if the pattern itself
+-- matches the subpattern, or recursively checks if any element contains the subpattern:
 --
 -- @
--- contains p subpat = any (matches subpat) (allSubpatterns p)
+-- contains p subpat = matches p subpat || any (\elemPat -> contains elemPat subpat) (elements p)
 -- @
 --
 -- This ensures that containment is based on structural matching, not just
