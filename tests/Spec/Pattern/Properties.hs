@@ -19,7 +19,7 @@ import Data.Monoid (All(..), Product(..), Sum(..))
 import Data.List (nub, sort)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import Pattern.Core (Pattern(..), pattern, patternWith, fromList, flatten, size, depth, values, toTuple)
+import Pattern.Core (Pattern(..), pattern, patternWith, fromList, flatten, size, depth, values, toTuple, anyValue, allValues, filterPatterns, findPattern, findAllPatterns, matches, contains)
 import qualified Pattern.Core as PC
 import Test.Hspec
 import Test.QuickCheck hiding (elements)
@@ -1200,4 +1200,79 @@ spec = do
               functorResult = fmap f p
               applicativeResult = pure f <*> p
           in functorResult == applicativeResult
+  
+  describe "Value Predicate Functions Properties (User Story 1)" $ do
+    
+    describe "anyValue and allValues relationship" $ do
+      
+      it "T009: anyValue p = not (allValues (not . p))" $ do
+        -- Property: anyValue and allValues are complementary for any predicate
+        quickProperty $ \(p :: Pattern Int) (Fun _ pred) -> 
+          let p' = pred :: Int -> Bool
+          in anyValue p' p == not (allValues (not . p') p)
+      
+      it "T010: anyValue (const True) = True" $ do
+        -- Property: anyValue with always-true predicate always returns True
+        quickProperty $ \(p :: Pattern Int) -> 
+          anyValue (const True) p == True
+      
+      it "T011: allValues (const False) = False for non-empty patterns" $ do
+        -- Property: allValues with always-false predicate returns False for non-empty patterns
+        quickProperty $ \(p :: Pattern Int) -> 
+          let isEmpty = null (toList p)
+          in if isEmpty
+             then True  -- Vacuous truth for empty patterns
+             else allValues (const False) p == False
+  
+  describe "Pattern Predicate Functions Properties (User Story 2)" $ do
+    
+    describe "filterPatterns properties" $ do
+      
+      it "T029: filterPatterns (const True) returns all subpatterns" $ do
+        -- Property: filterPatterns with always-true predicate returns all subpatterns (including root)
+        quickProperty $ \(p :: Pattern Int) -> 
+          let allSubpatterns = filterPatterns (const True) p
+              expectedCount = size p  -- All nodes are subpatterns
+          in length allSubpatterns == expectedCount
+      
+      it "T030: filterPatterns (const False) returns empty list" $ do
+        -- Property: filterPatterns with always-false predicate returns empty list
+        quickProperty $ \(p :: Pattern Int) -> 
+          filterPatterns (const False) p == []
+      
+      it "T031: findPattern p returns Just first match from filterPatterns p" $ do
+        -- Property: findPattern returns the first match from filterPatterns results
+        quickProperty $ \(p :: Pattern Int) -> 
+          let pred = (\pat -> size pat > 0)  -- Always true for non-empty patterns
+              filtered = filterPatterns pred p
+              found = findPattern pred p
+          in if null filtered
+             then found == Nothing
+             else found == Just (head filtered)
+  
+  describe "Structural Matching Functions Properties (User Story 3)" $ do
+    
+    describe "matches properties" $ do
+      
+      it "T051: matches reflexivity: matches p p = True" $ do
+        -- Property: matches is reflexive - every pattern matches itself
+        quickProperty $ \(p :: Pattern Int) -> 
+          matches p p == True
+      
+      it "T052: matches symmetry: matches p1 p2 = matches p2 p1" $ do
+        -- Property: matches is symmetric - if p1 matches p2, then p2 matches p1
+        quickProperty $ \(p1 :: Pattern Int) (p2 :: Pattern Int) -> 
+          matches p1 p2 == matches p2 p1
+      
+      it "T053: contains reflexivity: contains p p = True" $ do
+        -- Property: contains is reflexive - every pattern contains itself
+        quickProperty $ \(p :: Pattern Int) -> 
+          contains p p == True
+      
+      it "T054: contains transitivity" $ do
+        -- Property: If p1 contains p2 and p2 contains p3, then p1 contains p3
+        quickProperty $ \(p1 :: Pattern Int) (p2 :: Pattern Int) (p3 :: Pattern Int) -> 
+          if contains p1 p2 && contains p2 p3
+          then contains p1 p3
+          else True  -- If premise is false, property holds vacuously
 

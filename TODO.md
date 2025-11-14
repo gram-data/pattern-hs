@@ -287,14 +287,119 @@ See [README.md](README.md#development-workflow) for complete workflow details.
 
 ---
 
-## Feature 9: Graph Views (Underspecified)
+## Feature 9: Predicate-Based Pattern Matching
 
-### 9.1 GraphView Typeclass Design
+### 9.1 Value Predicate Functions
+- [ ] **STOP and REVIEW**: Identify clear use cases for value-based predicates
+- [ ] Evaluate semantics: should predicates match on values only, or also consider structure?
+- [ ] Consider: how do predicates relate to existing `Eq` and `Ord` instances?
+- [ ] Document use cases before proceeding
+- [ ] If proceeding: implement `anyValue :: (v -> Bool) -> Pattern v -> Bool`
+- [ ] If proceeding: implement `allValues :: (v -> Bool) -> Pattern v -> Bool`
+- [ ] Write tests: verify predicate matching on atomic patterns
+- [ ] Write tests: verify predicate matching on nested patterns
+- [ ] Write tests: edge cases (empty patterns, all match, none match)
+
+**Goal**: Enable value-based predicate matching for pattern queries.
+
+### 9.2 Pattern Predicate Functions
+- [ ] **STOP and REVIEW**: Identify clear use cases for pattern-based predicates
+- [ ] Evaluate semantics: should predicates match on structure, values, or both?
+- [ ] Consider: how do pattern predicates relate to structural pattern matching?
+- [ ] Document use cases before proceeding
+- [ ] If proceeding: implement `filterPatterns :: (Pattern v -> Bool) -> Pattern v -> [Pattern v]`
+- [ ] If proceeding: implement `findPattern :: (Pattern v -> Bool) -> Pattern v -> Maybe (Pattern v)`
+- [ ] If proceeding: implement `findAllPatterns :: (Pattern v -> Bool) -> Pattern v -> [Pattern v]`
+- [ ] Write tests: verify pattern matching on various structures
+- [ ] Write tests: verify matching includes root pattern and all nested subpatterns
+- [ ] Write tests: edge cases (no matches, all match, deeply nested)
+
+**Goal**: Enable pattern-based predicate matching for finding subpatterns.
+
+### 9.3 Structural Pattern Matching
+- [ ] **STOP and REVIEW**: Identify clear use cases for structural pattern matching
+- [ ] Evaluate semantics: should matching be exact structure, or allow partial matching?
+- [ ] Consider: how does structural matching relate to `Eq` instance?
+- [ ] Document use cases before proceeding
+- [ ] If proceeding: implement `matches :: Pattern v -> Pattern v -> Bool` (structural matching)
+- [ ] If proceeding: implement `contains :: Pattern v -> Pattern v -> Bool` (subpattern containment)
+- [ ] Write tests: verify structural matching semantics
+- [ ] Write tests: verify subpattern containment detection
+- [ ] Write tests: edge cases (empty patterns, self-matching, nested matching)
+
+**Goal**: Enable structural pattern matching beyond exact equality.
+
+**Note**: Predicate-based matching extends beyond `Eq` to support flexible querying and filtering of patterns based on value properties or structural characteristics.
+
+---
+
+## Feature 10: Comonad Instance
+
+### 10.1 Comonad Design
+- [ ] **STOP and REVIEW**: Identify clear use cases for context-aware computations
+- [ ] Evaluate semantics: what does "context" mean for Pattern? (full structure, position, depth?)
+- [ ] Consider: how does Comonad relate to existing `Foldable` and `Traversable` instances?
+- [ ] Research: review comonad implementations for tree structures (e.g., `Data.Tree`)
+- [ ] Document use cases before proceeding
+- [ ] Design `extract :: Pattern v -> v` semantics (extract decoration value)
+- [ ] Design `extend :: (Pattern v -> w) -> Pattern v -> Pattern w` semantics (context-aware computation)
+- [ ] Design `duplicate :: Pattern v -> Pattern (Pattern v)` semantics (create context at each position)
+
+**Goal**: Enable context-aware computations that have access to full structural context.
+
+### 10.2 Comonad Implementation
+- [ ] Implement `extract :: Pattern v -> v` (extract value at focus)
+- [ ] Implement `duplicate :: Pattern v -> Pattern (Pattern v)` (create pattern of contexts)
+- [ ] Implement `extend :: (Pattern v -> w) -> Pattern v -> Pattern w` (context-aware transformation)
+- [ ] Verify: `extract . extend f = f` (comonad law 1)
+- [ ] Verify: `extend extract = id` (comonad law 2)
+- [ ] Verify: `extend f . extend g = extend (f . extend g)` (comonad law 3)
+- [ ] Write tests: verify all comonad laws with property-based testing
+- [ ] Write tests: verify extract on atomic patterns
+- [ ] Write tests: verify extract on nested patterns
+- [ ] Write tests: verify extend with context-aware functions
+- [ ] Write tests: verify duplicate creates correct context structures
+- [ ] Write tests: edge cases (empty patterns, deeply nested, single element)
+
+**Goal**: Implement Comonad instance with verified laws and comprehensive tests.
+
+### 10.3 Context-Aware Operations
+- [ ] **STOP and REVIEW**: Identify useful context-aware operations enabled by Comonad
+- [ ] Evaluate: what context information is most useful? (depth, path, parent, siblings, size?)
+- [ ] Consider: should we provide helper functions for common context queries?
+- [ ] Document use cases before proceeding
+- [ ] If proceeding: implement `depthAt :: Pattern v -> Pattern Int` (depth at each position)
+- [ ] If proceeding: implement `sizeAt :: Pattern v -> Pattern Int` (size of subtree at each position)
+- [ ] If proceeding: implement `pathAt :: Pattern v -> Pattern [Int]` (path from root at each position)
+- [ ] Write tests: verify context-aware operations produce correct results
+- [ ] Write tests: verify context operations on various structures
+- [ ] Write tests: edge cases (root position, leaf positions, nested structures)
+
+**Goal**: Provide useful context-aware operations enabled by Comonad instance.
+
+**Note**: Comonad enables context-aware folding where computations have access to the full structural context (parent, siblings, depth, path) around each value, not just the value itself. This extends beyond `Foldable` which only provides values in sequence.
+
+**Comonad Laws**:
+- **Law 1**: `extract . extend f = f` - Extracting from an extended computation gives the original result
+- **Law 2**: `extend extract = id` - Extending with extract is identity
+- **Law 3**: `extend f . extend g = extend (f . extend g)` - Extend is associative
+
+**Use Cases**:
+- Depth-aware aggregations (compute based on nesting level)
+- Position-aware transformations (transform based on location in structure)
+- Context-sensitive queries (find patterns based on structural context)
+- Structural metadata computation (compute depth, size, path at each position)
+
+---
+
+## Feature 11: Graph Views (Underspecified)
+
+### 11.1 GraphView Typeclass Design
 - [ ] **STOP and REVIEW**: Is GraphView needed yet?
 - [ ] Design `GraphView` typeclass interface (minimal)
 - [ ] Consider: can we defer this entirely?
 
-### 9.2 DirectedView (If Proceeding)
+### 11.2 DirectedView (If Proceeding)
 - [ ] Implement minimal `DirectedView` if needed
 - [ ] Keep implementation simple
 
@@ -304,9 +409,9 @@ See [README.md](README.md#development-workflow) for complete workflow details.
 
 ---
 
-## Feature 10: Pattern Morphisms (Underspecified)
+## Feature 12: Pattern Morphisms (Underspecified)
 
-### 10.1 Morphism Design
+### 12.1 Morphism Design
 - [ ] **STOP and REVIEW**: Are morphisms needed yet?
 - [ ] Define `PatternMorphism` type synonym
 - [ ] Implement `homomorphism` if clearly needed
@@ -318,19 +423,19 @@ See [README.md](README.md#development-workflow) for complete workflow details.
 
 ---
 
-## Feature 11: Integration and Polish
+## Feature 13: Integration and Polish
 
-### 17.1 Module Exports
+### 13.1 Module Exports
 - [ ] Review and finalize exports from `Pattern.Core`
 - [ ] Update `Pattern.hs` main module exports
 - [ ] Ensure clean public API
 
-### 17.2 Documentation
+### 13.2 Documentation
 - [ ] Add comprehensive Haddock documentation
 - [ ] Include usage examples
 - [ ] Document mathematical properties where applicable
 
-### 17.3 Testing
+### 13.3 Testing
 - [ ] Review test coverage
 - [ ] Add property-based tests for laws (functor, etc.)
 - [ ] Add edge case tests
@@ -456,9 +561,11 @@ See [README.md](README.md#development-workflow) for complete workflow details.
   - All 50 tasks (T001-T050) completed across 5 phases (MVP, verification, integration, polish)
 
 **Next Steps**: 
-1. Evaluate Phase 8.6 (Applicative Instance) - identify use cases and design semantics before proceeding
-2. Or proceed to Feature 9 (Graph Views) or Feature 10 (Pattern Morphisms) if needed
-3. Or proceed to Feature 11 (Integration and Polish)
+1. Feature 8.6 (Applicative Instance) - ✅ COMPLETE
+2. Feature 9 (Predicate-Based Pattern Matching) - identify use cases and design semantics before proceeding
+3. Feature 10 (Comonad Instance) - identify use cases and design semantics before proceeding
+4. Feature 11 (Graph Views) or Feature 12 (Pattern Morphisms) if needed
+5. Feature 13 (Integration and Polish)
 
 ---
 

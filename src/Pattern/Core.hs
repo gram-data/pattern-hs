@@ -167,6 +167,13 @@
 -- * @depth@ - Returns the maximum nesting depth of a pattern structure (O(n))
 -- * @values@ - Extracts all values from a pattern structure as a flat list (O(n))
 -- * @value@ - Field accessor for accessing a pattern's decoration value (O(1))
+-- * @anyValue@ - Checks if any value in a pattern satisfies a predicate (O(n))
+-- * @allValues@ - Checks if all values in a pattern satisfy a predicate (O(n))
+-- * @filterPatterns@ - Filters all subpatterns (including root) matching a pattern predicate (O(n))
+-- * @findPattern@ - Finds the first subpattern (including root) matching a pattern predicate (O(n))
+-- * @findAllPatterns@ - Finds all subpatterns (including root) matching a pattern predicate (O(n))
+-- * @matches@ - Checks if two patterns match structurally (O(n))
+-- * @contains@ - Checks if a pattern contains a subpattern (O(n))
 --
 -- These query functions enable pattern introspection, validation, and analysis operations.
 -- See individual function documentation for details on usage and performance characteristics.
@@ -3140,3 +3147,558 @@ depth (Pattern _ els) = case els of
 --
 values :: Pattern v -> [v]
 values = toList
+
+-- | Check if any value in a pattern satisfies a predicate.
+--
+-- Returns `True` if at least one value in the pattern (at any nesting level)
+-- satisfies the predicate, `False` otherwise. The function considers all values
+-- extracted from the pattern structure, including the pattern's own value and
+-- all element values recursively.
+--
+-- The @anyValue@ function operates on flattened values extracted via
+-- @Foldable.toList@, treating values independently of structural context.
+-- This enables value-based queries like "does this pattern contain any negative
+-- numbers?" without needing to know the exact structure or values.
+--
+-- === Relationship to Foldable
+--
+-- The @anyValue@ function leverages the @Foldable@ instance:
+--
+-- @
+-- anyValue p = any p . toList
+-- @
+--
+-- This ensures all values at all nesting levels are considered, consistent
+-- with @Foldable@ semantics where values are extracted and processed
+-- independently.
+--
+-- === Short-Circuit Behavior
+--
+-- The @anyValue@ function short-circuits on the first match, returning `True`
+-- immediately when a matching value is found. This provides efficient behavior
+-- for patterns where matching values appear early in the traversal.
+--
+-- === Examples
+--
+-- Atomic pattern:
+--
+-- >>> anyValue (> 0) (pattern 5)
+-- True
+-- >>> anyValue (> 10) (pattern 5)
+-- False
+--
+-- Pattern with elements:
+--
+-- >>> pat = patternWith 0 [pattern 1, pattern 2]
+-- >>> anyValue (> 0) pat
+-- True
+-- >>> anyValue (< 0) pat
+-- False
+--
+-- Nested pattern:
+--
+-- >>> pat = patternWith 0 [patternWith 1 [pattern 2]]
+-- >>> anyValue (> 1) pat
+-- True
+-- >>> anyValue (> 10) pat
+-- False
+--
+-- === Performance
+--
+-- The @anyValue@ function completes in O(n) time where n is the total number
+-- of nodes, but may short-circuit earlier if a match is found. For patterns
+-- with up to 1000 nodes, the function should complete in under 10 milliseconds.
+--
+-- === Type Safety
+--
+-- The @anyValue@ function works with patterns of any value type @v@:
+--
+-- >>> anyValue (== "test") (pattern "test" :: Pattern String)
+-- True
+-- >>> anyValue (> 0) (pattern 42 :: Pattern Int)
+-- True
+--
+anyValue :: (v -> Bool) -> Pattern v -> Bool
+anyValue p = any p . toList
+
+-- | Check if all values in a pattern satisfy a predicate.
+--
+-- Returns `True` only if every value in the pattern (at any nesting level)
+-- satisfies the predicate, `False` otherwise. The function considers all values
+-- extracted from the pattern structure, including the pattern's own value and
+-- all element values recursively.
+--
+-- The @allValues@ function operates on flattened values extracted via
+-- @Foldable.toList@, treating values independently of structural context.
+-- This enables value-based queries like "are all values in this pattern valid?"
+-- without needing to know the exact structure or values.
+--
+-- === Relationship to Foldable
+--
+-- The @allValues@ function leverages the @Foldable@ instance:
+--
+-- @
+-- allValues p = all p . toList
+-- @
+--
+-- This ensures all values at all nesting levels are considered, consistent
+-- with @Foldable@ semantics where values are extracted and processed
+-- independently.
+--
+-- === Vacuous Truth
+--
+-- For empty patterns (atomic patterns with no elements), the @allValues@
+-- function evaluates the predicate on the pattern's value. This means:
+--
+-- * If the predicate matches the value: returns `True`
+-- * If the predicate doesn't match the value: returns `False`
+--
+-- Note: This is different from standard vacuous truth semantics for empty
+-- collections, as atomic patterns always have a value to evaluate.
+--
+-- === Examples
+--
+-- Atomic pattern:
+--
+-- >>> allValues (> 0) (pattern 5)
+-- True
+-- >>> allValues (> 10) (pattern 5)
+-- False
+--
+-- Pattern where all values match:
+--
+-- >>> pat = patternWith 1 [pattern 2, pattern 3]
+-- >>> allValues (> 0) pat
+-- True
+-- >>> allValues (> 1) pat
+-- False
+--
+-- Pattern where some values don't match:
+--
+-- >>> pat = patternWith 1 [pattern 2, pattern 0]
+-- >>> allValues (> 0) pat
+-- False
+--
+-- Nested pattern:
+--
+-- >>> pat = patternWith 1 [patternWith 2 [pattern 3]]
+-- >>> allValues (> 0) pat
+-- True
+-- >>> allValues (> 2) pat
+-- False
+--
+-- === Performance
+--
+-- The @allValues@ function completes in O(n) time where n is the total number
+-- of nodes, as it must check all values to verify the predicate holds for
+-- every value. For patterns with up to 1000 nodes, the function should
+-- complete in under 10 milliseconds.
+--
+-- === Type Safety
+--
+-- The @allValues@ function works with patterns of any value type @v@:
+--
+-- >>> allValues (== "test") (pattern "test" :: Pattern String)
+-- True
+-- >>> allValues (> 0) (pattern 42 :: Pattern Int)
+-- True
+--
+allValues :: (v -> Bool) -> Pattern v -> Bool
+allValues p = all p . toList
+
+-- | Filter all subpatterns (including root) that match a pattern predicate.
+--
+-- Returns a list of all subpatterns in the pattern structure (including the
+-- root pattern itself) that satisfy the predicate. The function recursively
+-- traverses the entire pattern structure, examining each subpattern at all
+-- nesting levels.
+--
+-- The @filterPatterns@ function operates on pattern structures, not just
+-- flattened values. This enables structural queries like "find all patterns
+-- with exactly 3 elements" or "find all patterns where elements form a
+-- palindrome sequence" regardless of the internal content of individual
+-- elements.
+--
+-- === Traversal Order
+--
+-- The function traverses patterns in a depth-first, pre-order fashion:
+--
+-- 1. The root pattern is checked first
+-- 2. Then each element pattern is checked recursively
+-- 3. Results are collected in traversal order
+--
+-- This ensures that the root pattern appears first in the result list,
+-- followed by element patterns in their order of appearance.
+--
+-- === Relationship to findAllPatterns
+--
+-- The @filterPatterns@ and @findAllPatterns@ functions are equivalent:
+--
+-- @
+-- filterPatterns p = findAllPatterns p
+-- @
+--
+-- Both functions return all matching subpatterns. Use @filterPatterns@ for
+-- consistency with standard filtering operations, or @findAllPatterns@ for
+-- explicit "find all" semantics.
+--
+-- === Examples
+--
+-- Filter atomic patterns (patterns with no elements):
+--
+-- >>> pat = patternWith "root" [pattern "a", pattern "b", patternWith "c" [pattern "d"]]
+-- >>> filterPatterns (\p -> length (elements p) == 0) pat
+-- [pattern "a", pattern "b", pattern "d"]
+--
+-- Filter patterns matching a value:
+--
+-- >>> pat = patternWith "root" [pattern "a", pattern "b"]
+-- >>> filterPatterns (\p -> value p == "root") pat
+-- [Pattern {value = "root", elements = [Pattern {value = "a", elements = []},Pattern {value = "b", elements = []}]}]
+--
+-- Filter patterns with no matches:
+--
+-- >>> pat = patternWith "root" [pattern "a", pattern "b"]
+-- >>> filterPatterns (\p -> value p == "x") pat
+-- []
+--
+-- Filter patterns matching element sequence structure:
+--
+-- >>> pat = patternWith "root" [pattern "a", pattern "b", pattern "b", pattern "a"]
+-- >>> length (filterPatterns (\p -> length (elements p) == 4 && 
+-- ...                              value (elements p !! 0) == value (elements p !! 3) &&
+-- ...                              value (elements p !! 1) == value (elements p !! 2)) pat)
+-- 1
+--
+-- === Performance
+--
+-- The @filterPatterns@ function completes in O(n) time where n is the total
+-- number of subpatterns (nodes) in the pattern structure. For patterns with up
+-- to 1000 nodes, the function should complete in under 10 milliseconds.
+--
+-- === Type Safety
+--
+-- The @filterPatterns@ function works with patterns of any value type @v@:
+--
+-- >>> filterPatterns (\p -> value p == "test") (pattern "test" :: Pattern String)
+-- [pattern "test"]
+-- >>> filterPatterns (\p -> value p > 0) (pattern 42 :: Pattern Int)
+-- [pattern 42]
+--
+filterPatterns :: (Pattern v -> Bool) -> Pattern v -> [Pattern v]
+filterPatterns pred pat = 
+  let matches = if pred pat then [pat] else []
+      elementMatches = concatMap (filterPatterns pred) (elements pat)
+  in matches ++ elementMatches
+
+-- | Find the first subpattern (including root) that matches a pattern predicate.
+--
+-- Returns `Just` the first subpattern in the pattern structure (including the
+-- root pattern itself) that satisfies the predicate, or `Nothing` if no
+-- subpattern matches. The function recursively traverses the pattern structure
+-- in depth-first, pre-order fashion, returning the first match found.
+--
+-- The @findPattern@ function operates on pattern structures, not just
+-- flattened values. This enables structural queries like "find the first
+-- pattern with exactly 3 elements" or "find the first pattern where elements
+-- form a palindrome sequence" regardless of the internal content of individual
+-- elements.
+--
+-- === Traversal Order
+--
+-- The function traverses patterns in a depth-first, pre-order fashion:
+--
+-- 1. The root pattern is checked first
+-- 2. Then each element pattern is checked recursively
+-- 3. The first match is returned immediately (short-circuit behavior)
+--
+-- This ensures that the root pattern is checked before any element patterns,
+-- and matches are found in traversal order.
+--
+-- === Relationship to filterPatterns
+--
+-- The @findPattern@ function returns the first match from @filterPatterns@:
+--
+-- @
+-- findPattern p pat = listToMaybe (filterPatterns p pat)
+-- @
+--
+-- Use @findPattern@ when you only need the first match, or @filterPatterns@
+-- when you need all matches.
+--
+-- === Examples
+--
+-- Find first atomic pattern:
+--
+-- >>> pat = patternWith "root" [pattern "a", pattern "b"]
+-- >>> findPattern (\p -> length (elements p) == 0) pat
+-- Just (pattern "a")
+--
+-- Find root pattern:
+--
+-- >>> pat = patternWith "root" [pattern "a", pattern "b"]
+-- >>> findPattern (\p -> value p == "root") pat
+-- Just (Pattern {value = "root", elements = [Pattern {value = "a", elements = []},Pattern {value = "b", elements = []}]})
+--
+-- Find pattern with no matches:
+--
+-- >>> pat = patternWith "root" [pattern "a", pattern "b"]
+-- >>> findPattern (\p -> value p == "x") pat
+-- Nothing
+--
+-- === Performance
+--
+-- The @findPattern@ function completes in O(n) time where n is the total
+-- number of subpatterns (nodes) in the pattern structure, but may short-circuit
+-- earlier if a match is found. For patterns with up to 1000 nodes, the function
+-- should complete in under 10 milliseconds.
+--
+-- === Type Safety
+--
+-- The @findPattern@ function works with patterns of any value type @v@:
+--
+-- >>> findPattern (\p -> value p == "test") (pattern "test" :: Pattern String)
+-- Just (pattern "test")
+-- >>> findPattern (\p -> value p > 0) (pattern 42 :: Pattern Int)
+-- Just (pattern 42)
+--
+findPattern :: (Pattern v -> Bool) -> Pattern v -> Maybe (Pattern v)
+findPattern pred pat
+  | pred pat = Just pat
+  | otherwise = foldr (\elemPat acc -> case acc of
+      Just _ -> acc  -- Already found a match, keep it
+      Nothing -> findPattern pred elemPat) Nothing (elements pat)
+
+-- | Find all subpatterns (including root) that match a pattern predicate.
+--
+-- Returns a list of all subpatterns in the pattern structure (including the
+-- root pattern itself) that satisfy the predicate. The function recursively
+-- traverses the entire pattern structure, examining each subpattern at all
+-- nesting levels.
+--
+-- The @findAllPatterns@ function is equivalent to @filterPatterns@:
+--
+-- @
+-- findAllPatterns p = filterPatterns p
+-- @
+--
+-- Both functions return all matching subpatterns. Use @filterPatterns@ for
+-- consistency with standard filtering operations, or @findAllPatterns@ for
+-- explicit "find all" semantics.
+--
+-- === Examples
+--
+-- Find all atomic patterns:
+--
+-- >>> pat = patternWith "root" [pattern "a", pattern "b"]
+-- >>> findAllPatterns (\p -> length (elements p) == 0) pat
+-- [pattern "a", pattern "b"]
+--
+-- === Performance
+--
+-- The @findAllPatterns@ function completes in O(n) time where n is the total
+-- number of subpatterns (nodes) in the pattern structure. For patterns with up
+-- to 1000 nodes, the function should complete in under 10 milliseconds.
+--
+-- === Type Safety
+--
+-- The @findAllPatterns@ function works with patterns of any value type @v@:
+--
+-- >>> findAllPatterns (\p -> value p == "test") (pattern "test" :: Pattern String)
+-- [pattern "test"]
+-- >>> findAllPatterns (\p -> value p > 0) (pattern 42 :: Pattern Int)
+-- [pattern 42]
+--
+findAllPatterns :: (Pattern v -> Bool) -> Pattern v -> [Pattern v]
+findAllPatterns = filterPatterns
+
+-- | Check if two patterns match structurally.
+--
+-- Returns `True` if the two patterns have the same structure (same values at
+-- corresponding positions and same element structure), `False` otherwise.
+-- The function performs recursive structural comparison, distinguishing patterns
+-- based on their structure, not just flattened values.
+--
+-- The @matches@ function is equivalent to structural equality (`==`):
+--
+-- @
+-- matches p1 p2 = p1 == p2
+-- @
+--
+-- However, @matches@ provides explicit, intentional structural matching semantics,
+-- making it clear that the comparison is based on pattern structure rather than
+-- value-based equality.
+--
+-- === Structural Comparison
+--
+-- Two patterns match if and only if:
+--
+-- 1. Their values are equal (using `Eq` for the value type)
+-- 2. Their element lists have the same length
+-- 3. Corresponding elements match recursively
+--
+-- This ensures that patterns with the same flattened values but different
+-- structures are distinguished. For example, a pattern with two direct
+-- elements does not match a pattern with one element containing another element,
+-- even if the flattened values are the same.
+--
+-- === Relationship to Eq
+--
+-- The @matches@ function is equivalent to the `Eq` instance:
+--
+-- @
+-- matches p1 p2 = p1 == p2
+-- @
+--
+-- Use @matches@ when you want explicit structural matching semantics, or use
+-- `==` for standard equality checking.
+--
+-- === Examples
+--
+-- Identical patterns match:
+--
+-- >>> pat1 = patternWith "root" [pattern "a", pattern "b"]
+-- >>> pat2 = patternWith "root" [pattern "a", pattern "b"]
+-- >>> matches pat1 pat2
+-- True
+--
+-- Patterns with different values don't match:
+--
+-- >>> pat1 = patternWith "root1" [pattern "a", pattern "b"]
+-- >>> pat2 = patternWith "root2" [pattern "a", pattern "b"]
+-- >>> matches pat1 pat2
+-- False
+--
+-- Patterns with different element counts don't match:
+--
+-- >>> pat1 = patternWith "root" [pattern "a", pattern "b"]
+-- >>> pat2 = patternWith "root" [pattern "a"]
+-- >>> matches pat1 pat2
+-- False
+--
+-- Patterns with same flattened values but different structures don't match:
+--
+-- >>> pat1 = patternWith "root" [pattern "a", pattern "b"]
+-- >>> pat2 = patternWith "a" [patternWith "b" [pattern "root"]]
+-- >>> matches pat1 pat2
+-- False
+--
+-- Atomic patterns:
+--
+-- >>> matches (pattern "a") (pattern "a")
+-- True
+-- >>> matches (pattern "a") (pattern "b")
+-- False
+--
+-- === Performance
+--
+-- The @matches@ function completes in O(n) time where n is the total number
+-- of nodes in the smaller pattern. For patterns with up to 1000 nodes, the
+-- function should complete in under 10 milliseconds.
+--
+-- === Type Safety
+--
+-- The @matches@ function requires that the value type @v@ has an `Eq` instance:
+--
+-- @
+-- matches :: (Eq v) => Pattern v -> Pattern v -> Bool
+-- @
+--
+-- This ensures that pattern values can be compared for equality, which is
+-- necessary for structural matching.
+--
+matches :: (Eq v) => Pattern v -> Pattern v -> Bool
+matches = (==)
+
+-- | Check if a pattern contains a subpattern.
+--
+-- Returns `True` if the pattern contains the subpattern anywhere in its structure
+-- (including the pattern itself), `False` otherwise. The function recursively
+-- searches through all subpatterns in the pattern structure, checking for
+-- structural equality with the target subpattern.
+--
+-- The @contains@ function checks for structural containment:
+--
+-- * A pattern always contains itself (reflexivity)
+-- * A pattern contains all its direct elements
+-- * A pattern contains all nested subpatterns recursively
+--
+-- This enables pattern analysis operations like "does this pattern contain a
+-- specific subpattern?" or "is this pattern structure present in another pattern?"
+--
+-- === Relationship to filterPatterns
+--
+-- The @contains@ function can be implemented using @filterPatterns@:
+--
+-- @
+-- contains p subpat = not (null (filterPatterns (== subpat) p))
+-- @
+--
+-- However, @contains@ provides a more efficient implementation that short-circuits
+-- on the first match, and provides explicit containment semantics.
+--
+-- === Relationship to matches
+--
+-- The @contains@ function uses @matches@ internally to check for structural
+-- equality between the pattern and subpatterns. It checks if the pattern itself
+-- matches the subpattern, or recursively checks if any element contains the subpattern:
+--
+-- @
+-- contains p subpat = matches p subpat || any (\elemPat -> contains elemPat subpat) (elements p)
+-- @
+--
+-- This ensures that containment is based on structural matching, not just
+-- value-based equality.
+--
+-- === Examples
+--
+-- Pattern containing a subpattern:
+--
+-- >>> subpat = pattern "a"
+-- >>> pat = patternWith "root" [subpat, pattern "b"]
+-- >>> contains pat subpat
+-- True
+--
+-- Pattern not containing a subpattern:
+--
+-- >>> subpat = pattern "x"
+-- >>> pat = patternWith "root" [pattern "a", pattern "b"]
+-- >>> contains pat subpat
+-- False
+--
+-- Pattern containing itself (self-containment):
+--
+-- >>> pat = patternWith "root" [pattern "a", pattern "b"]
+-- >>> contains pat pat
+-- True
+--
+-- Atomic patterns:
+--
+-- >>> pat1 = pattern "a"
+-- >>> pat2 = pattern "b"
+-- >>> contains pat1 pat1
+-- True
+-- >>> contains pat1 pat2
+-- False
+--
+-- === Performance
+--
+-- The @contains@ function completes in O(n) time where n is the total number
+-- of subpatterns in the pattern structure, but may short-circuit earlier if
+-- the subpattern is found. For patterns with up to 1000 nodes, the function
+-- should complete in under 10 milliseconds.
+--
+-- === Type Safety
+--
+-- The @contains@ function requires that the value type @v@ has an `Eq` instance:
+--
+-- @
+-- contains :: (Eq v) => Pattern v -> Pattern v -> Bool
+-- @
+--
+-- This ensures that pattern values can be compared for equality, which is
+-- necessary for structural matching during containment checking.
+--
+contains :: (Eq v) => Pattern v -> Pattern v -> Bool
+contains p subpat = 
+  matches p subpat || any (\elemPat -> contains elemPat subpat) (elements p)

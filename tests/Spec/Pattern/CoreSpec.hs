@@ -17,7 +17,7 @@ import Data.Monoid (All(..), Any(..), Endo(..), Product(..), Sum(..), mconcat)
 import Data.Semigroup (sconcat, stimes)
 import qualified Data.Set as Set
 import Test.Hspec
-import Pattern.Core (Pattern(..), pattern, patternWith, fromList, toTuple, size, depth, values)
+import Pattern.Core (Pattern(..), pattern, patternWith, fromList, toTuple, size, depth, values, anyValue, allValues, filterPatterns, findPattern, findAllPatterns, matches, contains)
 import qualified Pattern.Core as PC
 
 -- Custom type for testing
@@ -3992,3 +3992,222 @@ spec = do
           elements p1 `shouldBe` ([] :: [Pattern String])
           elements p2 `shouldBe` ([] :: [Pattern Int])
           elements p3 `shouldBe` ([] :: [Pattern Person])
+    
+    describe "Value Predicate Functions (User Story 1)" $ do
+      
+      describe "anyValue function - unit tests" $ do
+        
+        it "T001: anyValue with atomic pattern containing matching value" $ do
+          let pat = pattern 5
+          anyValue (> 0) pat `shouldBe` True
+          anyValue (> 10) pat `shouldBe` False
+        
+        it "T002: anyValue with nested pattern containing matching value" $ do
+          let pat = patternWith 0 [pattern 1, pattern 2]
+          anyValue (> 0) pat `shouldBe` True
+          anyValue (< 0) pat `shouldBe` False
+        
+        it "T003: anyValue with pattern containing no matching values" $ do
+          let pat = patternWith 0 [pattern 1, pattern 2]
+          anyValue (< 0) pat `shouldBe` False
+          anyValue (> 10) pat `shouldBe` False
+      
+      describe "allValues function - unit tests" $ do
+        
+        it "T004: allValues with atomic pattern" $ do
+          let pat = pattern 5
+          allValues (> 0) pat `shouldBe` True
+          allValues (> 10) pat `shouldBe` False
+        
+        it "T007: allValues with empty pattern (vacuous truth)" $ do
+          let pat = pattern 0
+          -- For atomic pattern, predicate is evaluated on the value
+          allValues (> 0) pat `shouldBe` False
+          allValues (>= 0) pat `shouldBe` True
+        
+        it "T008: anyValue and allValues with deeply nested patterns" $ do
+          let level3 = pattern 1
+          let level2 = patternWith 2 [level3]
+          let level1 = patternWith 3 [level2]
+          let pat = patternWith 4 [level1]
+          anyValue (> 0) pat `shouldBe` True
+          allValues (> 0) pat `shouldBe` True
+          anyValue (> 10) pat `shouldBe` False
+          allValues (> 10) pat `shouldBe` False
+    
+    describe "Pattern Predicate Functions (User Story 2)" $ do
+      
+      describe "filterPatterns function - unit tests" $ do
+        
+        it "T019: filterPatterns with predicate matching some subpatterns" $ do
+          let pat = patternWith "root" [pattern "a", pattern "b", patternWith "c" [pattern "d"]]
+          filterPatterns (\p -> length (elements p) == 0) pat `shouldBe` [pattern "a", pattern "b", pattern "d"]
+        
+        it "T020: filterPatterns with predicate matching root pattern" $ do
+          let pat = patternWith "root" [pattern "a", pattern "b"]
+          filterPatterns (\p -> value p == "root") pat `shouldBe` [pat]
+        
+        it "T021: filterPatterns with predicate matching no subpatterns" $ do
+          let pat = patternWith "root" [pattern "a", pattern "b"]
+          filterPatterns (\p -> value p == "x") pat `shouldBe` []
+      
+      describe "findPattern function - unit tests" $ do
+        
+        it "T022: findPattern with predicate matching first subpattern" $ do
+          let pat = patternWith "root" [pattern "a", pattern "b"]
+          findPattern (\p -> value p == "a") pat `shouldBe` Just (pattern "a")
+        
+        it "T023: findPattern with predicate matching root pattern" $ do
+          let pat = patternWith "root" [pattern "a", pattern "b"]
+          findPattern (\p -> value p == "root") pat `shouldBe` Just pat
+        
+        it "T024: findPattern with predicate matching no subpatterns" $ do
+          let pat = patternWith "root" [pattern "a", pattern "b"]
+          findPattern (\p -> value p == "x") pat `shouldBe` Nothing
+      
+      describe "findAllPatterns function - unit tests" $ do
+        
+        it "T025: findAllPatterns with predicate matching multiple subpatterns" $ do
+          let pat = patternWith "root" [pattern "a", pattern "b"]
+          findAllPatterns (\p -> length (elements p) == 0) pat `shouldBe` [pattern "a", pattern "b"]
+      
+      describe "Pattern predicates on various structures" $ do
+        
+        it "T026: pattern predicates on deeply nested patterns" $ do
+          let level3 = pattern "leaf"
+          let level2 = patternWith "level2" [level3]
+          let level1 = patternWith "level1" [level2]
+          let pat = patternWith "root" [level1]
+          filterPatterns (\p -> value p == "leaf") pat `shouldBe` [level3]
+          findPattern (\p -> value p == "level2") pat `shouldBe` Just level2
+        
+        it "T027: pattern predicates on atomic patterns" $ do
+          let pat = pattern "a"
+          filterPatterns (\p -> value p == "a") pat `shouldBe` [pat]
+          findPattern (\p -> value p == "a") pat `shouldBe` Just pat
+        
+        it "T028: pattern predicates matching element sequence structure (a, b, b, a)" $ do
+          let pat = patternWith "root" [pattern "a", pattern "b", pattern "b", pattern "a"]
+          filterPatterns (\p -> length (elements p) == 4 && 
+                               value (elements p !! 0) == value (elements p !! 3) &&
+                               value (elements p !! 1) == value (elements p !! 2)) pat `shouldBe` [pat]
+    
+    describe "Structural Matching Functions (User Story 3)" $ do
+      
+      describe "matches function - unit tests" $ do
+        
+        it "T041: matches with identical patterns" $ do
+          let pat1 = patternWith "root" [pattern "a", pattern "b"]
+          let pat2 = patternWith "root" [pattern "a", pattern "b"]
+          matches pat1 pat2 `shouldBe` True
+        
+        it "T042: matches with patterns having different values" $ do
+          let pat1 = patternWith "root1" [pattern "a", pattern "b"]
+          let pat2 = patternWith "root2" [pattern "a", pattern "b"]
+          matches pat1 pat2 `shouldBe` False
+        
+        it "T043: matches with patterns having different element counts" $ do
+          let pat1 = patternWith "root" [pattern "a", pattern "b"]
+          let pat2 = patternWith "root" [pattern "a"]
+          matches pat1 pat2 `shouldBe` False
+        
+        it "T044: matches with patterns having same flattened values but different structures" $ do
+          let pat1 = patternWith "root" [pattern "a", pattern "b"]
+          let pat2 = patternWith "a" [patternWith "b" [pattern "root"]]
+          -- Same flattened values but different structure
+          matches pat1 pat2 `shouldBe` False
+        
+        it "T045: matches with atomic patterns" $ do
+          let pat1 = pattern "a"
+          let pat2 = pattern "a"
+          let pat3 = pattern "b"
+          matches pat1 pat2 `shouldBe` True
+          matches pat1 pat3 `shouldBe` False
+      
+      describe "contains function - unit tests" $ do
+        
+        it "T046: contains with pattern containing subpattern" $ do
+          let subpat = pattern "a"
+          let pat = patternWith "root" [subpat, pattern "b"]
+          contains pat subpat `shouldBe` True
+        
+        it "T047: contains with pattern not containing subpattern" $ do
+          let subpat = pattern "x"
+          let pat = patternWith "root" [pattern "a", pattern "b"]
+          contains pat subpat `shouldBe` False
+        
+        it "T048: contains with pattern containing itself (self-containment)" $ do
+          let pat = patternWith "root" [pattern "a", pattern "b"]
+          contains pat pat `shouldBe` True
+        
+        it "T049: contains with atomic patterns" $ do
+          let pat1 = pattern "a"
+          let pat2 = pattern "b"
+          contains pat1 pat1 `shouldBe` True
+          contains pat1 pat2 `shouldBe` False
+      
+      describe "Structural matching on various structures" $ do
+        
+        it "T050: structural matching on deeply nested patterns" $ do
+          let level3 = pattern "leaf"
+          let level2 = patternWith "level2" [level3]
+          let level1 = patternWith "level1" [level2]
+          let pat1 = patternWith "root" [level1]
+          let pat2 = patternWith "root" [level1]
+          let pat3 = patternWith "root" [patternWith "level1" [pattern "leaf"]]
+          matches pat1 pat2 `shouldBe` True
+          matches pat1 pat3 `shouldBe` False
+          contains pat1 level3 `shouldBe` True
+          contains pat1 (pattern "x") `shouldBe` False
+    
+    describe "Integration Tests - Predicate Functions with Existing Operations" $ do
+      
+      describe "Predicate functions with Functor operations" $ do
+        
+        it "T063: anyValue and allValues work with fmap" $ do
+          let pat = patternWith 1 [pattern 2, pattern 3]
+          let pat' = fmap (+1) pat
+          anyValue (> 0) pat' `shouldBe` True
+          allValues (> 0) pat' `shouldBe` True
+          anyValue (> 5) pat' `shouldBe` False
+      
+      describe "Predicate functions with Foldable operations" $ do
+        
+        it "T064: anyValue and allValues are consistent with toList" $ do
+          let pat = patternWith 1 [pattern 2, pattern 3]
+          let valuesList = toList pat
+          anyValue (> 0) pat `shouldBe` any (> 0) valuesList
+          allValues (> 0) pat `shouldBe` all (> 0) valuesList
+      
+      describe "Pattern predicates with existing query functions" $ do
+        
+        it "T064: filterPatterns works with size and depth" $ do
+          let pat = patternWith "root" [pattern "a", pattern "b"]
+          let largePatterns = filterPatterns (\p -> size p >= 2) pat
+          length largePatterns `shouldBe` 1  -- only root has size >= 2 (size 3)
+          let deepPatterns = filterPatterns (\p -> depth p == 0) pat
+          length deepPatterns `shouldBe` 2  -- two atomic elements
+    
+    describe "Edge Case Tests - Extreme Patterns" $ do
+      
+      describe "Very deeply nested patterns (100+ levels)" $ do
+        
+        it "T065: predicate functions work with 100+ nesting levels" $ do
+          let createDeep n = if n <= 0
+                             then pattern 1
+                             else patternWith n [createDeep (n - 1)]
+          let deepPat = createDeep 100
+          anyValue (> 0) deepPat `shouldBe` True
+          allValues (> 0) deepPat `shouldBe` True
+          filterPatterns (\p -> depth p == 0) deepPat `shouldBe` [pattern 1]
+          contains deepPat (pattern 1) `shouldBe` True
+      
+      describe "Patterns with many nodes (1000+)" $ do
+        
+        it "T065: predicate functions work with 1000+ nodes" $ do
+          let manyElems = map pattern [1..1000]
+          let pat = patternWith 0 manyElems
+          anyValue (> 500) pat `shouldBe` True
+          allValues (>= 0) pat `shouldBe` True
+          allValues (> 0) pat `shouldBe` False  -- root value is 0
+          length (filterPatterns (\p -> length (elements p) == 0) pat) `shouldBe` 1000

@@ -31,9 +31,9 @@ tests/
 : Follow standard conventions
 
 ## Recent Changes
+- 012-predicate-matching: Added Haskell (GHC 9.8.4, 9.10.3) + base >=4.17.0.0, containers ^>=0.6
 - 013-applicative-instance: Added Haskell (GHC 9.8.4, 9.10.3) + base >=4.17.0.0, QuickCheck (for property-based testing), Hspec (for test framework)
 - 012-hashable-instance: Added Haskell (GHC 9.8.4, 9.10.3) + base >=4.17.0.0, containers ^>=0.6, hashable ^>=1.4
-- 011-monoid-instance: Added Haskell (GHC 9.8.4, 9.10.3) + base >=4.17.0.0, containers ^>=0.6
 
 
 <!-- MANUAL ADDITIONS START -->
