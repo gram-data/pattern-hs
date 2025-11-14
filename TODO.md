@@ -242,20 +242,34 @@ See [README.md](README.md#development-workflow) for complete workflow details.
 9. **All 32 tasks (T001-T032) completed** across 7 phases (setup, foundational, user stories, polish)
 10. **Documentation examples updated** - All examples use constructor functions (`pattern`, `patternWith`) instead of record syntax
 
-### 8.5 Hashable Instance
-- [ ] **STOP and REVIEW**: Identify clear use cases for hash-based containers
-- [ ] Evaluate: do we need `HashMap`/`HashSet` beyond `Data.Set`/`Data.Map` (which use Ord)?
-- [ ] Consider: performance requirements for lookups and deduplication
-- [ ] Document use cases before proceeding
-- [ ] If proceeding: implement `Hashable` instance (requires `Hashable v` constraint)
-- [ ] Write tests: verify hash consistency with `Eq` (equal patterns have same hash)
-- [ ] Write tests: verify hash distribution (avoid collisions)
-- [ ] Write tests: integration with `HashMap` and `HashSet`
-- [ ] Write tests: edge cases (nested patterns, large structures)
+### 8.5 Hashable Instance ✅
+- [x] **STOP and REVIEW**: Identify clear use cases for hash-based containers
+- [x] Evaluate: do we need `HashMap`/`HashSet` beyond `Data.Set`/`Data.Map` (which use Ord)?
+- [x] Consider: performance requirements for lookups and deduplication
+- [x] Document use cases before proceeding
+- [x] If proceeding: implement `Hashable` instance (requires `Hashable v` constraint)
+- [x] Write tests: verify hash consistency with `Eq` (equal patterns have same hash)
+- [x] Write tests: verify hash distribution (avoid collisions)
+- [x] Write tests: integration with `HashMap` and `HashSet`
+- [x] Write tests: edge cases (nested patterns, large structures)
 
-**Goal**: Enable efficient hash-based lookups and deduplication, if use cases are clear.
+**Goal**: Enable efficient hash-based lookups and deduplication, if use cases are clear. ✅ **COMPLETE**
 
-**Status**: Pending use case evaluation.
+**Hashable Instance Added**:
+1. **`Hashable` instance** - Enables using patterns as keys in `HashMap` and elements in `HashSet` for O(1) average-case lookups
+2. **Structure-preserving hashing** - Patterns are hashed based on their structure (value and elements recursively), distinguishing different structures even if they have the same flattened values
+3. **Hash consistency with Eq** - Verified through property-based testing: equal patterns (according to `Eq`) produce the same hash value
+4. **Good hash distribution** - Statistical testing shows collision rate < 1% for random patterns
+5. **Comprehensive tests** - All tests passing (477 examples, 0 failures):
+   - Unit tests for basic hashing operations (T001-T010)
+   - Property-based tests for hash consistency with Eq (T017-T019)
+   - Hash distribution tests (T020-T021)
+   - Edge case tests (T022-T026)
+   - Integration tests with HashMap and HashSet (T029-T038)
+   - Integration tests with other typeclass instances (T045-T047)
+6. **Complete Haddock documentation** - Module-level and instance-level documentation with examples
+7. **Type constraint** - Requires `Hashable v` constraint, ensuring type safety
+8. **All 50 tasks (T001-T050) completed** across 5 phases (MVP, verification, integration, polish)
 
 ### 8.6 Applicative Instance
 - [ ] **STOP and REVIEW**: Identify clear use cases for applying patterns of functions to patterns of values
@@ -339,7 +353,7 @@ See [README.md](README.md#development-workflow) for complete workflow details.
 
 ## Current Status
 
-**Current Phase**: Phase 8.2 (Other Instances Evaluation) - Semigroup complete ✅, Monoid complete ✅, evaluating remaining candidates (8.5-8.6)
+**Current Phase**: Phase 8.2 (Other Instances Evaluation) - Semigroup complete ✅, Monoid complete ✅, Hashable complete ✅, evaluating remaining candidates (8.6)
 
 **Completed**:
 - ✅ Phase 1: Core Pattern type fully implemented with comprehensive tests (25 test cases)
@@ -426,12 +440,25 @@ See [README.md](README.md#development-workflow) for complete workflow details.
   - Module-level documentation updated
   - All examples use constructor functions (`pattern`, `patternWith`) instead of record syntax
   - All 32 tasks (T001-T032) completed across 7 phases (setup, foundational, user stories, polish)
+- ✅ Phase 8.5: Hashable Instance implemented with comprehensive tests:
+  - `Hashable` instance for `Pattern` with structure-preserving hashing (value and elements recursively)
+  - Integration with `HashMap` and `HashSet` for O(1) average-case lookups
+  - Hash consistency with `Eq` verified through property-based testing
+  - Good hash distribution (collision rate < 1% for random patterns)
+  - Property-based tests for hash consistency with Eq (T017-T019)
+  - Hash distribution tests (T020-T021)
+  - Edge case tests (atomic patterns, many elements, deep nesting, duplicate values)
+  - Integration tests with HashMap and HashSet (T029-T038)
+  - Integration tests with other typeclass instances (T045-T047)
+  - All tests passing (477 examples, 0 failures)
+  - Complete Haddock documentation with examples
+  - Module-level documentation updated
+  - All 50 tasks (T001-T050) completed across 5 phases (MVP, verification, integration, polish)
 
 **Next Steps**: 
-1. Evaluate Phase 8.5 (Hashable Instance) - identify use cases before proceeding
-2. Evaluate Phase 8.6 (Applicative Instance) - identify use cases and design semantics before proceeding
-3. Or proceed to Feature 9 (Graph Views) or Feature 10 (Pattern Morphisms) if needed
-4. Or proceed to Feature 11 (Integration and Polish)
+1. Evaluate Phase 8.6 (Applicative Instance) - identify use cases and design semantics before proceeding
+2. Or proceed to Feature 9 (Graph Views) or Feature 10 (Pattern Morphisms) if needed
+3. Or proceed to Feature 11 (Integration and Polish)
 
 ---
 
