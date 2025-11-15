@@ -271,7 +271,7 @@ module Pattern.Core
   , sizeAt
   , indicesAt
     -- * Typeclass Instances
-    -- | All typeclass instances are exported automatically via Pattern(..)
+    -- All typeclass instances are exported automatically via Pattern(..)
     -- Instances: Show, Ord, Semigroup, Monoid, Hashable, Functor, Applicative, Foldable, Traversable, Comonad
   ) where
 
