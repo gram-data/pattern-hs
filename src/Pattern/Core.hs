@@ -254,7 +254,7 @@ module Pattern.Core
   , size
   , depth
   , values
-    -- | Note: 'value' is exported via Pattern(..) as a field accessor
+    -- Note: 'value' is exported via Pattern(..) as a field accessor
     -- * Predicate Functions
   , anyValue
   , allValues
