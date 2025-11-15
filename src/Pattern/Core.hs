@@ -242,8 +242,41 @@
 -- >>> length (elements manyElements)
 -- 2
 {-# LANGUAGE InstanceSigs #-}
-module Pattern.Core where
+module Pattern.Core
+  ( -- * Pattern Type
+    Pattern(..)
+    -- * Construction Functions
+  , pattern
+  , patternWith
+  , fromList
+    -- * Query Functions
+  , length
+  , size
+  , depth
+  , values
+    -- | Note: 'value' is exported via Pattern(..) as a field accessor
+    -- * Predicate Functions
+  , anyValue
+  , allValues
+  , filterPatterns
+  , findPattern
+  , findAllPatterns
+  , matches
+  , contains
+    -- * Helper Functions
+  , flatten
+  , toTuple
+    -- * Comonad Helper Functions
+  , depthAt
+  , sizeAt
+  , indicesAt
+    -- * Typeclass Instances
+    -- | All typeclass instances are exported automatically via Pattern(..)
+    -- Instances: Show, Ord, Semigroup, Monoid, Hashable, Functor, Applicative, Foldable, Traversable, Comonad
+  ) where
 
+import Prelude hiding (length)
+import qualified Prelude as P
 import Control.Comonad (Comonad(..))
 import Data.Foldable (toList)
 import Data.Hashable (Hashable(..))
@@ -2747,7 +2780,7 @@ flatten = toList
 -- 0
 --
 length :: Pattern v -> Int
-length (Pattern _ els) = Prelude.length els
+length (Pattern _ els) = P.length els
 
 -- | Query the total number of nodes in a pattern structure.
 --

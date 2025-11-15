@@ -13,6 +13,8 @@ Auto-generated from all feature plans. Last updated: 2025-11-04
 - Haskell (GHC 9.8.4, 9.10.3) + base >=4.17.0.0, containers ^>=0.6, hashable ^>=1.4 (012-hashable-instance)
 - Haskell (GHC 9.8.4, 9.10.3) + base >=4.17.0.0, QuickCheck (for property-based testing), Hspec (for test framework) (013-applicative-instance)
 - Haskell (GHC 9.8.4, 9.10.3) + base >=4.17.0.0, comonad (for Comonad typeclass), QuickCheck (for property-based testing), Hspec (for test framework) (014-comonad-instance)
+- Haskell (GHC 9.8.4, 9.10.3) + base >=4.17.0.0, comonad ^>=5, containers ^>=0.6, hashable ^>=1.4, unordered-containers ^>=0.2 (015-integration-polish)
+- N/A (in-memory data structure library) (015-integration-polish)
 
 - (001-pattern-data-structure)
 
@@ -32,9 +34,9 @@ tests/
 : Follow standard conventions
 
 ## Recent Changes
+- 015-integration-polish: Added Haskell (GHC 9.8.4, 9.10.3) + base >=4.17.0.0, comonad ^>=5, containers ^>=0.6, hashable ^>=1.4, unordered-containers ^>=0.2
 - 014-comonad-instance: Added Haskell (GHC 9.8.4, 9.10.3) + base >=4.17.0.0, comonad (for Comonad typeclass), QuickCheck (for property-based testing), Hspec (for test framework)
 - 012-predicate-matching: Added Haskell (GHC 9.8.4, 9.10.3) + base >=4.17.0.0, containers ^>=0.6
-- 013-applicative-instance: Added Haskell (GHC 9.8.4, 9.10.3) + base >=4.17.0.0, QuickCheck (for property-based testing), Hspec (for test framework)
 
 
 <!-- MANUAL ADDITIONS START -->
