@@ -85,24 +85,24 @@
 
 ### Implementation for User Story 3
 
-- [ ] T032 [US3] Review existing test coverage in `tests/Spec/Pattern/CoreSpec.hs` to identify gaps in public API function coverage
-- [ ] T033 [US3] Review existing property-based tests in `tests/Spec/Pattern/Properties.hs` to identify missing typeclass law tests
-- [ ] T034 [US3] Verify Functor law tests (identity: `fmap id = id`, composition: `fmap (f . g) = fmap f . fmap g`) exist in `tests/Spec/Pattern/Properties.hs` and add if missing
-- [ ] T035 [US3] Verify Applicative law tests (identity, composition, homomorphism, interchange) exist in `tests/Spec/Pattern/Properties.hs` and add if missing
-- [ ] T036 [US3] Verify Comonad law tests (extract-extend, extend-extract, extend composition) exist in `tests/Spec/Pattern/Properties.hs` and add if missing
-- [ ] T037 [US3] Verify Semigroup associativity law test exists in `tests/Spec/Pattern/Properties.hs` and add if missing
-- [ ] T038 [US3] Verify Monoid identity law tests (`mempty <> p = p`, `p <> mempty = p`) exist in `tests/Spec/Pattern/Properties.hs` and add if missing
-- [ ] T039 [US3] Verify Hashable consistency test (equal patterns produce equal hashes) exists in `tests/Spec/Pattern/Properties.hs` and add if missing
-- [ ] T040 [P] [US3] Add edge case tests for empty patterns in `tests/Spec/Pattern/CoreSpec.hs` (if not already covered)
-- [ ] T041 [P] [US3] Add edge case tests for single element patterns in `tests/Spec/Pattern/CoreSpec.hs` (if not already covered)
-- [ ] T042 [P] [US3] Add edge case tests for deeply nested patterns (100+ levels) in `tests/Spec/Pattern/CoreSpec.hs` (if not already covered)
-- [ ] T043 [P] [US3] Add edge case tests for large patterns (1000+ nodes) in `tests/Spec/Pattern/CoreSpec.hs` (if not already covered)
-- [ ] T044 [US3] Review test coverage metrics using coverage tooling (if available) to identify any uncovered public API functions
-- [ ] T045 [US3] Add unit tests for any public API functions that lack test coverage in `tests/Spec/Pattern/CoreSpec.hs`
-- [ ] T046 [US3] Ensure all property-based tests use bounded generators to prevent slow test execution in `tests/Spec/Pattern/Properties.hs`
-- [ ] T047 [US3] Run full test suite with timeout: `timeout 60 cabal test` to verify all tests pass
-- [ ] T048 [US3] Verify test execution time is under 1 minute total
-- [ ] T049 [US3] Review test output to ensure all typeclass laws pass and edge cases are handled correctly
+- [x] T032 [US3] Review existing test coverage in `tests/Spec/Pattern/CoreSpec.hs` to identify gaps in public API function coverage
+- [x] T033 [US3] Review existing property-based tests in `tests/Spec/Pattern/Properties.hs` to identify missing typeclass law tests
+- [x] T034 [US3] Verify Functor law tests (identity: `fmap id = id`, composition: `fmap (f . g) = fmap f . fmap g`) exist in `tests/Spec/Pattern/Properties.hs` and add if missing
+- [x] T035 [US3] Verify Applicative law tests (identity, composition, homomorphism, interchange) exist in `tests/Spec/Pattern/Properties.hs` and add if missing
+- [x] T036 [US3] Verify Comonad law tests (extract-extend, extend-extract, extend composition) exist in `tests/Spec/Pattern/Properties.hs` and add if missing
+- [x] T037 [US3] Verify Semigroup associativity law test exists in `tests/Spec/Pattern/Properties.hs` and add if missing
+- [x] T038 [US3] Verify Monoid identity law tests (`mempty <> p = p`, `p <> mempty = p`) exist in `tests/Spec/Pattern/Properties.hs` and add if missing
+- [x] T039 [US3] Verify Hashable consistency test (equal patterns produce equal hashes) exists in `tests/Spec/Pattern/Properties.hs` and add if missing
+- [x] T040 [P] [US3] Add edge case tests for empty patterns in `tests/Spec/Pattern/CoreSpec.hs` (if not already covered)
+- [x] T041 [P] [US3] Add edge case tests for single element patterns in `tests/Spec/Pattern/CoreSpec.hs` (if not already covered)
+- [x] T042 [P] [US3] Add edge case tests for deeply nested patterns (100+ levels) in `tests/Spec/Pattern/CoreSpec.hs` (if not already covered)
+- [x] T043 [P] [US3] Add edge case tests for large patterns (1000+ nodes) in `tests/Spec/Pattern/CoreSpec.hs` (if not already covered)
+- [x] T044 [US3] Review test coverage metrics using coverage tooling (if available) to identify any uncovered public API functions
+- [x] T045 [US3] Add unit tests for any public API functions that lack test coverage in `tests/Spec/Pattern/CoreSpec.hs`
+- [x] T046 [US3] Ensure all property-based tests use bounded generators to prevent slow test execution in `tests/Spec/Pattern/Properties.hs`
+- [x] T047 [US3] Run full test suite with timeout: `timeout 60 cabal test` to verify all tests pass
+- [x] T048 [US3] Verify test execution time is under 1 minute total
+- [x] T049 [US3] Review test output to ensure all typeclass laws pass and edge cases are handled correctly
 - [ ] T050 [US3] Git commit: "test: improve test coverage for typeclass laws and edge cases - US3"
 
 **Checkpoint**: At this point, User Story 3 should be complete. All typeclass laws are verified with property-based tests, edge cases are explicitly tested, and test coverage meets quality standards.
