@@ -5,7 +5,7 @@
 
 ## Overview
 
-This quickstart guide demonstrates how to use the Comonad instance for `Pattern` to perform context-aware computations where functions have access to the full structural context (parent, siblings, depth, path) around each value, not just the value itself. The Comonad instance enables computations based on position and structure, extending beyond `Foldable` which only provides values.
+This quickstart guide demonstrates how to use the Comonad instance for `Pattern` to perform context-aware computations where functions have access to the full structural context (parent, siblings, depth, indices) around each value, not just the value itself. The Comonad instance enables computations based on position and structure, extending beyond `Foldable` which only provides values.
 
 ---
 
@@ -178,10 +178,10 @@ let p = patternWith "root" [pattern "a", pattern "b"]
     sizes = sizeAt p
 -- sizes = Pattern {value = 3, elements = [Pattern {value = 1, elements = []}, Pattern {value = 1, elements = []}]}
 
--- Compute path at each position
+-- Compute indices at each position
 let p = patternWith "root" [pattern "a", pattern "b"]
-    paths = pathAt p
--- paths = Pattern {value = [], elements = [Pattern {value = [0], elements = []}, Pattern {value = [1], elements = []}]}
+    indices = indicesAt p
+-- indices = Pattern {value = [], elements = [Pattern {value = [0], elements = []}, Pattern {value = [1], elements = []}]}
 ```
 
 ### Custom Context-Aware Functions
@@ -269,7 +269,7 @@ let p = patternWith "root" [pattern "a", pattern "b"]
 
 ### Use Context-Aware Functions for Structural Computations
 
-Use `extend` when you need to compute based on structural context (depth, size, path, relationships):
+Use `extend` when you need to compute based on structural context (depth, size, indices, relationships):
 
 ```haskell
 -- Good: Use extend for context-aware computations
@@ -298,7 +298,7 @@ extend f . extend g = extend (f . extend g)
 
 ### Use Helper Functions When Available
 
-If helper functions (depthAt, sizeAt, pathAt) are implemented, use them for common operations:
+If helper functions (depthAt, sizeAt, indicesAt) are implemented, use them for common operations:
 
 ```haskell
 -- Good: Use helper function

@@ -218,7 +218,7 @@ in extend customFunc p
 -- === Context-Aware Computation
 --
 -- The extend operation enables context-aware computations where functions have
--- access to the full structural context (parent, siblings, depth, path) around
+-- access to the full structural context (parent, siblings, depth, indices) around
 -- each value, not just the value itself. This extends beyond Foldable (which
 -- only provides values) to enable computations based on structural context.
 --
@@ -298,30 +298,30 @@ sizeAt (patternWith "root" [patternWith "a" [pattern "x"]])
 
 ---
 
-### Path at Each Position
+### Indices at Each Position
 
 ```haskell
-pathAt :: Pattern v -> Pattern [Int]
-pathAt = extend (\p -> pathFromRoot p)
+indicesAt :: Pattern v -> Pattern [Int]
+indicesAt = extend (\p -> indicesFromRoot p)
 ```
 
-**Purpose**: Compute path from root to each position (list of indices).
+**Purpose**: Compute indices from root to each position (list of indices).
 
 **Type Constraint**: None
 
 **Module**: `Pattern.Core`
 
-**Note**: This function requires a `pathFromRoot` helper function that computes the path from root to a position. This may need to be implemented as part of the feature or may require additional context tracking.
+**Note**: This function requires an `indicesFromRoot` helper function that computes the indices from root to a position. This may need to be implemented as part of the feature or may require additional context tracking.
 
 **Examples**:
 
 ```haskell
 -- Simple pattern
-pathAt (patternWith "root" [pattern "a", pattern "b"])
+indicesAt (patternWith "root" [pattern "a", pattern "b"])
 -- Result: Pattern {value = [], elements = [Pattern {value = [0], elements = []}, Pattern {value = [1], elements = []}]}
 
 -- Nested pattern
-pathAt (patternWith "root" [patternWith "a" [pattern "x"]])
+indicesAt (patternWith "root" [patternWith "a" [pattern "x"]])
 -- Result: Pattern {value = [], elements = [Pattern {value = [0], elements = [Pattern {value = [0, 0], elements = []}]}]}
 ```
 

@@ -7,7 +7,7 @@
 
 ## Summary
 
-Implement a Comonad instance for the Pattern type that enables context-aware computations where functions have access to the full structural context (parent, siblings, depth, path) around each value, not just the value itself. The implementation must provide `extract` (extract decoration value), `duplicate` (create pattern of contexts), and `extend` (context-aware transformation), satisfying all Comonad laws (extract-extend, extend-extract, extend composition). The instance will follow standard comonad patterns for tree structures, similar to `Data.Tree`, enabling context-aware operations like depth, size, and path computation at each position.
+Implement a Comonad instance for the Pattern type that enables context-aware computations where functions have access to the full structural context (parent, siblings, depth, indices) around each value, not just the value itself. The implementation must provide `extract` (extract decoration value), `duplicate` (create pattern of contexts), and `extend` (context-aware transformation), satisfying all Comonad laws (extract-extend, extend-extract, extend composition). The instance will follow standard comonad patterns for tree structures, similar to `Data.Tree`, enabling context-aware operations like depth, size, and indices computation at each position.
 
 ## Technical Context
 
@@ -19,7 +19,7 @@ Implement a Comonad instance for the Pattern type that enables context-aware com
 **Project Type**: Single library project  
 **Performance Goals**: Basic implementation sufficient (no specific performance targets for MVP)  
 **Constraints**: Must satisfy Comonad laws, must handle all pattern structures (atomic, with elements, nested), must enable context-aware computations  
-**Scale/Scope**: Single typeclass instance implementation with comprehensive test coverage, optional helper functions (depthAt, sizeAt, pathAt)
+**Scale/Scope**: Single typeclass instance implementation with comprehensive test coverage, optional helper functions (depthAt, sizeAt, indicesAt)
 
 ## Constitution Check
 
@@ -63,7 +63,7 @@ tests/
         └── Properties.hs # Property-based tests for Comonad laws
 ```
 
-**Structure Decision**: Single library project structure. The Comonad instance will be added to `src/Pattern/Core.hs` alongside existing Functor, Foldable, Traversable, and Applicative instances. Tests will be added to existing test files in `tests/Spec/Pattern/`. Optional helper functions (depthAt, sizeAt, pathAt) will be added to `Core.hs` if implemented.
+**Structure Decision**: Single library project structure. The Comonad instance will be added to `src/Pattern/Core.hs` alongside existing Functor, Foldable, Traversable, and Applicative instances. Tests will be added to existing test files in `tests/Spec/Pattern/`. Optional helper functions (depthAt, sizeAt, indicesAt) will be added to `Core.hs` if implemented.
 
 ## Complexity Tracking
 

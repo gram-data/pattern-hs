@@ -36,7 +36,7 @@
 - Use case evaluation is embedded in User Stories 1-4 (P1) to ensure the feature provides value before implementation
 - Comonad laws are emphasized as fundamental requirements (User Story 4, P1)
 - Context-aware operations (User Story 5, P2) are marked as optional convenience functions, appropriately scoped as secondary to core Comonad functionality
-- The specification clearly distinguishes between core Comonad operations (extract, duplicate, extend) and optional helper functions (depthAt, sizeAt, pathAt)
+- The specification clearly distinguishes between core Comonad operations (extract, duplicate, extend) and optional helper functions (depthAt, sizeAt, indicesAt)
 - All functional requirements are clearly testable with defined acceptance scenarios
 - Success criteria are measurable and technology-agnostic, focusing on developer capabilities and test coverage
 - Edge cases are comprehensively identified covering atomic patterns, nested patterns, type transformations, and structural edge cases

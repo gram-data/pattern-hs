@@ -5,7 +5,7 @@
 
 ## Overview
 
-The Comonad instance for `Pattern` enables context-aware computations where functions have access to the full structural context (parent, siblings, depth, path) around each value, not just the value itself. This extends beyond `Foldable` (which only provides values) to enable computations that consider structural context, depth, position, and relationships between pattern elements.
+The Comonad instance for `Pattern` enables context-aware computations where functions have access to the full structural context (parent, siblings, depth, indices) around each value, not just the value itself. This extends beyond `Foldable` (which only provides values) to enable computations that consider structural context, depth, position, and relationships between pattern elements.
 
 ## Core Entity: Comonad Instance
 
@@ -94,7 +94,7 @@ Context for Pattern means the full pattern structure focused at a particular pos
 
 1. **Pattern Structure**: The full pattern structure (value and elements) at the focused position
 2. **Depth**: Nesting level from root (0 at root, increases with nesting)
-3. **Path**: List of indices from root to current position (e.g., [0, 1] for second element of first element)
+3. **Indices**: List of indices from root to current position (e.g., [0, 1] for second element of first element)
 4. **Size**: Total number of nodes in subtree at current position
 5. **Parent Context**: Context of parent position (if not at root)
 6. **Sibling Context**: Contexts of sibling positions (elements at same level)
@@ -105,7 +105,7 @@ A context-aware function is a function that takes a Pattern and returns a result
 
 - **Depth computation**: `\p -> depth p` - computes depth of pattern structure
 - **Size computation**: `\p -> size p` - computes size of pattern structure
-- **Path computation**: `\p -> pathFromRoot p` - computes path from root to position
+- **Indices computation**: `\p -> indicesFromRoot p` - computes indices from root to position
 - **Custom computations**: Any function that uses pattern structure information
 
 ### Example: Context at Different Positions
@@ -120,19 +120,19 @@ p = patternWith "root"
 -- Context at root position: full pattern p
 --   - Pattern structure: p itself
 --   - Depth: 0
---   - Path: []
+--   - Indices: []
 --   - Size: 4 (root + "a" + "x" + "b")
 
 -- Context at first element: patternWith "a" [pattern "x"]
 --   - Pattern structure: patternWith "a" [pattern "x"]
 --   - Depth: 1
---   - Path: [0]
+--   - Indices: [0]
 --   - Size: 2 ("a" + "x")
 
 -- Context at nested element: pattern "x"
 --   - Pattern structure: pattern "x"
 --   - Depth: 2
---   - Path: [0, 0]
+--   - Indices: [0, 0]
 --   - Size: 1 ("x")
 ```
 
@@ -145,7 +145,7 @@ p = patternWith "root"
 
 **Use Cases**:
 - **Foldable**: Sum values, concatenate strings, count elements
-- **Comonad**: Compute depth at each position, compute path from root, compute size of subtree
+- **Comonad**: Compute depth at each position, compute indices from root, compute size of subtree
 
 ### Comonad vs Traversable
 
@@ -154,7 +154,7 @@ p = patternWith "root"
 
 **Use Cases**:
 - **Traversable**: Validate values, handle errors, perform IO operations
-- **Comonad**: Compute structural metadata (depth, size, path) at each position
+- **Comonad**: Compute structural metadata (depth, size, indices) at each position
 
 ### Comonad vs Functor/Applicative
 
@@ -196,19 +196,19 @@ let p = patternWith "root" [pattern "a", pattern "b"]
 in sizeAt p == pattern 3 [pattern 1, pattern 1]  -- True (root=3, a=1, b=1)
 ```
 
-### Path at Each Position
+### Indices at Each Position
 
 ```haskell
-pathAt :: Pattern v -> Pattern [Int]
-pathAt = extend (\p -> pathFromRoot p)
+indicesAt :: Pattern v -> Pattern [Int]
+indicesAt = extend (\p -> indicesFromRoot p)
 ```
 
-**Purpose**: Compute path from root to each position (list of indices).
+**Purpose**: Compute indices from root to each position (list of indices).
 
 **Example**:
 ```haskell
 let p = patternWith "root" [pattern "a", pattern "b"]
-in pathAt p == pattern [] [[0], [1]]  -- True (root=[], a=[0], b=[1])
+in indicesAt p == pattern [] [[0], [1]]  -- True (root=[], a=[0], b=[1])
 ```
 
 **Note**: Helper functions are optional convenience functions that demonstrate the power of the Comonad instance but are not required for core Comonad functionality.

@@ -52,7 +52,7 @@ instance Comonad Pattern where
 
 **Decision**: Context for Pattern means the full pattern structure focused at a particular position, including:
 - The pattern structure itself (value and elements)
-- Position information (depth, path from root, size of subtree)
+- Position information (depth, indices from root, size of subtree)
 - Structural relationships (parent, siblings, children)
 - All nested patterns at that position
 
@@ -60,12 +60,12 @@ instance Comonad Pattern where
 - Context-aware computations need access to full structural information, not just values
 - This extends beyond Foldable (which only provides values) to enable computations based on structure
 - Aligns with zipper semantics where context includes full structure around focus point
-- Enables useful operations like depth computation, path tracking, and size calculation
+- Enables useful operations like depth computation, indices tracking, and size calculation
 
 **Context Components**:
 1. **Pattern Structure**: The full pattern structure (value and elements) at the focused position
 2. **Depth**: Nesting level from root (0 at root, increases with nesting)
-3. **Path**: List of indices from root to current position (e.g., [0, 1] for second element of first element)
+3. **Indices**: List of indices from root to current position (e.g., [0, 1] for second element of first element)
 4. **Size**: Total number of nodes in subtree at current position
 5. **Parent Context**: Context of parent position (if not at root)
 6. **Sibling Context**: Contexts of sibling positions (elements at same level)
@@ -82,7 +82,7 @@ p = patternWith "root" [patternWith "a" [pattern "x"], pattern "b"]
 
 **Alternatives Considered**:
 - **Value-only context**: Only the value at position, no structure. Rejected because it doesn't enable context-aware computations (just Foldable).
-- **Shallow context**: Only immediate parent and siblings, no nested structure. Rejected because it doesn't provide full context needed for operations like depth and path computation.
+- **Shallow context**: Only immediate parent and siblings, no nested structure. Rejected because it doesn't provide full context needed for operations like depth and indices computation.
 
 **References**:
 - Zipper data structures and their relationship to comonads
@@ -108,7 +108,7 @@ p = patternWith "root" [patternWith "a" [pattern "x"], pattern "b"]
 
 **Implementation Approach**:
 - Generate arbitrary patterns using QuickCheck's `Arbitrary` typeclass
-- Generate arbitrary context-aware functions (e.g., depth, size, path computation)
+- Generate arbitrary context-aware functions (e.g., depth, size, indices computation)
 - Test laws for patterns of various structures (atomic, with elements, nested)
 - Test laws for various value types (String, Int, custom types)
 - Test laws for various context-aware function types
@@ -142,7 +142,7 @@ p = patternWith "root" [patternWith "a" [pattern "x"], pattern "b"]
 **Use Cases**:
 - **Foldable**: Sum values, concatenate strings, count elements
 - **Traversable**: Validate values, handle errors, perform IO operations
-- **Comonad**: Compute depth at each position, compute path from root, compute size of subtree
+- **Comonad**: Compute depth at each position, compute indices from root, compute size of subtree
 
 **Example**:
 ```haskell
@@ -167,9 +167,9 @@ extend depth p = pattern 0 [pattern 1 [pattern 2], pattern 1]
 
 ---
 
-### RQ-005: Should helper functions (depthAt, sizeAt, pathAt) be implemented?
+### RQ-005: Should helper functions (depthAt, sizeAt, indicesAt) be implemented?
 
-**Decision**: Helper functions (depthAt, sizeAt, pathAt) are optional convenience functions that demonstrate the power of the Comonad instance but are not required for core Comonad functionality. They should be implemented if time permits, but core Comonad instance (extract, duplicate, extend) takes priority.
+**Decision**: Helper functions (depthAt, sizeAt, indicesAt) are optional convenience functions that demonstrate the power of the Comonad instance but are not required for core Comonad functionality. They should be implemented if time permits, but core Comonad instance (extract, duplicate, extend) takes priority.
 
 **Rationale**:
 - Helper functions provide convenient access to common context-aware operations
@@ -186,13 +186,13 @@ depthAt = extend (\p -> depth p)
 sizeAt :: Pattern v -> Pattern Int
 sizeAt = extend (\p -> size p)
 
-pathAt :: Pattern v -> Pattern [Int]
-pathAt = extend (\p -> pathFromRoot p)
+indicesAt :: Pattern v -> Pattern [Int]
+indicesAt = extend (\p -> indicesFromRoot p)
 ```
 
 **Priority**:
 - **P1**: Core Comonad instance (extract, duplicate, extend) with law verification
-- **P2**: Helper functions (depthAt, sizeAt, pathAt) as convenience functions
+- **P2**: Helper functions (depthAt, sizeAt, indicesAt) as convenience functions
 
 **Alternatives Considered**:
 - **Required helper functions**: Rejected because they're convenience functions, not core functionality
@@ -206,5 +206,5 @@ pathAt = extend (\p -> pathFromRoot p)
 
 ## Summary
 
-The Comonad instance for Pattern will be implemented following standard comonad patterns for tree structures, similar to `Data.Tree`. The implementation provides `extract` (extract decoration value), `duplicate` (create pattern of contexts), and `extend` (context-aware transformation), enabling context-aware computations with access to full structural context at each position. All Comonad laws will be verified using property-based testing. Helper functions (depthAt, sizeAt, pathAt) are optional convenience functions that can be implemented using `extend`.
+The Comonad instance for Pattern will be implemented following standard comonad patterns for tree structures, similar to `Data.Tree`. The implementation provides `extract` (extract decoration value), `duplicate` (create pattern of contexts), and `extend` (context-aware transformation), enabling context-aware computations with access to full structural context at each position. All Comonad laws will be verified using property-based testing. Helper functions (depthAt, sizeAt, indicesAt) are optional convenience functions that can be implemented using `extend`.
 

@@ -161,7 +161,7 @@
 -- consistency with equality.
 --
 -- The Pattern type has a Comonad instance that enables context-aware computations where
--- functions have access to the full structural context (parent, siblings, depth, path) around
+-- functions have access to the full structural context (parent, siblings, depth, indices) around
 -- each value, not just the value itself. This extends beyond Foldable (which only provides
 -- values) to enable computations that consider structural context, depth, position, and
 -- relationships between pattern elements. The instance provides @extract@ (extract decoration
@@ -3836,7 +3836,7 @@ instance Comonad Pattern where
   -- === Context-Aware Computation
   --
   -- The extend operation enables context-aware computations where functions have
-  -- access to the full structural context (parent, siblings, depth, path) around
+  -- access to the full structural context (parent, siblings, depth, indices) around
   -- each value, not just the value itself. This extends beyond Foldable (which
   -- only provides values) to enable computations based on structural context.
   --

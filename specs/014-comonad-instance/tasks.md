@@ -203,9 +203,9 @@
 
 ## Phase 6: User Story 5 - Context-Aware Operations (Priority: P2)
 
-**Goal**: Implement optional helper functions (depthAt, sizeAt, pathAt) that provide convenient access to common context-aware operations, demonstrating the power of the Comonad instance.
+**Goal**: Implement optional helper functions (depthAt, sizeAt, indicesAt) that provide convenient access to common context-aware operations, demonstrating the power of the Comonad instance.
 
-**Independent Test**: Can be fully tested by implementing helper functions that use `extend` to compute common context information (depth, size, path) at each position, testing on various pattern structures. This delivers convenient access to common context-aware computations.
+**Independent Test**: Can be fully tested by implementing helper functions that use `extend` to compute common context information (depth, size, indices) at each position, testing on various pattern structures. This delivers convenient access to common context-aware computations.
 
 **Note**: Helper functions are optional convenience functions. If time is limited, this phase can be skipped.
 
@@ -219,15 +219,15 @@
 - [X] T059 [P] [US5] Add unit test for `depthAt` with nested pattern structure in tests/Spec/Pattern/CoreSpec.hs
 - [X] T060 [P] [US5] Add unit test for `sizeAt` with pattern with elements in tests/Spec/Pattern/CoreSpec.hs
 - [X] T061 [P] [US5] Add unit test for `sizeAt` with nested pattern structure in tests/Spec/Pattern/CoreSpec.hs
-- [ ] T062 [P] [US5] Add unit test for `pathAt` with pattern with elements in tests/Spec/Pattern/CoreSpec.hs (if pathFromRoot helper exists) - SKIPPED: pathFromRoot does not exist
-- [ ] T063 [P] [US5] Add unit test for `pathAt` with nested pattern structure in tests/Spec/Pattern/CoreSpec.hs (if pathFromRoot helper exists) - SKIPPED: pathFromRoot does not exist
+- [ ] T062 [P] [US5] Add unit test for `indicesAt` with pattern with elements in tests/Spec/Pattern/CoreSpec.hs (if indicesFromRoot helper exists) - SKIPPED: indicesFromRoot does not exist
+- [ ] T063 [P] [US5] Add unit test for `indicesAt` with nested pattern structure in tests/Spec/Pattern/CoreSpec.hs (if indicesFromRoot helper exists) - SKIPPED: indicesFromRoot does not exist
 - [X] T064 [US5] Run tests to verify they fail: `timeout 60 cabal test` in project root
 
 ### Implementation for User Story 5
 
 - [X] T065 [US5] Implement `depthAt :: Pattern v -> Pattern Int` helper function in src/Pattern/Core.hs (uses `extend (\p -> depth p)`)
 - [X] T066 [US5] Implement `sizeAt :: Pattern v -> Pattern Int` helper function in src/Pattern/Core.hs (uses `extend (\p -> size p)`)
-- [ ] T067 [US5] Implement `pathAt :: Pattern v -> Pattern [Int]` helper function in src/Pattern/Core.hs (uses `extend (\p -> pathFromRoot p)`) if pathFromRoot helper exists - SKIPPED: pathFromRoot does not exist
+- [ ] T067 [US5] Implement `indicesAt :: Pattern v -> Pattern [Int]` helper function in src/Pattern/Core.hs (uses `extend (\p -> indicesFromRoot p)`) if indicesFromRoot helper exists - SKIPPED: indicesFromRoot does not exist
 - [X] T068 [US5] Add Haddock documentation for helper functions in src/Pattern/Core.hs (explain convenience functions, include examples)
 - [X] T069 [US5] Run tests to verify implementation: `timeout 60 cabal test` in project root
 - [X] T070 [US5] Verify all User Story 5 tests pass independently
@@ -236,11 +236,11 @@
 
 ### Git Commit for User Story 5
 
-- [ ] T071 [US5] Commit User Story 5: `git add -A && git commit -m "feat: add context-aware helper functions (User Story 5)
+- [X] T071 [US5] Commit User Story 5: `git add -A && git commit -m "feat: add context-aware helper functions (User Story 5)
 
 - Implement depthAt helper function
 - Implement sizeAt helper function
-- Implement pathAt helper function (if pathFromRoot exists)
+- Implement indicesAt helper function (if indicesFromRoot exists)
 - Add comprehensive Haddock documentation
 - Add unit tests for all helper functions
 - Demonstrate power of Comonad instance"`
