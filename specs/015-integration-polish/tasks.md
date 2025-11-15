@@ -113,17 +113,17 @@
 
 **Purpose**: Final polish and validation that affects all user stories
 
-- [ ] T051 [P] Review all export lists to ensure consistency between `src/Pattern/Core.hs` and `src/Pattern.hs`
-- [ ] T052 [P] Verify that all documentation examples in `src/Pattern/Core.hs` compile and execute correctly using doctest (if configured)
-- [ ] T053 [P] Review quickstart.md in `specs/015-integration-polish/quickstart.md` and validate that it accurately reflects the current API
-- [ ] T054 [P] Generate final Haddock documentation: `cabal haddock` and review for completeness
-- [ ] T055 Run full test suite with timeout: `timeout 60 cabal test` to verify all tests pass
-- [ ] T056 Verify that all public API functions are accessible through main Pattern module without importing Pattern.Core directly
-- [ ] T057 Verify that internal helper functions cannot be accessed through public API
-- [ ] T058 Review test coverage metrics to ensure all public API functions have coverage
-- [ ] T059 Verify that all typeclass laws are tested and pass
-- [ ] T060 Verify that all edge cases are explicitly tested
-- [ ] T061 Review code for any remaining polish opportunities (formatting, consistency, etc.)
+- [x] T051 [P] Review all export lists to ensure consistency between `src/Pattern/Core.hs` and `src/Pattern.hs`
+- [x] T052 [P] Verify that all documentation examples in `src/Pattern/Core.hs` compile and execute correctly using doctest (if configured)
+- [x] T053 [P] Review quickstart.md in `specs/015-integration-polish/quickstart.md` and validate that it accurately reflects the current API
+- [x] T054 [P] Generate final Haddock documentation: `cabal haddock` and review for completeness
+- [x] T055 Run full test suite with timeout: `timeout 60 cabal test` to verify all tests pass
+- [x] T056 Verify that all public API functions are accessible through main Pattern module without importing Pattern.Core directly
+- [x] T057 Verify that internal helper functions cannot be accessed through public API
+- [x] T058 Review test coverage metrics to ensure all public API functions have coverage
+- [x] T059 Verify that all typeclass laws are tested and pass
+- [x] T060 Verify that all edge cases are explicitly tested
+- [x] T061 Review code for any remaining polish opportunities (formatting, consistency, etc.)
 - [ ] T062 Git commit: "chore: finalize integration and polish feature"
 
 ---
