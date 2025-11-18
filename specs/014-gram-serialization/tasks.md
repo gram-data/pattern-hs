@@ -104,29 +104,29 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T033 [P] [US2] Create unit test for simple subject parsing in libs/gram/tests/Spec/Gram/ParseSpec.hs
-- [ ] T034 [P] [US2] Create unit test for subject with standard value types parsing in libs/gram/tests/Spec/Gram/ParseSpec.hs
-- [ ] T035 [P] [US2] Create unit test for subject with extended value types parsing in libs/gram/tests/Spec/Gram/ParseSpec.hs
-- [ ] T036 [P] [US2] Create unit test for nested pattern parsing in libs/gram/tests/Spec/Gram/ParseSpec.hs
-- [ ] T037 [P] [US2] Create unit test for relationship pattern parsing in libs/gram/tests/Spec/Gram/ParseSpec.hs
-- [ ] T038 [P] [US2] Create unit test for anonymous subject parsing in libs/gram/tests/Spec/Gram/ParseSpec.hs
-- [ ] T039 [P] [US2] Create unit test for parse error handling (invalid syntax, malformed structure) in libs/gram/tests/Spec/Gram/ParseSpec.hs
-- [ ] T040 [P] [US2] Create edge case tests (special characters, Unicode, inconsistent whitespace) in libs/gram/tests/Spec/Gram/ParseSpec.hs
+- [x] T033 [P] [US2] Create unit test for simple subject parsing in libs/gram/tests/Spec/Gram/ParseSpec.hs
+- [x] T034 [P] [US2] Create unit test for subject with standard value types parsing in libs/gram/tests/Spec/Gram/ParseSpec.hs
+- [x] T035 [P] [US2] Create unit test for subject with extended value types parsing in libs/gram/tests/Spec/Gram/ParseSpec.hs
+- [x] T036 [P] [US2] Create unit test for nested pattern parsing in libs/gram/tests/Spec/Gram/ParseSpec.hs
+- [x] T037 [P] [US2] Create unit test for relationship pattern parsing in libs/gram/tests/Spec/Gram/ParseSpec.hs
+- [x] T038 [P] [US2] Create unit test for anonymous subject parsing in libs/gram/tests/Spec/Gram/ParseSpec.hs
+- [x] T039 [P] [US2] Create unit test for parse error handling (invalid syntax, malformed structure) in libs/gram/tests/Spec/Gram/ParseSpec.hs
+- [x] T040 [P] [US2] Create edge case tests (special characters, Unicode, inconsistent whitespace) in libs/gram/tests/Spec/Gram/ParseSpec.hs
 
 ### Implementation for User Story 2
 
-- [ ] T041 [US2] Implement ParseError type in libs/gram/src/Gram/Parse.hs
-- [ ] T042 [US2] Implement unescapeString helper function in libs/gram/src/Gram/Parse.hs
-- [ ] T043 [US2] Implement parseSymbol parser function in libs/gram/src/Gram/Parse.hs
-- [ ] T044 [US2] Implement parseValue parser for standard value types in libs/gram/src/Gram/Parse.hs
-- [ ] T045 [US2] Implement parseValue parser for extended value types in libs/gram/src/Gram/Parse.hs
-- [ ] T046 [US2] Implement parsePropertyRecord parser function in libs/gram/src/Gram/Parse.hs
-- [ ] T047 [US2] Implement parseSubject parser function (identity, labels, properties) in libs/gram/src/Gram/Parse.hs
-- [ ] T048 [US2] Implement parsePatternElements parser function for nested patterns in libs/gram/src/Gram/Parse.hs
-- [ ] T049 [US2] Implement comment stripping logic (line comments `//`, end-of-line comments) in libs/gram/src/Gram/Parse.hs
-- [ ] T050 [US2] Implement fromGram function (main parsing entry point) in libs/gram/src/Gram/Parse.hs
-- [ ] T051 [US2] Add comprehensive Haddock documentation with examples to libs/gram/src/Gram/Parse.hs
-- [ ] T052 [US2] Run tests with timeout: `timeout 60 cabal test gram-test` to verify all User Story 2 tests pass
+- [x] T041 [US2] Implement ParseError type in libs/gram/src/Gram/Parse.hs
+- [x] T042 [US2] Implement unescapeString helper function in libs/gram/src/Gram/Parse.hs
+- [x] T043 [US2] Implement parseSymbol parser function in libs/gram/src/Gram/Parse.hs
+- [x] T044 [US2] Implement parseValue parser for standard value types in libs/gram/src/Gram/Parse.hs
+- [x] T045 [US2] Implement parseValue parser for extended value types in libs/gram/src/Gram/Parse.hs
+- [x] T046 [US2] Implement parsePropertyRecord parser function in libs/gram/src/Gram/Parse.hs
+- [x] T047 [US2] Implement parseSubject parser function (identity, labels, properties) in libs/gram/src/Gram/Parse.hs
+- [x] T048 [US2] Implement parsePatternElements parser function for nested patterns in libs/gram/src/Gram/Parse.hs
+- [x] T049 [US2] Implement comment stripping logic (line comments `//`, end-of-line comments) in libs/gram/src/Gram/Parse.hs
+- [x] T050 [US2] Implement fromGram function (main parsing entry point) in libs/gram/src/Gram/Parse.hs
+- [x] T051 [US2] Add comprehensive Haddock documentation with examples to libs/gram/src/Gram/Parse.hs
+- [x] T052 [US2] Run tests with timeout: `timeout 60 cabal test gram-test` to verify all User Story 2 tests pass
 - [ ] T053 [US2] Git commit: "feat: implement gram notation parsing to Pattern Subject - US2"
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently. Parsing works for all value types, nested patterns, and relationship patterns with proper error handling.
