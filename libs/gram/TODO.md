@@ -32,7 +32,7 @@ See [README.md](../../README.md#development-workflow) for complete workflow deta
 
 ---
 
-## Feature 2: Gram Parsing ✅
+## Feature 2: Gram Parsing ⚠️ (Under Review)
 
 ### 2.1 Parsing Implementation
 - [x] Implement `fromGram :: String -> Either ParseError (Pattern Subject)` in `src/Gram/Parse.hs`
@@ -45,7 +45,16 @@ See [README.md](../../README.md#development-workflow) for complete workflow deta
 - [x] Write tests for error handling
 - [x] Write tests for edge cases
 
-**Goal**: Parse gram notation strings into Pattern Subject structures. ✅ **COMPLETE**
+**Goal**: Parse gram notation strings into Pattern Subject structures. ✅ **Initial Implementation Complete**
+
+### 2.2 Parsing Conformance Re-assessment
+- [x] Integrate tree-sitter-gram corpus tests (T063)
+- [ ] Run corpus tests and analyze failures (T064)
+- [ ] Gap Analysis: Identify missing syntax support (e.g., Path syntax `(a)-->(b)`)
+- [ ] Implement missing syntax support in `src/Gram/Parse.hs`
+- [ ] Verify all corpus files parse successfully
+
+**Goal**: Ensure parser supports ALL syntax features defined in tree-sitter-gram corpus.
 
 ---
 
@@ -122,17 +131,19 @@ See [README.md](../../README.md#development-workflow) for complete workflow deta
 
 ## Current Status
 
-**Current Phase**: Feature 3 (Gram Validation) - Research Phase
+**Current Branch**: WIP (014-gram-serialization) - Pending PR to main before addressing parsing gaps.
+
+**Current Phase**: Feature 2.2 (Parsing Conformance) / Feature 3 (Gram Validation)
 
 **Completed**:
 - ✅ Feature 1: Gram Serialization - Complete with comprehensive tests
-- ✅ Feature 2: Gram Parsing - Complete with comprehensive tests (73 examples, 0 failures)
+- ⚠️ Feature 2: Gram Parsing - Initial implementation complete, but corpus tests reveal missing syntax support (Path syntax)
 
 **Next Steps**: 
-1. Research semantic validation requirements
-2. Design validation architecture
-3. Get user confirmation on design
-4. Implement validation module
+1. Merge current WIP to main
+2. Create new branch for parsing conformance (addressing path syntax gaps)
+3. Complete corpus integration verification
+4. Proceed to Feature 3 (Validation)
 
 ---
 

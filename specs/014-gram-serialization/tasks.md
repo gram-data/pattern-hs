@@ -158,7 +158,10 @@
 ### Implementation for User Story 3
 
 - [x] T063 [US3] Implement corpus file loading and test execution logic in libs/gram/tests/Spec/Gram/CorpusSpec.hs
-- [ ] T064 [US3] Verify all corpus files parse successfully (fix any parsing issues)
+- [ ] T064 [US3] Run corpus tests and analyze failures (Gap Analysis) - *Current Status: Failures identified (Path syntax)*
+- [ ] T064a [US3] Implement Path syntax parsing support in libs/gram/src/Gram/Parse.hs (Cypher-like arrows)
+- [ ] T064b [US3] Fix node attribute parsing issues identified in corpus tests
+- [ ] T064c [US3] Verify all corpus files parse successfully (after fixes)
 - [ ] T065 [US3] Verify all corpus files pass round-trip conversion (fix any serialization/parsing mismatches)
 - [ ] T066 [US3] Verify comment handling works correctly for all corpus files
 - [ ] T067 [US3] Verify all value types are correctly handled in corpus files
