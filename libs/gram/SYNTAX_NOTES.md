@@ -7,11 +7,12 @@ This document tracks the status of Gram syntax support in the Haskell implementa
 - **Nodes**: `(id:Label {prop: val})` - Fully supported.
 - **Subjects**: `[id:Label {prop: val}]` - Fully supported.
 - **Relationships**:
-  - Simple arrows: `-->`, `<--`, `--`
-  - Interrupted arrows with attributes: `-[...] ->`, `<- [...] -`
-  - Complex arrows: `==>`, `<==>`, `~~>`
-  - Backticked identifiers in arrows: `-[`id`]->`
+  - Simple arrows: `-->`, `<--`, `--` - Supported.
+  - Complex arrows: `==>`, `<==>`, `~~>` - Supported.
+  - Interrupted arrows with attributes: `-[...] ->`, `<- [...] -` - **Not Supported**.
+  - Backticked identifiers in arrows: `-[`id`]->` - **Not Supported**.
 - **Paths**: Sequences of nodes and relationships.
+
 - **Values**:
   - Integers, Decimals, Booleans
   - Strings: Double quoted `"..."` and Single quoted `'...'`
@@ -27,9 +28,9 @@ This document tracks the status of Gram syntax support in the Haskell implementa
 ## Known Limitations / Gaps
 
 ### 1. Predicates in Records
-The corpus file `records.txt` contains examples like `{ n > 1 }`.
-- **Status**: Not supported.
-- **Reason**: The current `Pattern` data model treats records strictly as Property Maps (Key-Value pairs). Semantic predicates are not yet modeled.
+The corpus file `records.txt` contains examples like `{ n > 1 }` marked as `:error`.
+- **Status**: Correctly Rejected.
+- **Note**: The parser correctly identifies this as invalid syntax, consistent with the corpus.
 
 ### 2. Complex Multiline Comments / Strings
 Some edge cases in `comments.txt` and `text_values.txt` involving specific combinations of comments inside patterns or multiline tagged strings may fail.

@@ -60,18 +60,29 @@ convertError bundle = ParseError (errorBundlePretty bundle)
 
 -- | Strip comments from gram notation string.
 -- Handles both line comments (//) and end-of-line comments.
+-- Respects double and single quoted strings.
 stripComments :: String -> String
 stripComments = unlines . filter (not . null) . map stripLineComment . lines
   where
     stripLineComment line = case findComment line of
       Nothing -> line
       Just idx -> take idx line
-    findComment s = findComment' s 0 False
+    
+    findComment s = findComment' s 0 Nothing
+    
+    findComment' :: String -> Int -> Maybe Char -> Maybe Int
     findComment' [] _ _ = Nothing
-    findComment' ('"' : xs) idx inString = findComment' xs (idx + 1) (not inString)
     findComment' ('\\' : _ : xs) idx inString = findComment' xs (idx + 2) inString  -- Skip escaped char
-    findComment' ('/' : '/' : _) idx False = Just idx  -- Found comment, not in string
-    findComment' (_ : xs) idx inString = findComment' xs (idx + 1) inString
+    -- Start of string (if not already in string)
+    findComment' (c : xs) idx Nothing
+      | c == '"'  = findComment' xs (idx + 1) (Just '"')
+      | c == '\'' = findComment' xs (idx + 1) (Just '\'')
+      | c == '/' && take 1 xs == "/" = Just idx  -- Found comment start //
+      | otherwise = findComment' xs (idx + 1) Nothing
+    -- Inside string (check for matching closing quote)
+    findComment' (c : xs) idx (Just q)
+      | c == q    = findComment' xs (idx + 1) Nothing
+      | otherwise = findComment' xs (idx + 1) (Just q)
 
 -- | Parse optional whitespace (spaces and tabs only, no newlines).
 optionalSpace :: Parser ()
@@ -165,13 +176,13 @@ parseTaggedString = do
   where
     quoteSymbol (Symbol s) = s
 
--- | Parse an array value.
+-- | Parse a array value.
 parseArray :: Parser Value
 parseArray = do
   void $ char '['
   optionalSpace
-  -- Wrap parseScalarValue in try for proper backtracking
-  values <- sepBy (try parseScalarValue) (optionalSpace >> char ',' >> optionalSpace)
+  -- Use try on the separator to ensure we backtrack if space is consumed but comma is missing
+  values <- sepBy (try parseScalarValue) (try (optionalSpaceWithNewlines >> char ',') >> optionalSpaceWithNewlines)
   optionalSpace
   void $ char ']'
   return $ VArray values
@@ -181,8 +192,8 @@ parseMap :: Parser Value
 parseMap = do
   void $ char '{'
   optionalSpaceWithNewlines
-  -- Wrap parseMapping in try for proper backtracking
-  pairs <- sepBy (try parseMapping) (optionalSpaceWithNewlines >> char ',' >> optionalSpaceWithNewlines)
+  -- Use try on the separator
+  pairs <- sepBy (try parseMapping) (try (optionalSpaceWithNewlines >> char ',') >> optionalSpaceWithNewlines)
   optionalSpaceWithNewlines
   void $ char '}'
   return $ VMap (Map.fromList pairs)
@@ -325,8 +336,8 @@ parsePropertyRecord = do
   void $ char '{'
   optionalSpaceWithNewlines
   -- Use sepBy to allow empty records (empty list)
-  -- Wrap parseProperty in try to allow proper backtracking if parsing fails
-  pairs <- sepBy (try parseProperty) (optionalSpaceWithNewlines >> char ',' >> optionalSpaceWithNewlines)
+  -- Use try on separator to handle newlines/spaces robustly
+  pairs <- sepBy (try parseProperty) (try (optionalSpaceWithNewlines >> char ',') >> optionalSpaceWithNewlines)
   optionalSpaceWithNewlines
   void $ char '}'
   return $ Map.fromList pairs
@@ -548,8 +559,8 @@ parseSubject = do
     void $ char '|'
     optionalSpace
     -- Parse comma-separated elements (at least one required by grammar: commaSep1)
-    -- Wrap parseSubPatternElement in try for proper backtracking
-    elements <- sepBy1 (try parseSubPatternElement) (optionalSpace >> char ',' >> optionalSpace)
+    -- Use try on separator for robust spacing handling
+    elements <- sepBy1 (try parseSubPatternElement) (try (optionalSpaceWithNewlines >> char ',') >> optionalSpaceWithNewlines)
     -- Consume any trailing whitespace after the last element
     optionalSpace
     return elements)
@@ -572,9 +583,8 @@ parsePattern = do
   first <- parsePatternElement
   -- Parse additional elements (optional, comma-separated)
   rest <- many (do
-    optionalSpace
-    void $ char ','
-    optionalSpace
+    try (optionalSpaceWithNewlines >> void (char ','))
+    optionalSpaceWithNewlines
     parsePatternElement)
   -- For a single element, return it as-is
   -- For multiple elements, use first as main, rest as nested

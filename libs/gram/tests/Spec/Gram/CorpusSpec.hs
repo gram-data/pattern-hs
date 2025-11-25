@@ -81,7 +81,9 @@ extractGramExamples content =
           
           -- Process content lines
           beforeSeparator = takeWhile (/= "---") contentLines
-          processed = map (\line -> trim (stripEndOfLineComment line)) beforeSeparator
+          -- Don't strip comments here! The parser handles Gram comments.
+          -- Just trim leading/trailing whitespace from lines to handle formatting.
+          processed = map trim beforeSeparator
           noComments = filter (not . isCommentOnly) processed
           trimmed = dropWhile null $ reverse $ dropWhile null $ reverse noComments
           content = unlines trimmed
@@ -90,15 +92,7 @@ extractGramExamples content =
     isCommentOnly :: String -> Bool
     isCommentOnly line = 
       let trimmed = dropWhile (== ' ') line
-      in "//" `isPrefixOf` trimmed && (null (drop 2 trimmed) || all (== ' ') (drop 2 trimmed))
-    
-    stripEndOfLineComment :: String -> String
-    stripEndOfLineComment line = 
-      let (beforeComment, _) = break (== '/') line
-          rest = drop (length beforeComment) line
-      in if "//" `isPrefixOf` rest
-         then trim beforeComment
-         else line
+      in False 
     
     trim :: String -> String
     trim = reverse . dropWhile (== ' ') . reverse . dropWhile (== ' ')
