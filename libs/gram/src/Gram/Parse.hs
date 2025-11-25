@@ -152,7 +152,7 @@ escapedChar quote = do
 parseBacktickedIdentifier :: Parser String
 parseBacktickedIdentifier = do
   void $ char '`'
-  content <- manyTill (satisfy (/= '`')) (char '`')
+  content <- manyTill (escapedChar '`') (char '`')
   return content
 
 -- | Parse a tagged string value.
