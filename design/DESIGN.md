@@ -87,41 +87,129 @@ A pattern containing patterns that themselves contain patterns, enabling arbitra
 
 ## Graph Interpretations (Views)
 
-Patterns can be **interpreted** as graph elements through different views. These are interpretations/views of pattern structures, not pattern variants themselves. The following interpretation functions are planned but not yet implemented:
+Patterns can be **interpreted** as graph elements through different views. These are interpretations/views of pattern structures, not pattern variants themselves.
 
+### Nodes
+
+**Definition**: A node is an atomic pattern - a pattern with no elements.
+
+**Representation**:
 ```haskell
--- ⏳ Planned: Graph interpretation functions
--- These interpret pattern structures as graph elements through views
-
--- ⏳ Planned: Check if pattern is a graph element (node, relationship, subgraph, or path)
-isGraphElement :: Pattern v -> Bool
-
--- ⏳ Planned: Interpret pattern as a node (typically atomic pattern)
-isNode :: Pattern v -> Bool
-isNode p = all (not . isGraphElement) (elements p)
-
--- ⏳ Planned: Interpret pattern as a relationship (typically 2 elements that are nodes)
-isRelationship :: Pattern v -> Bool
-isRelationship p = length (elements p) == 2 && all isNode (elements p)
-
--- ⏳ Planned: Interpret pattern as a subgraph (all elements are graph elements)
-isSubgraph :: Pattern v -> Bool
-isSubgraph p = all isGraphElement (elements p)
-
--- ⏳ Planned: Interpret pattern as a path (subgraph with chained relationships)
-isPath :: Pattern v -> Bool
-isPath p = isSubgraph p && chainsCorrectly (elements p)
-  where
-    chainsCorrectly [] = True
-    chainsCorrectly [_] = True
-    chainsCorrectly (r1:r2:rs) = 
-      isRelationship r1 && isRelationship r2 &&
-      target r1 == source r2 && chainsCorrectly (r2:rs)
+node :: v -> Pattern v
+node v = Pattern v []
 ```
 
-**Status**: ⏳ Planned (graph interpretation functions not yet implemented)
+**Notation**:
+```
+Cypher:  (n:Person)
+Pattern: [n:Person]
+```
 
-**Note**: These functions interpret pattern structures as graph elements. Patterns themselves are decorated sequences; graph interpretations (nodes, relationships, subgraphs, paths) are views of those structures, not pattern variants.
+**Properties**:
+- Nodes are leaves in the Pattern tree
+- Node identity is determined by the value `v`
+- All atomic patterns are valid nodes
+
+### Relationships
+
+#### Undirected Relationships
+
+**Definition**: An undirected relationship is a pattern with exactly two atomic patterns as elements.
+
+**Representation**:
+```haskell
+undirectedRel :: v -> Pattern v -> Pattern v -> Pattern v
+undirectedRel relValue node1 node2 = Pattern relValue [node1, node2]
+```
+
+**Notation**:
+```
+Cypher:  (a)-[r:KNOWS]-(b)
+Pattern: [r:KNOWS | (a), (b)]
+```
+
+**Semantic Interpretation**: The order of elements is not semantically meaningful for undirected relationships. `[r | (a), (b)]` and `[r | (b), (a)]` represent the same undirected relationship.
+
+#### Directed Relationships
+
+**Definition**: A directed relationship is a pattern with exactly two atomic patterns as elements, where element order encodes direction. By convention:
+- **Element[0]** = source node
+- **Element[1]** = target node
+
+**Representation**:
+```haskell
+directedRel :: v -> Pattern v -> Pattern v -> Pattern v
+directedRel relValue source target = Pattern relValue [source, target]
+
+-- Accessors
+source :: Pattern v -> Pattern v
+source (Pattern _ (s:_)) = s
+
+target :: Pattern v -> Pattern v
+target (Pattern _ [_, t]) = t
+
+-- Reverse direction
+reverse :: Pattern v -> Pattern v
+reverse (Pattern v [a, b]) = Pattern v [b, a]
+```
+
+**Notation**:
+```
+Cypher:  (a)-[r:KNOWS]->(b)
+Pattern: [r:KNOWS | (a), (b)]
+
+Cypher:  (a)<-[r:KNOWS]-(b)
+Pattern: [r:KNOWS | (b), (a)]
+```
+
+**Design Rationale**:
+1. **Natural use of ordered sequences**: Pattern's fundamental property (ordered elements) directly encodes direction
+2. **Structural distinction**: Directed vs. undirected relationships are distinguished at the semantic layer, not the structural layer
+3. **No value pollution**: The relationship value remains pure domain metadata (type, properties, etc.)
+4. **Clean operations**: Reversing, extracting source/target are simple structural operations
+
+### Walks
+
+**Definition**: A walk is an ordered sequence of relationships where consecutive relationships allow for a continuous traversal. This means entering a relationship at one node (the "entry" node) and exiting at the other (the "exit" node), which becomes the entry node for the next relationship.
+
+**Representation**: A pattern whose elements are relationships (patterns with exactly two elements).
+
+```haskell
+walk :: v -> [Pattern v] -> Pattern v
+walk walkMeta relationships = Pattern walkMeta relationships
+```
+
+**Notation**:
+```
+Cypher:  (a)-[r1:KNOWS]->(b)<-[r2:LIKES]-(c)-[r3:FOLLOWS]->(d)
+
+Pattern: [walk_metadata | 
+           [r1:KNOWS | (a), (b)],
+           [r2:LIKES | (c), (b)],
+           [r3:FOLLOWS | (c), (d)]
+         ]
+```
+
+Valid walks, in Pattern and Path notation equivalents:
+
+```
+[walk | [r1 | a, b]] =~ [walk | (a)-[r1]->(b)]
+
+[walk | [r1 | a, b], [r2 | c, b]] =~ (a)-[r1]->(b)<-[r2]-(c)
+
+[walk | [r1 | a, b], [r2 | b, a]] =~ (a)-[r1]->(b)-[r2]->(a)
+
+[walk | [r1 | a, b], [r2 | a, b]] =~ (a)-[r1]->(b)<-[r2]-(a)
+```
+
+### Summary Table
+
+| Concept | Pattern Structure | Convention |
+|---------|------------------|------------|
+| Node | `[v]` | Atomic pattern (no elements) |
+| Undirected Rel | `[r \| (a), (b)]` | Order semantically irrelevant |
+| Directed Rel | `[r \| (a), (b)]` | Element[0]=source, Element[1]=target |
+| Walk | `[meta \| rel1, rel2, ...]` | Consecutive rels share nodes |
 
 ## Pattern Navigation Functions
 
@@ -336,4 +424,3 @@ analogicalMatch view1 view2 p1 p2 =
 ```
 
 This framework provides a principled way to handle graph-like structures while maintaining flexibility in interpretation, enabling both strict pattern matching and analogical reasoning through categorical abstractions.
-

@@ -42,6 +42,18 @@ Some edge cases in `comments.txt` and `text_values.txt` involving specific combi
 - **Status**: Parsing fails on some combinations of top-level records followed immediately by array-like patterns `[...]`.
 - **Reason**: Ambiguity or strictness in top-level loop parsing logic.
 
+### 4. Relationship Nuances (Mapping Gap)
+Gram notation supports rich relationship syntax (`-->`, `<--`, `==>`) which semantically represents an "Edge Pattern".
+- **Concept**: An edge is a Pattern containing two children (source and target).
+  - `(a)-[r]->(b)` is semantically equivalent to `[r | (a), (b)]`.
+- **Current Status**: 
+  - The parser **accepts** arrow syntax (Parsing Conformance).
+  - The parser **incorrectly maps** it to a parent-child nesting: `Pattern a [Pattern b]`.
+  - This loses the relationship identity (`r`), the direction, and the arrow style.
+- **Future Work**: 
+  - Update the parser to map arrow syntax to the correct "Edge Pattern" structure: `Pattern r [Pattern a, Pattern b]`.
+  - Store arrow styles/types in the Subject of that Edge Pattern.
+
 ## Corpus Conformance
 
 As of 2025-11-25:

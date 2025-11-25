@@ -532,11 +532,13 @@ parseRelationship = do
 
   optionalSpace
   right <- parsePath
-  -- Create a relationship pattern: left node as main, right node as element
-  -- The relationship arrow kind is consumed but not stored in the data structure
-  -- Relationship attributes are also currently lost if not stored on the right pattern
-  -- For now, we just return the structure as is
-  return $ Pattern (value left) [right]
+  
+  -- CORRECT MAPPING: Pattern r [left, right]
+  -- If we have attributes (subject 'r'), use them. Otherwise use empty subject.
+  let relSubject = maybe (Pattern (Subject (Symbol "") Set.empty Map.empty) []) id attrs
+  let relValue = value relSubject
+  
+  return $ Pattern relValue [left, right]
 
 -- | Parse a path (relationship or node).
 parsePath :: Parser (Pattern Subject)

@@ -112,15 +112,23 @@ spec = do
         it "parses one relationship" $ do
           case fromGram "()-->()" of
             Right p -> do
-              -- Relationship should be parsed as a single element
-              length (elements p) `shouldBe` 1
+              -- Relationship should be parsed as a single element (Edge Pattern)
+              -- With correct mapping, the top-level pattern is the Edge Pattern itself
+              -- because fromGram parses the first pattern
+              
+              -- The structure of ()-->() is Pattern relValue [leftNode, rightNode]
+              -- NOTE: parseRelationship returns Pattern relValue [left, right]
+              -- fromGram wraps it if there are multiple patterns, but here it's a single path
+              
+              length (elements p) `shouldBe` 2
             Left err -> expectationFailure $ "Parse failed: " ++ show err
         
         it "parses two-hop path" $ do
           case fromGram "()-->()-->()" of
             Right p -> do
-              -- Nested relationship
-              length (elements p) `shouldBe` 1
+              -- The parser now right-associates: () --> (() --> ())
+              -- So top level has 2 elements: left node and the rest of the path
+              length (elements p) `shouldBe` 2
             Left err -> expectationFailure $ "Parse failed: " ++ show err
       
       describe "value types parsing (from corpus)" $ do
