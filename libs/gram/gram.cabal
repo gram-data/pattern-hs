@@ -25,6 +25,8 @@ library
         Gram
         Gram.Serialize
         Gram.Parse
+        Gram.CST
+        Gram.Transform
 
     build-depends:
         base >=4.17.0.0 && <5,
@@ -61,4 +63,3 @@ test-suite gram-test
 
     hs-source-dirs:   tests
     default-language: Haskell2010
-

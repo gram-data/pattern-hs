@@ -17,6 +17,8 @@ Auto-generated from all feature plans. Last updated: 2025-11-04
 - N/A (in-memory data structure library) (015-integration-polish)
 - Haskell (GHC 9.10.3, 9.8.4) (014-gram-serialization)
 - N/A (text serialization/deserialization library) (014-gram-serialization)
+- Haskell (GHC 9.x) + `megaparsec` (parsing), `hspec` (testing) (016-gram-parsing-conformance)
+- N/A (In-memory data structures) (016-gram-parsing-conformance)
 
 - (001-pattern-data-structure)
 
@@ -36,9 +38,9 @@ tests/
 : Follow standard conventions
 
 ## Recent Changes
+- 016-gram-parsing-conformance: Added Haskell (GHC 9.x) + `megaparsec` (parsing), `hspec` (testing)
 - 014-gram-serialization: Added Haskell (GHC 9.10.3, 9.8.4)
 - 015-integration-polish: Added Haskell (GHC 9.8.4, 9.10.3) + base >=4.17.0.0, comonad ^>=5, containers ^>=0.6, hashable ^>=1.4, unordered-containers ^>=0.2
-- 014-comonad-instance: Added Haskell (GHC 9.8.4, 9.10.3) + base >=4.17.0.0, comonad (for Comonad typeclass), QuickCheck (for property-based testing), Hspec (for test framework)
 
 
 <!-- MANUAL ADDITIONS START -->
