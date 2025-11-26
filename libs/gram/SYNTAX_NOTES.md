@@ -12,6 +12,8 @@ This document tracks the status of Gram syntax support in the Haskell implementa
   - Interrupted arrows with attributes: `-[...] ->`, `<- [...] -` - **Not Supported**.
   - Backticked identifiers in arrows: `-[`id`]->` - **Not Supported**.
 - **Paths**: Sequences of nodes and relationships.
+  - **Single Edges**: `(a)-[r]->(b)` maps to Edge Pattern `[r | (a), (b)]`.
+  - **Walks**: `(a)-[r1]->(b)-[r2]->(c)` maps to Walk Pattern `[walk | edge1, edge2]`.
 
 - **Values**:
   - Integers, Decimals, Booleans
@@ -42,17 +44,14 @@ Some edge cases in `comments.txt` and `text_values.txt` involving specific combi
 - **Status**: Parsing fails on some combinations of top-level records followed immediately by array-like patterns `[...]`.
 - **Reason**: Ambiguity or strictness in top-level loop parsing logic.
 
-### 4. Relationship Nuances (Mapping Gap)
-Gram notation supports rich relationship syntax (`-->`, `<--`, `==>`) which semantically represents an "Edge Pattern".
-- **Concept**: An edge is a Pattern containing two children (source and target).
-  - `(a)-[r]->(b)` is semantically equivalent to `[r | (a), (b)]`.
+### 4. Relationship Nuances (Data Loss)
+Gram notation supports rich relationship syntax (`-->`, `<--`, `==>`).
 - **Current Status**: 
-  - The parser **accepts** arrow syntax (Parsing Conformance).
-  - The parser **incorrectly maps** it to a parent-child nesting: `Pattern a [Pattern b]`.
-  - This loses the relationship identity (`r`), the direction, and the arrow style.
+  - The parser **accepts** all arrow variations.
+  - The CST **preserves** the arrow string (e.g., `"==>"`).
+  - The `Pattern` structure currently **discards** the arrow style (only preserves attributes).
 - **Future Work**: 
-  - Update the parser to map arrow syntax to the correct "Edge Pattern" structure: `Pattern r [Pattern a, Pattern b]`.
-  - Store arrow styles/types in the Subject of that Edge Pattern.
+  - Map the arrow style from the CST to a property in the Edge Pattern's Subject (e.g. `{arrow: "==>"}`).
 
 ## Corpus Conformance
 
@@ -60,4 +59,4 @@ As of 2025-11-25:
 - **Negative Tests**: 100% Pass (all invalid syntax is correctly rejected).
 - **Positive Tests**: ~95% Pass.
   - 4 failing examples out of ~80 total.
-
+  - **Note**: Round-trip tests currently fail due to recent structural improvements (Edge/Walk patterns) that the Serializer does not yet support. Serializer updates are scheduled for a future task.
