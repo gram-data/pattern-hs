@@ -5,7 +5,7 @@ module Gram.Parse
   , ParseError(..)
   ) where
 
-import Gram.CST (Gram(..), Pattern(..), PatternElement(..), Path(..), PathSegment(..), Node(..), Relationship(..), Bracketed(..), SubjectData(..), Identifier(..), Symbol(..))
+import Gram.CST (Gram(..), AnnotatedPattern(..), PatternElement(..), Path(..), PathSegment(..), Node(..), Relationship(..), SubjectPattern(..), SubjectData(..), Identifier(..), Symbol(..), Annotation(..))
 import qualified Gram.CST as CST
 import qualified Gram.Transform as Transform
 import qualified Pattern.Core as Core
@@ -52,6 +52,7 @@ stripComments = unlines . filter (not . null) . map stripLineComment . lines
     findComment' (c : xs) idx Nothing
       | c == '"'  = findComment' xs (idx + 1) (Just '"')
       | c == '\'' = findComment' xs (idx + 1) (Just '\'')
+      | c == '`'  = findComment' xs (idx + 1) (Just '`')
       | c == '/' && take 1 xs == "/" = Just idx
       | otherwise = findComment' xs (idx + 1) Nothing
     findComment' (c : xs) idx (Just q)
@@ -72,12 +73,12 @@ optionalSpaceWithNewlines = void $ many (char ' ' <|> char '\t' <|> char '\n' <|
 parseSymbol :: Parser Symbol
 parseSymbol = 
   (Symbol <$> try parseBacktickedIdentifier) <|> do
-    first <- satisfy (\c -> isAlphaNum c || c == '_')
+    first <- satisfy (\c -> isAlpha c || c == '_')
     rest <- many (satisfy (\c -> isAlphaNum c || c == '_' || c == '-' || c == '.' || c == '@'))
     return $ Symbol (first : rest)
 
 isSymbolStart :: Char -> Bool
-isSymbolStart c = isAlphaNum c || c == '_'
+isSymbolStart c = isAlpha c || c == '_'
 
 parseInteger :: Parser Integer
 parseInteger = do
@@ -116,15 +117,15 @@ parseSingleQuotedString = do
   return content
 
 escapedChar :: Char -> Parser Char
-escapedChar quote = do
-  c <- satisfy (\x -> x /= quote && x /= '\\') <|> (char '\\' >> anyChar)
-  return $ case c of
+escapedChar quote = 
+  satisfy (\x -> x /= quote && x /= '\\') <|> 
+  (char '\\' >> anyChar >>= \c -> return (case c of
     '\\' -> '\\'
     'n' -> '\n'
     'r' -> '\r'
     't' -> '\t'
     x | x == quote -> quote
-    x -> x
+    x -> x))
   where
     anyChar = satisfy (const True)
 
@@ -289,6 +290,19 @@ parsePropertyRecord = do
 
 -- ... [CST Specific Parsers] ...
 
+parseAnnotation :: Parser Annotation
+parseAnnotation = do
+  void $ char '@'
+  key <- parseSymbol
+  void $ char '('
+  value <- parseValue
+  void $ char ')'
+  optionalSpace
+  return $ Annotation key value
+
+parseAnnotations :: Parser [Annotation]
+parseAnnotations = many (try parseAnnotation)
+
 parseSubjectData :: Parser SubjectData
 parseSubjectData = do
   nextChar <- lookAhead (satisfy (const True))
@@ -331,9 +345,7 @@ parseReference :: Parser PatternElement
 parseReference = do
   ident <- parseIdentifier
   optionalSpace
-  -- Create a Bracketed CST element for the reference
-  let data' = SubjectData (Just ident) Set.empty Map.empty
-  return $ PEBracketed (Bracketed (Just data') [])
+  return $ PEReference ident
 
 parseRelationshipKind :: Parser String
 parseRelationshipKind = 
@@ -342,41 +354,26 @@ parseRelationshipKind =
   try (string "<~~>") <|>
   try (string "<--") <|>
   try (string "-->") <|>
-  try (string "<=>") <|>
+  try (string "<==>") <|>
   try (string "==>") <|>
   try (string "<==") <|>
-  try (string "<=") <|>
-  try (string "=>") <|>
-  try (string "<~>") <|>
-  try (string "<~~") <|>
+  try (string "<~~>") <|>
   try (string "~~>") <|>
-  try (string "<~") <|>
-  try (string "~>") <|>
-  try (string "~~") <|>
+  try (string "<~~") <|>
   try (string "==") <|>
+  try (string "~~") <|>
   string "--"
 
 -- | Parses the arrow part (including potential attributes)
-parseArrow :: Parser (String, Maybe SubjectData)
+parseArrow :: Parser (String, [Annotation], Maybe SubjectData)
 parseArrow = 
   try parseInterruptedArrow <|>
-  try parseSimpleArrowWithAttributes <|>
   parseSimpleArrow
   where
     parseSimpleArrow = do
       kind <- parseRelationshipKind
-      return (kind, Nothing)
+      return (kind, [], Nothing)
       
-    parseSimpleArrowWithAttributes = do
-      void $ char '['
-      optionalSpace
-      data' <- optional parseSubjectData
-      optionalSpace
-      void $ char ']'
-      optionalSpace
-      kind <- parseRelationshipKind
-      return (kind, data')
-
     parseInterruptedArrow = do
       -- Simplified for now, capturing the whole interrupted arrow logic is complex
       -- But we need to capture attributes inside.
@@ -391,6 +388,8 @@ parseArrow =
          ]
        void $ char '['
        optionalSpace
+       anns <- parseAnnotations
+       optionalSpace
        data' <- optional parseSubjectData
        optionalSpace
        void $ char ']'
@@ -402,7 +401,7 @@ parseArrow =
          , try (string "=")
          , try (string "~")
          ]
-       return (prefix ++ "..." ++ suffix, data')
+       return (prefix ++ "..." ++ suffix, anns, data')
 
 parsePath :: Parser Path
 parsePath = do
@@ -413,17 +412,17 @@ parsePath = do
 
 parsePathSegment :: Parser PathSegment
 parsePathSegment = do
-  (arrow, data') <- parseArrow
+  (arrow, anns, data') <- parseArrow
   optionalSpace
   next <- parseNode
   optionalSpace
-  return $ PathSegment (Relationship arrow data') next
+  return $ PathSegment (Relationship arrow anns data') next
 
 parseSubPatternElement :: Parser PatternElement
-parseSubPatternElement = try (PEBracketed <$> parseBracketed) <|> try (PEPath <$> parsePath) <|> try parseReference
+parseSubPatternElement = try (PESubjectPattern <$> parseSubjectPattern) <|> try (PEPath <$> parsePath) <|> try parseReference
 
-parseBracketed :: Parser Bracketed
-parseBracketed = do
+parseSubjectPattern :: Parser SubjectPattern
+parseSubjectPattern = do
   void $ char '['
   optionalSpace
   data' <- optional parseSubjectData
@@ -436,16 +435,18 @@ parseBracketed = do
     return elements)
   optionalSpace
   void $ char ']'
-  return $ Bracketed data' (maybe [] id nested)
+  return $ SubjectPattern data' (maybe [] id nested)
 
 parsePatternElement :: Parser PatternElement
-parsePatternElement = try (PEBracketed <$> parseBracketed) <|> (PEPath <$> parsePath)
+parsePatternElement = try (PESubjectPattern <$> parseSubjectPattern) <|> (PEPath <$> parsePath)
 
-parsePattern :: Parser Pattern
-parsePattern = do
+parseAnnotatedPattern :: Parser AnnotatedPattern
+parseAnnotatedPattern = do
+  optionalSpace
+  anns <- parseAnnotations
   optionalSpace
   elements <- sepBy1 parsePatternElement (try (optionalSpaceWithNewlines >> char ',') >> optionalSpaceWithNewlines)
-  return $ Pattern elements
+  return $ AnnotatedPattern anns elements
 
 parseGram :: Parser Gram
 parseGram = do
@@ -454,14 +455,14 @@ parseGram = do
   optionalSpace
   
   firstPatterns <- if rootRecord == Nothing
-    then (:[]) <$> parsePattern
-    else optional (try parsePattern) >>= \p -> return $ maybe [] (:[]) p
+    then (:[]) <$> parseAnnotatedPattern
+    else optional (try parseAnnotatedPattern) >>= \p -> return $ maybe [] (:[]) p
     
   additionalPatterns <- many (try (do
     optionalSpaceWithNewlines
     nextChar <- lookAhead (satisfy (const True))
-    if nextChar == '(' || nextChar == '[' || isSymbolStart nextChar
-      then parsePattern
+    if nextChar == '(' || nextChar == '[' || nextChar == '@'
+      then parseAnnotatedPattern
       else fail "no pattern"))
       
   optionalSpaceWithNewlines

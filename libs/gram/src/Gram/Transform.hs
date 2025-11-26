@@ -28,8 +28,8 @@ transformGram (CST.Gram record patterns) =
       -- Multiple patterns without root record: wrap in implicit root
       P.Pattern (S.Subject (S.Symbol "") Set.empty Map.empty) (map transformPattern pats)
 
-transformPattern :: CST.Pattern -> P.Pattern S.Subject
-transformPattern (CST.Pattern elements) =
+transformPattern :: CST.AnnotatedPattern -> P.Pattern S.Subject
+transformPattern (CST.AnnotatedPattern _ elements) =
   case elements of
     [el] -> transformElement el
     (first:rest) -> 
@@ -44,7 +44,9 @@ transformPattern (CST.Pattern elements) =
 
 transformElement :: CST.PatternElement -> P.Pattern S.Subject
 transformElement (CST.PEPath path) = transformPath path
-transformElement (CST.PEBracketed b) = transformBracketed b
+transformElement (CST.PESubjectPattern b) = transformSubjectPattern b
+transformElement (CST.PEReference ident) =
+  P.Pattern (S.Subject (transformIdentifier (Just ident)) Set.empty Map.empty) []
 
 -- | Transform a path into a Pattern.
 -- 
@@ -83,20 +85,20 @@ constructWalkEdges leftNode (seg:rest) =
   in edge : constructWalkEdges rightNode rest
 
 transformNode :: CST.Node -> P.Pattern S.Subject
-transformNode (CST.Node attrs) =
-  let subj = maybe emptySubject transformSubjectData attrs
+transformNode (CST.Node subjData) =
+  let subj = maybe emptySubject transformSubjectData subjData
   in P.Pattern subj []
 
-transformBracketed :: CST.Bracketed -> P.Pattern S.Subject
-transformBracketed (CST.Bracketed attrs nested) =
-  let subj = maybe emptySubject transformSubjectData attrs
+transformSubjectPattern :: CST.SubjectPattern -> P.Pattern S.Subject
+transformSubjectPattern (CST.SubjectPattern subjData nested) =
+  let subj = maybe emptySubject transformSubjectData subjData
       nestedPats = map transformElement nested
   in P.Pattern subj nestedPats
 
 transformRelationship :: CST.Relationship -> P.Pattern S.Subject
-transformRelationship (CST.Relationship _ attrs) =
+transformRelationship (CST.Relationship _ _ subjData) =
   -- Arrow string is currently ignored in Pattern Subject (as per design)
-  let subj = maybe emptySubject transformSubjectData attrs
+  let subj = maybe emptySubject transformSubjectData subjData
   in P.Pattern subj []
 
 transformSubjectData :: CST.SubjectData -> S.Subject

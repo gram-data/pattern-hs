@@ -3,14 +3,15 @@
 
 module Gram.CST
   ( Gram(..)
-  , Pattern(..)
+  , AnnotatedPattern(..)
   , PatternElement(..)
   , Path(..)
   , PathSegment(..)
   , Node(..)
   , Relationship(..)
-  , Bracketed(..)
+  , SubjectPattern(..)
   , SubjectData(..)
+  , Annotation(..)
   , Value(..)
   , RangeValue(..)
   , Identifier(..)
@@ -24,26 +25,29 @@ import qualified Subject.Core as Core
 import qualified Subject.Value as CoreVal
 
 -- | Top-level Gram structure
--- gram: optional(record) + repeat(pattern)
+-- gram: optional(record) + repeat(annotated_pattern)
 data Gram = Gram
   { gramRecord :: Maybe (Map String Value)
-  , gramPatterns :: [Pattern]
+  , gramPatterns :: [AnnotatedPattern]
   } deriving (Show, Eq, Generic)
 
--- | A pattern sequence
--- pattern: optional(annotations) + commaSep1(pattern_element)
-data Pattern = Pattern
-  { patternElements :: [PatternElement]
+-- | A top-level annotated pattern
+-- annotated_pattern: optional(annotations) + commaSep1(pattern_element)
+data AnnotatedPattern = AnnotatedPattern
+  { apAnnotations :: [Annotation]
+  , apElements :: [PatternElement]
   } deriving (Show, Eq, Generic)
 
 -- | Element of a pattern
--- pattern_element: subject | path
+-- pattern_element: subject_pattern | path_pattern | pattern_reference
 data PatternElement
   = PEPath Path
-  | PEBracketed Bracketed
+  | PESubjectPattern SubjectPattern
+  | PEReference Identifier
   deriving (Show, Eq, Generic)
 
 -- | A path structure (node connected by relationships)
+-- path_pattern: node_pattern | relationship_pattern
 -- This represents the linearized path: (a)-[r1]->(b)<-[r2]-(c)
 data Path = Path
   { pathStart :: Node
@@ -57,33 +61,40 @@ data PathSegment = PathSegment
   } deriving (Show, Eq, Generic)
 
 -- | A node structure
--- node: (attributes?)
+-- node_pattern: (subject?)
 data Node = Node
-  { nodeAttributes :: Maybe SubjectData
+  { nodeSubject :: Maybe SubjectData
   } deriving (Show, Eq, Generic)
 
 -- | A relationship structure
--- relationship: node + relationship_kind + path (in recursive definition)
--- In CST, we capture the arrow and the optional attributes
+-- relationship_pattern
+-- In CST, we capture the arrow and the optional annotations and subject
 data Relationship = Relationship
-  { relArrow :: String        -- The raw arrow string, e.g., "-->", "<==>", "-[...]->"
-  , relAttributes :: Maybe SubjectData
+  { relArrow :: String
+  , relAnnotations :: [Annotation]
+  , relSubject :: Maybe SubjectData
   } deriving (Show, Eq, Generic)
 
--- | A bracketed pattern structure
--- subject: [attributes? | sub_pattern?]
--- Renamed from "Subject" to avoid confusion with the internal data type.
-data Bracketed = Bracketed
-  { bracketedAttributes :: Maybe SubjectData
-  , bracketedNested :: [PatternElement] -- Nested patterns after pipe
+-- | A subject pattern structure (bracket notation)
+-- subject_pattern: [subject | elements]
+data SubjectPattern = SubjectPattern
+  { spSubject :: Maybe SubjectData
+  , spElements :: [PatternElement]
   } deriving (Show, Eq, Generic)
 
--- | Subject data container (Identity, Labels, Properties)
--- Renamed from "Attributes" to align with semantics.
+-- | Subject data container (Identifier, Labels, Record)
+-- Maps to 'subject' in grammar
 data SubjectData = SubjectData
   { dataIdentifier :: Maybe Identifier
   , dataLabels :: Set String
   , dataProperties :: Map String Value
+  } deriving (Show, Eq, Generic)
+
+-- | Metadata annotation
+-- annotation: @key(value)
+data Annotation = Annotation
+  { annKey :: Symbol
+  , annValue :: Value
   } deriving (Show, Eq, Generic)
 
 -- | Identifiers

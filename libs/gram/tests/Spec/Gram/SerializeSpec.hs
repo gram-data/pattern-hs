@@ -150,20 +150,20 @@ spec = do
         it "serializes pattern with single nested element" $ do
           let inner = Pattern { value = Subject (Symbol "a") (Set.fromList ["Person"]) empty, elements = [] }
           let outer = Pattern { value = Subject (Symbol "g") Set.empty empty, elements = [inner] }
-          toGram outer `shouldBe` "(g (a:Person))"
+          toGram outer `shouldBe` "[g | (a:Person)]"
         
         it "serializes pattern with multiple nested elements" $ do
           let elem1 = Pattern { value = Subject (Symbol "a") (Set.fromList ["Person"]) empty, elements = [] }
           let elem2 = Pattern { value = Subject (Symbol "b") (Set.fromList ["Person"]) empty, elements = [] }
           let outer = Pattern { value = Subject (Symbol "g") Set.empty empty, elements = [elem1, elem2] }
-          toGram outer `shouldBe` "(g (a:Person) (b:Person))"
+          toGram outer `shouldBe` "[g | (a:Person), (b:Person)]"
         
         it "serializes deeply nested patterns" $ do
           let level3 = Pattern { value = Subject (Symbol "c") Set.empty empty, elements = [] }
           let level2 = Pattern { value = Subject (Symbol "b") Set.empty empty, elements = [level3] }
           let level1 = Pattern { value = Subject (Symbol "a") Set.empty empty, elements = [level2] }
           let root = Pattern { value = Subject (Symbol "root") Set.empty empty, elements = [level1] }
-          toGram root `shouldBe` "(root (a (b (c))))"
+          toGram root `shouldBe` "[root | [a | [b | c]]]"
       
       describe "relationship pattern serialization" $ do
         it "serializes relationship pattern (source-relationship-target)" $ do
@@ -171,7 +171,9 @@ spec = do
           let rel = Pattern { value = Subject (Symbol "r") (Set.fromList ["KNOWS"]) empty, elements = [] }
           let target = Pattern { value = Subject (Symbol "b") (Set.fromList ["Person"]) empty, elements = [] }
           let relationship = Pattern { value = Subject (Symbol "g") Set.empty empty, elements = [source, rel, target] }
-          toGram relationship `shouldBe` "(g (a:Person) (r:KNOWS) (b:Person))"
+          -- Note: Current serializer treats everything as [subject | elements] if elements exist.
+          -- It doesn't reconstruct arrow syntax ()-[]->() from the generic pattern structure yet.
+          toGram relationship `shouldBe` "[g | (a:Person), (r:KNOWS), (b:Person)]"
         
         it "serializes relationship with properties" $ do
           let source = Pattern { value = Subject (Symbol "a") (Set.fromList ["Person"]) empty, elements = [] }
@@ -179,7 +181,7 @@ spec = do
           let rel = Pattern { value = Subject (Symbol "r") (Set.fromList ["KNOWS"]) relProps, elements = [] }
           let target = Pattern { value = Subject (Symbol "b") (Set.fromList ["Person"]) empty, elements = [] }
           let relationship = Pattern { value = Subject (Symbol "g") Set.empty empty, elements = [source, rel, target] }
-          toGram relationship `shouldBe` "(g (a:Person) (r:KNOWS {since:2024}) (b:Person))"
+          toGram relationship `shouldBe` "[g | (a:Person), (r:KNOWS {since:2024}), (b:Person)]"
       
       describe "edge cases" $ do
         it "serializes pattern with empty property record" $ do
