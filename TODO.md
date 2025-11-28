@@ -616,6 +616,13 @@ See [README.md](README.md#development-workflow) for complete workflow details.
   - All core tasks (T001-T071) completed across 6 phases (5 user stories + helper functions)
   - See `specs/014-comonad-instance/` for full specification and implementation details
 
+- ✅ Phase 16: Gram Parsing Conformance implemented with comprehensive tests:
+  - Parser now correctly maps Path syntax `(a)-[r]->(b)` to Edge Pattern `[r | (a), (b)]`.
+  - Round-trip serialization (`toGram`) updated to support Edge Patterns, empty nodes, and quoted identifiers.
+  - Submodule `tree-sitter-gram` integration for corpus testing.
+  - Corpus tests: 100% Pass (Negative, Positive, and Round-Trip).
+  - See `libs/gram/SYNTAX_NOTES.md` for full syntax support details.
+
 **Next Steps**: 
 1. Feature 11 (Integration and Polish) - finalize exports, documentation, and testing
 2. See `TODO-later.md` for deferred features (Graph Views, Pattern Morphisms, Pattern Matching DSL)

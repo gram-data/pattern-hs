@@ -123,6 +123,24 @@ spec = do
               length (elements p) `shouldBe` 2
             Left err -> expectationFailure $ "Parse failed: " ++ show err
         
+        it "parses path with edge semantics correctly" $ do
+          -- (a)-[r]->(b) should be [r | (a), (b)]
+          case fromGram "(a)-[r]->(b)" of
+            Right p -> do
+              -- Check top-level is the relationship pattern
+              -- Relationship identifier "r" IS captured in Subject data
+              length (elements p) `shouldBe` 2
+              
+              -- Verify relationship identity
+              value p `shouldBe` Subject (Symbol "r") Set.empty empty
+
+              -- Check elements are nodes a and b
+              let [left, right] = elements p
+              value left `shouldBe` Subject (Symbol "a") Set.empty empty
+              value right `shouldBe` Subject (Symbol "b") Set.empty empty
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+
+        
         it "parses two-hop path" $ do
           case fromGram "()-->()-->()" of
             Right p -> do

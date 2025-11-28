@@ -34,14 +34,14 @@
 ## Phase 5: Path Semantics Correction
 **Goal**: Correctly map Path syntax `(a)-[r]->(b)` to Edge Pattern `[r | (a), (b)]` instead of nesting.
 
-- [ ] T015 [US1] Modify `Gram.Parse.parseRelationship` to produce `Pattern r [left, right]` instead of `Pattern left [right]`
-- [ ] T016 [US1] Update `Gram.Parse.parsePath` to handle the non-nested chain structure
-- [ ] T017 [US1] Verify all corpus tests still pass with new structure
-- [ ] T018 [US1] Add specific structural test case in `ParseSpec.hs` verifying `(a)-[r]->(b)` maps to `[r | (a), (b)]`
+- [x] T015 [US1] Modify `Gram.Parse.parseRelationship` to produce `Pattern r [left, right]` instead of `Pattern left [right]`
+- [x] T016 [US1] Update `Gram.Parse.parsePath` to handle the non-nested chain structure
+- [x] T017 [US1] Verify all corpus tests still pass with new structure
+- [x] T018 [US1] Add specific structural test case in `ParseSpec.hs` verifying `(a)-[r]->(b)` maps to `[r | (a), (b)]`
 
 ## Phase 6: Polish
-- [ ] T019 Run full test suite `cabal test` to ensure no regressions in existing tests
-- [ ] T020 Document syntax support status and any known deviations in `libs/gram/SYNTAX_NOTES.md`
+- [x] T019 Run full test suite `cabal test` to ensure no regressions in existing tests
+- [x] T020 Document syntax support status and any known deviations in `libs/gram/SYNTAX_NOTES.md`
 
 ## Dependencies
 

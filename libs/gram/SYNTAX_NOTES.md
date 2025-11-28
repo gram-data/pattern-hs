@@ -55,8 +55,11 @@ Gram notation supports rich relationship syntax (`-->`, `<--`, `==>`).
 
 ## Corpus Conformance
 
-As of 2025-11-25:
+As of 2025-11-28:
 - **Negative Tests**: 100% Pass (all invalid syntax is correctly rejected).
-- **Positive Tests**: ~95% Pass.
-  - 4 failing examples out of ~80 total.
-  - **Note**: Round-trip tests currently fail due to recent structural improvements (Edge/Walk patterns) that the Serializer does not yet support. Serializer updates are scheduled for a future task.
+- **Positive Tests**: 100% Pass (all valid corpus examples parse correctly).
+- **Round-Trip Tests**: 100% Pass (all valid corpus examples round-trip correctly).
+  - Edge/Walk patterns and atomic patterns are correctly preserved.
+  - Empty patterns `(), ()` are correctly preserved.
+  - Quoting of identifiers and strings is correctly handled.
+

@@ -49,6 +49,7 @@ import Data.Map (Map, empty)
 import qualified Data.Map as Map
 import Data.Set (Set)
 import qualified Data.Set as Set
+import Data.Char (isAlpha, isAlphaNum)
 
 -- | Escape special characters in strings for gram notation.
 --
@@ -71,18 +72,33 @@ escapeString = concatMap escapeChar
 
 -- | Format a Symbol for gram notation.
 --
--- Returns the symbol string as-is. Symbols in gram notation are
--- unquoted identifiers.
+-- Returns the symbol string, quoted with backticks if necessary.
+-- Symbols in gram notation are unquoted identifiers if they start with
+-- a letter/underscore and contain only alphanumeric/specified chars.
+-- Otherwise they must be quoted.
 --
 -- === Examples
 --
 -- >>> quoteSymbol (Symbol "n")
 -- "n"
 --
--- >>> quoteSymbol (Symbol "myId")
--- "myId"
+-- >>> quoteSymbol (Symbol "my-id.1")
+-- "my-id.1"
+--
+-- >>> quoteSymbol (Symbol "dear world")
+-- "`dear world`"
 quoteSymbol :: Symbol -> String
-quoteSymbol (Symbol s) = s
+quoteSymbol (Symbol s)
+  | needsQuoting s = "`" ++ escapeBackticks s ++ "`"
+  | otherwise = s
+  where
+    needsQuoting "" = True
+    needsQuoting (c:cs) = not (isIdStart c) || any (not . isIdChar) cs
+    
+    isIdStart c = isAlpha c || c == '_'
+    isIdChar c = isAlphaNum c || c == '_' || c == '-' || c == '.' || c == '@'
+    
+    escapeBackticks = concatMap (\c -> if c == '`' then "\\`" else [c])
 
 -- | Serialize a Value to gram notation.
 --
@@ -197,11 +213,9 @@ serializePatternElements elems
   where
     serializeNestedElement :: Pattern Subject -> String
     serializeNestedElement (Pattern (Subject ident lbls props) nested)
-      -- If it's a reference (just identity, no labels/properties/elements), serialize as just the symbol
-      | Set.null lbls && Map.null props && null nested =
-          case ident of
-            Symbol "" -> ""  -- Empty reference, return empty string
-            _ -> quoteSymbol ident
+      -- If it's a named reference (just identity, no labels/properties/elements), serialize as just the symbol
+      | Set.null lbls && Map.null props && null nested && ident /= Symbol "" =
+          quoteSymbol ident
       -- Otherwise serialize as a full pattern (recursive call to toGram)
       | otherwise = toGram (Pattern (Subject ident lbls props) nested)
 
@@ -244,15 +258,8 @@ serializePatternElements elems
 toGram :: Pattern Subject -> String
 toGram (Pattern subj elems)
   | null elems = serializeSubjectAsNode subj  -- No elements -> node syntax
-  | isAnonymousEmptyRelationship subj elems = serializeSubjectAsNode subj  -- Empty relationship -> serialize as node
   | otherwise = serializeSubjectAsSubject subj elems  -- Has elements -> subject syntax
   where
-    -- Check if this is an empty relationship (anonymous subject with one empty element)
-    isAnonymousEmptyRelationship :: Subject -> [Pattern Subject] -> Bool
-    isAnonymousEmptyRelationship (Subject (Symbol "") lbls props) [Pattern (Subject (Symbol "") lbls' props') nested']
-      | Set.null lbls && Map.null props && Set.null lbls' && Map.null props' && null nested' = True
-    isAnonymousEmptyRelationship _ _ = False
-    
     serializeSubjectAsNode :: Subject -> String
     serializeSubjectAsNode (Subject ident lbls props) =
       "(" ++
