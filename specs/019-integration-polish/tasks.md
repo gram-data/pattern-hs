@@ -21,15 +21,15 @@ Goal: Initialize feature branch and prepare for audit.
 
 - [x] T001 Create feature structure and register feature in changelog
 - [x] T002 Audit current exports in `Pattern.Core` and `Pattern` to identify leaks
-- [ ] T003 Implement Checkpoint: Setup
+- [x] T003 Implement Checkpoint: Setup
   - **User Action**: `git add . && git commit -m "feat: setup integration and polish" && git push`
 
 ## Phase 2: Foundational
 
 Goal: Establish strict export lists in core module.
 
-- [ ] T004 [P] Update `src/Pattern/Core.hs` module declaration to use explicit export list: `module Pattern.Core (exports...) where`
-- [ ] T005 Update `src/Pattern.hs` module declaration to re-export only public API from `Pattern.Core`
+- [x] T004 [P] Update `src/Pattern/Core.hs` module declaration to use explicit export list: `module Pattern.Core (exports...) where`
+- [x] T005 Update `src/Pattern.hs` module declaration to re-export only public API from `Pattern.Core`
 - [ ] T006 Implement Checkpoint: Foundational
   - **User Action**: `git add . && git commit -m "feat: enforce explicit export lists" && git push`
   - **Verification**: `cabal build` succeeds; `cabal repl pattern` shows only public API

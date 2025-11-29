@@ -254,7 +254,15 @@ module Pattern.Core
   , size
   , depth
   , values
-    -- Note: 'value' is exported via Pattern(..) as a field accessor
+  , flatten
+  , toTuple
+    -- * Context (Comonad) Functions
+  , extract
+  , duplicate
+  , extend
+  , depthAt
+  , sizeAt
+  , indicesAt
     -- * Predicate Functions
   , anyValue
   , allValues
@@ -263,16 +271,8 @@ module Pattern.Core
   , findAllPatterns
   , matches
   , contains
-    -- * Helper Functions
-  , flatten
-  , toTuple
-    -- * Comonad Helper Functions
-  , depthAt
-  , sizeAt
-  , indicesAt
     -- * Typeclass Instances
     -- All typeclass instances are exported automatically via Pattern(..)
-    -- Instances: Show, Ord, Semigroup, Monoid, Hashable, Functor, Applicative, Foldable, Traversable, Comonad
   ) where
 
 import Prelude hiding (length)
