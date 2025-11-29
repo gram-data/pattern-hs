@@ -53,8 +53,8 @@ import Data.Char (isAlpha, isAlphaNum)
 
 -- | Escape special characters in strings for gram notation.
 --
--- Escapes quotes and backslashes in string values to ensure proper
--- serialization in gram notation.
+-- Escapes quotes, backslashes, and control characters in string values 
+-- to ensure proper serialization in gram notation.
 --
 -- === Examples
 --
@@ -63,11 +63,17 @@ import Data.Char (isAlpha, isAlphaNum)
 --
 -- >>> escapeString "He said \"Hello\""
 -- "He said \\\"Hello\\\""
+--
+-- >>> escapeString "Line 1\nLine 2"
+-- "Line 1\\nLine 2"
 escapeString :: String -> String
 escapeString = concatMap escapeChar
   where
     escapeChar '"' = "\\\""
     escapeChar '\\' = "\\\\"
+    escapeChar '\n' = "\\n"
+    escapeChar '\r' = "\\r"
+    escapeChar '\t' = "\\t"
     escapeChar c = [c]
 
 -- | Format a Symbol for gram notation.

@@ -2,13 +2,18 @@
 module Spec.Gram.SerializeSpec where
 
 import Test.Hspec
+import Test.Hspec.QuickCheck
+import Test.QuickCheck
 import Gram.Serialize (toGram)
+import Gram.Parse (fromGram)
 import Pattern.Core (Pattern(..))
 import Subject.Core (Subject(..), Symbol(..))
 import Subject.Value (Value(..), RangeValue(..))
 import Data.Map (empty, fromList)
+import qualified Data.Map as Map
 import Data.Set (Set)
 import qualified Data.Set as Set
+import Data.Text (pack)
 
 spec :: Spec
 spec = do
@@ -279,3 +284,47 @@ spec = do
           result `shouldContain` "temp:-10"
           result `shouldContain` "ratio:-0.5"
           result `shouldContain` "})"
+
+      describe "User Story 1: Round-trip Serialization" $ do
+        
+        it "handles complex special character escaping" $ do
+          let specialStr = "Line 1\nLine 2\tTabbed\rCarriage \"Quote\" \\Backslash"
+          let props = fromList [("data", VString specialStr)]
+          let s = Subject (Symbol "n") Set.empty props
+          let p = Pattern { value = s, elements = [] }
+          let serialized = toGram p
+          
+          -- Verify serialization format
+          serialized `shouldContain` "\\n"
+          serialized `shouldContain` "\\t"
+          serialized `shouldContain` "\\r"
+          serialized `shouldContain` "\\\""
+          serialized `shouldContain` "\\\\"
+          
+          -- Verify round-trip
+          let parsed = fromGram serialized
+          parsed `shouldBe` Right p
+
+        prop "serializes and parses back to an equivalent pattern (Round Trip)" $ 
+          forAll genPattern $ \p -> do
+            let serialized = toGram p
+            let parsed = fromGram serialized
+            parsed `shouldBe` Right p
+
+-- Generators for Property Tests
+genPattern :: Gen (Pattern Subject)
+genPattern = do
+  val <- genSubject
+  -- Limit recursion depth for simple round-trip test
+  return $ Pattern val []
+
+genSubject :: Gen Subject
+genSubject = do
+  idStr <- listOf1 (elements ['a'..'z'])
+  lbls <- listOf (listOf1 (elements ['A'..'Z']))
+  -- Generate simple string properties to verify property serialization
+  k <- listOf1 (elements ['a'..'z'])
+  v <- listOf1 (elements ['a'..'z'])
+  let props = Map.fromList [(k, VString v)]
+  return $ Subject (Symbol idStr) (Set.fromList lbls) props
+

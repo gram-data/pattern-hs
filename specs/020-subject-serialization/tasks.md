@@ -21,8 +21,8 @@ description: "Tasks for implementing subject identity and serialization in gram-
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Create `libs/gram/tests/Spec/Gram/SerializeSpec.hs` skeleton if needed
-- [ ] T002 Create `libs/gram/tests/Spec/Gram/ParseSpec.hs` skeleton if needed (likely exists)
+- [x] T001 Create `libs/gram/tests/Spec/Gram/SerializeSpec.hs` skeleton if needed
+- [x] T002 Create `libs/gram/tests/Spec/Gram/ParseSpec.hs` skeleton if needed (likely exists)
 
 ---
 
@@ -32,7 +32,7 @@ description: "Tasks for implementing subject identity and serialization in gram-
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T003 Verify `libs/gram/src/Gram/Transform.hs` state monad readiness (conceptually)
+- [x] T003 Verify `libs/gram/src/Gram/Transform.hs` state monad readiness (conceptually)
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -49,14 +49,14 @@ description: "Tasks for implementing subject identity and serialization in gram-
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 > **PERFORMANCE**: Always use timeouts (`timeout 60 cabal test`).
 
-- [ ] T004 [US1] Add property test for round-trip serialization in `libs/gram/tests/Spec/Gram/SerializeSpec.hs`
-- [ ] T005 [P] [US1] Add unit test for special character escaping in `libs/gram/tests/Spec/Gram/SerializeSpec.hs`
+- [x] T004 [US1] Add property test for round-trip serialization in `libs/gram/tests/Spec/Gram/SerializeSpec.hs`
+- [x] T005 [P] [US1] Add unit test for special character escaping in `libs/gram/tests/Spec/Gram/SerializeSpec.hs`
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] Update `libs/gram/src/Gram/Serialize.hs` to handle all escaping cases (quotes, backslashes)
-- [ ] T007 [US1] Ensure `libs/gram/src/Gram/Serialize.hs` produces valid gram syntax for all value types
-- [ ] T008 [US1] Run tests with timeout: `timeout 60 cabal test` to verify round-trip
+- [x] T006 [US1] Update `libs/gram/src/Gram/Serialize.hs` to handle all escaping cases (quotes, backslashes)
+- [x] T007 [US1] Ensure `libs/gram/src/Gram/Serialize.hs` produces valid gram syntax for all value types
+- [x] T008 [US1] Run tests with timeout: `timeout 60 cabal test` to verify round-trip
 - [ ] T009 [US1] Git commit: "feat: implement round-trip serialization - US1"
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
