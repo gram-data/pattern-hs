@@ -27,6 +27,7 @@ library
         Gram.Parse
         Gram.CST
         Gram.Transform
+        Gram.Validate
 
     build-depends:
         base >=4.17.0.0 && <5,
@@ -48,6 +49,7 @@ test-suite gram-test
         Spec.Gram.ParseMinimalRepro
         Spec.Gram.ParseRangeRepro
         Spec.Gram.CorpusSpec
+        SemanticsSpec
 
     build-depends:
         base >=4.17.0.0 && <5,
