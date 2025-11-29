@@ -122,12 +122,16 @@ registerPath (Path start segments) = do
   let sourceId = getNodeIdentifier start
   registerPathSegments sourceId segments
 
--- | Helper to extract node identifier
+-- | Extract the identifier from a node, if present.
+-- Returns Nothing for anonymous nodes.
 getNodeIdentifier :: Node -> Maybe Identifier
 getNodeIdentifier (Node (Just (SubjectData (Just ident) _ _))) = Just ident
 getNodeIdentifier _ = Nothing
 
--- | Register path segments, tracking the source node for relationship endpoint validation
+-- | Register path segments while tracking node identifiers for relationship endpoint validation.
+-- The sourceId parameter is the identifier of the preceding node.
+-- For each segment, we extract the target node identifier and pass both to registerRelationship,
+-- allowing us to detect when a relationship identifier is reused with different endpoints.
 registerPathSegments :: Maybe Identifier -> [PathSegment] -> State ValidationState ()
 registerPathSegments _ [] = return ()
 registerPathSegments sourceId (PathSegment rel nextNode : rest) = do
