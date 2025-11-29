@@ -305,6 +305,40 @@ spec = do
           let parsed = fromGram serialized
           parsed `shouldBe` Right p
 
+      describe "User Story 3: Identity Preservation" $ do
+        
+        it "preserves explicit alphanumeric IDs" $ do
+          let idStr = "user123"
+          let s = Subject (Symbol idStr) Set.empty empty
+          let p = Pattern { value = s, elements = [] }
+          let serialized = toGram p
+          serialized `shouldBe` "(user123)"
+          
+          let parsed = fromGram serialized
+          parsed `shouldBe` Right p
+          
+        it "preserves explicit IDs requiring quoting" $ do
+          -- IDs with spaces require backtick quoting
+          let idStr = "user name"
+          let s = Subject (Symbol idStr) Set.empty empty
+          let p = Pattern { value = s, elements = [] }
+          let serialized = toGram p
+          serialized `shouldBe` "(`user name`)"
+          
+          let parsed = fromGram serialized
+          parsed `shouldBe` Right p
+          
+        it "preserves special characters in IDs" $ do
+          -- IDs with backticks need escaping
+          let idStr = "user`name"
+          let s = Subject (Symbol idStr) Set.empty empty
+          let p = Pattern { value = s, elements = [] }
+          let serialized = toGram p
+          serialized `shouldBe` "(`user\\`name`)"
+          
+          let parsed = fromGram serialized
+          parsed `shouldBe` Right p
+
         prop "serializes and parses back to an equivalent pattern (Round Trip)" $ 
           forAll genPattern $ \p -> do
             let serialized = toGram p

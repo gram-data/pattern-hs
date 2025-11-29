@@ -81,7 +81,7 @@ description: "Tasks for implementing subject identity and serialization in gram-
 - [x] T014 [US2] Update `libs/gram/src/Gram/Parse.hs` `fromGram` to run the stateful transformation
 - [x] T015 [US2] Verify generated IDs follow `#<N>` format (illegal as unquoted identifier)
 - [x] T016 [US2] Run tests with timeout: `timeout 60 cabal test` to verify anonymous ID generation
-- [ ] T017 [US2] Git commit: "feat: implement anonymous subject ID generation - US2"
+- [x] T017 [US2] Git commit: "feat: implement anonymous subject ID generation - US2"
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
