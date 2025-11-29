@@ -66,3 +66,30 @@ spec = do
 
     it "accepts indirect cycles" $ do
       validateSource "[a | b], [b | a]" `shouldSatisfy` isRight
+
+  describe "Path Notation Validation" $ do
+    it "accepts a simple path" $ do
+      validateSource "(a)-[r]->(b)" `shouldSatisfy` isRight
+
+    it "defines elements in a path" $ do
+      -- (a) defines 'a', so [p | a] should be valid
+      validateSource "(a)-[r]->(b), [p | a]" `shouldSatisfy` isRight
+
+    it "rejects redefinition of path elements" $ do
+      -- 'r' is defined in first path, cannot be redefined in second with different structure
+      -- Note: This depends on strict consistency checks. 
+      -- For now, just checking duplicates if they are treated as pattern definitions.
+      -- If (a)-[r]->(b) implies [r | a, b], then a second identical path is fine?
+      -- No, identified relationships must be unique unless they are references.
+      -- But in path notation, identifiers are often used for uniqueness.
+      -- Let's assume standard redefinition rule applies: r is defined once.
+      -- If we write (a)-[r]->(b) and then (c)-[r]->(d), 'r' is duplicated?
+      -- Yes, if 'r' is an identifier.
+      let result = validateSource "(a)-[r]->(b), (c)-[r]->(d)"
+      result `shouldSatisfy` isLeft
+      case result of
+        Left [err] -> err `shouldSatisfy` isDuplicateDefinition
+        _ -> expectationFailure "Expected DuplicateDefinition error for reused relationship identifier"
+
+    it "accepts anonymous relationships" $ do
+      validateSource "(a)-[:knows]->(b), (a)-[:knows]->(b)" `shouldSatisfy` isRight
