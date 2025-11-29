@@ -239,3 +239,50 @@ spec = do
           case fromGram "(g (a:Person))" of
             Right _ -> expectationFailure "Should have failed - nodes cannot nest"
             Left (ParseError _) -> return ()  -- Expected to fail
+
+      describe "User Story 2: Anonymous Subject Handling" $ do
+        
+        it "assigns unique IDs to anonymous nodes" $ do
+          -- Two anonymous nodes: () ()
+          case fromGram "(), ()" of
+            Right p -> do
+              let elems = elements p
+              length elems `shouldBe` 2
+              let [n1, n2] = elems
+              -- Check generated IDs
+              let Symbol id1 = identity (value n1)
+              let Symbol id2 = identity (value n2)
+              
+              -- IDs should be non-empty and distinct
+              id1 `shouldNotBe` ""
+              id2 `shouldNotBe` ""
+              id1 `shouldNotBe` id2
+              
+              -- IDs should follow format #<N>
+              head id1 `shouldBe` '#'
+              head id2 `shouldBe` '#'
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+            
+        it "assigns unique IDs to anonymous path elements" $ do
+          -- Path with anonymous nodes and relationship: ()-[]->()
+          case fromGram "()-[]->()" of
+            Right p -> do
+              -- Pattern is relationship: [rel | left, right]
+              let relSubject = value p
+              let [left, right] = elements p
+              
+              let Symbol relId = identity relSubject
+              let Symbol leftId = identity (value left)
+              let Symbol rightId = identity (value right)
+              
+              -- All IDs should be distinct and generated
+              relId `shouldNotBe` ""
+              leftId `shouldNotBe` ""
+              rightId `shouldNotBe` ""
+              
+              leftId `shouldNotBe` rightId
+              relId `shouldNotBe` leftId
+              relId `shouldNotBe` rightId
+              
+              head relId `shouldBe` '#'
+            Left err -> expectationFailure $ "Parse failed: " ++ show err

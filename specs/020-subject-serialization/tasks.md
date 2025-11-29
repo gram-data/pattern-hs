@@ -57,7 +57,7 @@ description: "Tasks for implementing subject identity and serialization in gram-
 - [x] T006 [US1] Update `libs/gram/src/Gram/Serialize.hs` to handle all escaping cases (quotes, backslashes)
 - [x] T007 [US1] Ensure `libs/gram/src/Gram/Serialize.hs` produces valid gram syntax for all value types
 - [x] T008 [US1] Run tests with timeout: `timeout 60 cabal test` to verify round-trip
-- [ ] T009 [US1] Git commit: "feat: implement round-trip serialization - US1"
+- [x] T009 [US1] Git commit: "feat: implement round-trip serialization - US1"
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
@@ -71,16 +71,16 @@ description: "Tasks for implementing subject identity and serialization in gram-
 
 ### Tests for User Story 2
 
-- [ ] T010 [US2] Add unit test for anonymous node parsing in `libs/gram/tests/Spec/Gram/ParseSpec.hs`
-- [ ] T011 [P] [US2] Add unit test for anonymous path parsing `()-[]->()` in `libs/gram/tests/Spec/Gram/ParseSpec.hs`
+- [x] T010 [US2] Add unit test for anonymous node parsing in `libs/gram/tests/Spec/Gram/ParseSpec.hs`
+- [x] T011 [P] [US2] Add unit test for anonymous path parsing `()-[]->()` in `libs/gram/tests/Spec/Gram/ParseSpec.hs`
 
 ### Implementation for User Story 2
 
-- [ ] T012 [US2] Modify `libs/gram/src/Gram/Transform.hs` to use `State Int` monad for ID generation
-- [ ] T013 [US2] Implement `transformIdentifier` with `#<N>` format logic in `libs/gram/src/Gram/Transform.hs`
-- [ ] T014 [US2] Update `libs/gram/src/Gram/Parse.hs` `fromGram` to run the stateful transformation
-- [ ] T015 [US2] Verify generated IDs follow `#<N>` format (illegal as unquoted identifier)
-- [ ] T016 [US2] Run tests with timeout: `timeout 60 cabal test` to verify anonymous ID generation
+- [x] T012 [US2] Modify `libs/gram/src/Gram/Transform.hs` to use `State Int` monad for ID generation
+- [x] T013 [US2] Implement `transformIdentifier` with `#<N>` format logic in `libs/gram/src/Gram/Transform.hs`
+- [x] T014 [US2] Update `libs/gram/src/Gram/Parse.hs` `fromGram` to run the stateful transformation
+- [x] T015 [US2] Verify generated IDs follow `#<N>` format (illegal as unquoted identifier)
+- [x] T016 [US2] Run tests with timeout: `timeout 60 cabal test` to verify anonymous ID generation
 - [ ] T017 [US2] Git commit: "feat: implement anonymous subject ID generation - US2"
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
