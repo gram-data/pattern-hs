@@ -63,19 +63,7 @@ Completed robust identity handling and round-trip capabilities.
 
 ---
 
-### 3. Gram Validation Tests
-**Priority**: Medium
-**Goal**: Add comprehensive tests for the implemented `Gram.Validate` module.
-
-- [ ] Create `libs/gram/tests/Spec/Gram/ValidateSpec.hs`
-- [ ] Write tests for `DuplicateDefinition` detection
-- [ ] Write tests for `UndefinedReference` detection
-- [ ] Write tests for relationship arity/consistency validation
-- [ ] Verify validation on corpus files
-
----
-
-### 4. Pattern Morphisms
+### 3. Pattern Morphisms
 **Priority**: Low / Deferred
 **Goal**: Basic morphisms if needed for core.
 
@@ -87,7 +75,7 @@ Completed robust identity handling and round-trip capabilities.
 
 ---
 
-### 5. Zipper for Interactive Navigation and Editing
+### 4. Zipper for Interactive Navigation and Editing
 **Priority**: Low / Deferred
 **Goal**: Efficient interactive navigation and editing (Up/Down/Left/Right).
 **Reference**: See `design/DESIGN.md` (section "Zipper for Focus").
@@ -161,7 +149,7 @@ Completed robust identity handling and round-trip capabilities.
 
 ---
 
-### 6. Pattern Matching DSL (PatternExpr Library)
+### 5. Pattern Matching DSL (PatternExpr Library)
 **Priority**: Low / Deferred
 **Goal**: Enable regex-like pattern matching expressions for Pattern structures.
 **Reference**: See `design/pattern-matching-dsl-design.md`.
