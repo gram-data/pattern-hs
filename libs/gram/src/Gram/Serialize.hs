@@ -221,9 +221,7 @@ serializePatternElements elems
   | null elems = ""
   | otherwise = 
       let serialized = filter (not . null) $ map serializeNestedElement elems
-      in if null serialized
-         then ""  -- All elements are empty, don't add pipe
-         else " | " ++ intercalate ", " serialized
+      in intercalate ", " serialized
   where
     serializeNestedElement :: Pattern Subject -> String
     serializeNestedElement (Pattern (Subject ident lbls props) nested)
@@ -290,7 +288,7 @@ toGram p@(Pattern subj elems)
       let propsStr = if Map.null props then "" else serializePropertyRecord props
           elemsStr = intercalate "\n" (map toGram elems)
       in case (null propsStr, null elemsStr) of
-           (True, True) -> "" -- Empty graph/root - return empty string instead of "{}"
+           (True, True) -> "{}" -- Empty graph/root
            (False, True) -> trimLeadingSpace propsStr -- Remove leading space from serializePropertyRecord
            (True, False) -> elemsStr
            (False, False) -> trimLeadingSpace propsStr ++ "\n" ++ elemsStr
@@ -359,5 +357,6 @@ toGram p@(Pattern subj elems)
       serializeIdentity ident ++
       serializeLabels lbls ++
       serializePropertyRecord props ++
+      (if not (null nested) && (not (Map.null props) || ident /= Symbol "" || not (Set.null lbls)) then " | " else "") ++
       serializePatternElements nested ++
       "]"
