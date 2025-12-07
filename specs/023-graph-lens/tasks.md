@@ -16,11 +16,11 @@
 
 **Purpose**: Prepare project structure and verify dependencies
 
-- [ ] T001 Review existing Pattern library structure in `libs/pattern/`
-- [ ] T002 [P] Verify Pattern.Core module provides required Pattern type and functions
-- [ ] T003 [P] Verify test infrastructure (hspec, QuickCheck) is configured in `libs/pattern/pattern.cabal`
-- [ ] T004 [P] Review design document at `design/graph-lens.md` for implementation details
-- [ ] T005 [P] Review analysis recommendations at `specs/022-graph-lens-review/analysis.md`
+- [X] T001 Review existing Pattern library structure in `libs/pattern/`
+- [X] T002 [P] Verify Pattern.Core module provides required Pattern type and functions
+- [X] T003 [P] Verify test infrastructure (hspec, QuickCheck) is configured in `libs/pattern/pattern.cabal`
+- [X] T004 [P] Review design document at `design/graph-lens.md` for implementation details
+- [X] T005 [P] Review analysis recommendations at `specs/022-graph-lens-review/analysis.md`
 
 **Checkpoint**: Project structure understood, dependencies confirmed, design documents reviewed
 
@@ -32,12 +32,12 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T006 Implement GraphLens data structure in `libs/pattern/src/Pattern/Graph.hs` with scopePattern and isNode fields
-- [ ] T007 Add Haddock documentation for GraphLens data structure including categorical interpretation in `libs/pattern/src/Pattern/Graph.hs`
-- [ ] T008 Add module header documentation explaining Graph Lens concept in `libs/pattern/src/Pattern/Graph.hs`
-- [ ] T009 [P] Write unit test for GraphLens construction in `libs/pattern/tests/Spec/Pattern/GraphSpec.hs`
-- [ ] T010 [P] Write edge case test for empty scopePattern in `libs/pattern/tests/Spec/Pattern/GraphSpec.hs`
-- [ ] T011 Run tests with timeout: `timeout 60 cabal test` to verify foundational tests pass
+- [X] T006 Implement GraphLens data structure in `libs/pattern/src/Pattern/Graph.hs` with scopePattern and isNode fields
+- [X] T007 Add Haddock documentation for GraphLens data structure including categorical interpretation in `libs/pattern/src/Pattern/Graph.hs`
+- [X] T008 Add module header documentation explaining Graph Lens concept in `libs/pattern/src/Pattern/Graph.hs`
+- [X] T009 [P] Write unit test for GraphLens construction in `libs/pattern/tests/Spec/Pattern/GraphSpec.hs`
+- [X] T010 [P] Write edge case test for empty scopePattern in `libs/pattern/tests/Spec/Pattern/GraphSpec.hs`
+- [X] T011 Run tests with timeout: `timeout 60 cabal test` to verify foundational tests pass
 - [ ] T012 Git commit: "feat: add GraphLens data structure - foundational"
 
 **Checkpoint**: GraphLens data structure complete and tested - user story implementation can now begin
@@ -52,21 +52,21 @@
 
 ### Tests for User Story 1
 
-- [ ] T013 [P] [US1] Write unit test for `nodes` function with atomic predicate in `libs/pattern/tests/Spec/Pattern/GraphSpec.hs`
-- [ ] T014 [P] [US1] Write unit test for `nodes` function with value-based predicate in `libs/pattern/tests/Spec/Pattern/GraphSpec.hs`
+- [X] T013 [P] [US1] Write unit test for `nodes` function with atomic predicate in `libs/pattern/tests/Spec/Pattern/GraphSpec.hs`
+- [X] T014 [P] [US1] Write unit test for `nodes` function with value-based predicate in `libs/pattern/tests/Spec/Pattern/GraphSpec.hs`
 - [ ] T015 [P] [US1] Write unit test for `isNode` function (context-aware) in `libs/pattern/tests/Spec/Pattern/GraphSpec.hs`
-- [ ] T016 [P] [US1] Write edge case test for empty Pattern scope in `libs/pattern/tests/Spec/Pattern/GraphSpec.hs`
-- [ ] T017 [P] [US1] Write edge case test for Pattern with no nodes (all fail predicate) in `libs/pattern/tests/Spec/Pattern/GraphSpec.hs`
+- [X] T016 [P] [US1] Write edge case test for empty Pattern scope in `libs/pattern/tests/Spec/Pattern/GraphSpec.hs`
+- [X] T017 [P] [US1] Write edge case test for Pattern with no nodes (all fail predicate) in `libs/pattern/tests/Spec/Pattern/GraphSpec.hs`
 - [ ] T018 [P] [US1] Write property-based test for nodes function correctness in `libs/pattern/tests/Spec/Pattern/Properties.hs`
 
 ### Implementation for User Story 1
 
-- [ ] T019 [US1] Implement `nodes` function in `libs/pattern/src/Pattern/Graph.hs` (filters scopePattern elements by isNode predicate)
-- [ ] T020 [US1] Implement `isNode` function (context-aware version) in `libs/pattern/src/Pattern/Graph.hs` (handle field accessor conflict)
-- [ ] T021 [US1] Add Haddock documentation for `nodes` function in `libs/pattern/src/Pattern/Graph.hs`
-- [ ] T022 [US1] Add Haddock documentation for `isNode` function in `libs/pattern/src/Pattern/Graph.hs`
-- [ ] T023 [US1] Update module export list in `libs/pattern/src/Pattern/Graph.hs` to export nodes and isNode
-- [ ] T024 [US1] Run tests with timeout: `timeout 60 cabal test` to verify all User Story 1 tests pass
+- [X] T019 [US1] Implement `nodes` function in `libs/pattern/src/Pattern/Graph.hs` (filters scopePattern elements by isNode predicate)
+- [X] T020 [US1] Implement `isNode` function (context-aware version) in `libs/pattern/src/Pattern/Graph.hs` (handle field accessor conflict)
+- [X] T021 [US1] Add Haddock documentation for `nodes` function in `libs/pattern/src/Pattern/Graph.hs`
+- [X] T022 [US1] Add Haddock documentation for `isNode` function in `libs/pattern/src/Pattern/Graph.hs`
+- [X] T023 [US1] Update module export list in `libs/pattern/src/Pattern/Graph.hs` to export nodes and isNode
+- [X] T024 [US1] Run tests with timeout: `timeout 60 cabal test` to verify all User Story 1 tests pass
 - [ ] T025 [US1] Git commit: "feat: implement node identification - US1"
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently. Developers can create GraphLens and identify nodes.
