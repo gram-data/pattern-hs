@@ -23,7 +23,6 @@ library
     exposed-modules:
         Pattern
         Pattern.Core
-        Pattern.Views
         Pattern.Graph
 
     -- LANGUAGE extensions used by modules in this package.
@@ -44,7 +43,6 @@ test-suite pattern-test
     main-is:             Test.hs
     other-modules:
         Spec.Pattern.CoreSpec
-        Spec.Pattern.ViewsSpec
         Spec.Pattern.GraphSpec
         Spec.Pattern.Properties
 

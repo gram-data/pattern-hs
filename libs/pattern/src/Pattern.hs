@@ -11,7 +11,6 @@
 --
 -- * @Pattern.Core@ - Core Pattern data type, construction functions, query functions,
 --   predicate functions, and typeclass instances (Functor, Applicative, Comonad, etc.)
--- * @Pattern.Views@ - Graph view interpretations for different graph semantics
 -- * @Pattern.Graph@ - Graph operations and transformations
 --
 -- == Usage
@@ -33,7 +32,6 @@
 --
 -- * All public exports from @Pattern.Core@ (Pattern type, construction functions,
 --   query functions, predicate functions, helper functions, and all typeclass instances)
--- * All public exports from @Pattern.Views@ (graph view interpretations)
 -- * All public exports from @Pattern.Graph@ (graph operations)
 --
 -- Internal implementation details and helper functions are not exported through
@@ -41,12 +39,9 @@
 module Pattern
   ( -- * Core Pattern Type and Operations
     module Pattern.Core
-    -- * Graph Views and Interpretations
-  , module Pattern.Views
     -- * Graph Operations
   , module Pattern.Graph
   ) where
 
 import Pattern.Core
-import Pattern.Views
 import Pattern.Graph
