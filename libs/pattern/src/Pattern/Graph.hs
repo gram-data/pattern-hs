@@ -129,8 +129,8 @@ data GraphLens v = GraphLens
 -- >>> nodes lens
 -- [[a], [b], [c]]
 nodes :: GraphLens v -> [Pattern v]
-nodes (GraphLens (Pattern _ elements) testNodePred) = 
-  filter testNodePred elements
+nodes lens@(GraphLens (Pattern _ elements) _) = 
+  filter (isNode lens) elements
 
 -- | Determine if a Pattern is a node according to the lens.
 --
@@ -165,8 +165,8 @@ isNode (GraphLens _ testNodePred) p = testNodePred p
 -- >>> isRelationship lens rel
 -- True
 isRelationship :: GraphLens v -> Pattern v -> Bool
-isRelationship lens@(GraphLens _ testNodePred) p@(Pattern _ els) =
-  not (testNodePred p) &&
+isRelationship lens@(GraphLens _ _) p@(Pattern _ els) =
+  not (isNode lens p) &&
   length els == 2 &&
   all (isNode lens) els
 
@@ -271,8 +271,8 @@ consecutivelyConnected lens rels =
 -- >>> isWalk lens walk
 -- True
 isWalk :: Eq v => GraphLens v -> Pattern v -> Bool
-isWalk lens@(GraphLens _ testNodePred) p@(Pattern _ elements) =
-  not (testNodePred p) &&
+isWalk lens@(GraphLens _ _) p@(Pattern _ elements) =
+  not (isNode lens p) &&
   all (isRelationship lens) elements &&
   consecutivelyConnected lens elements
 
