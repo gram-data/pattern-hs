@@ -110,18 +110,32 @@ stripComments input = unlines $ filter (not . null) $ processLines False (lines 
       | inCodefence = 
           -- Inside codefence content
           if isClosingFence line
-            then line : processLines False rest  -- Closing fence, exit codefence
+            then processClosingFenceLine line : processLines False rest  -- Closing fence, exit codefence
             else line : processLines True rest   -- Keep content verbatim
       | otherwise =
           -- Outside codefence, check for opening fence and strip comments
           let (processed, nowInCodefence) = processLineOutsideCodefence line
           in processed : processLines nowInCodefence rest
     
-    -- Check if line is a closing fence (``` possibly with trailing whitespace)
+    -- Check if line contains a closing fence (``` at start of line).
+    -- The closing fence may be followed by gram syntax like }) on the same line.
+    -- Content cannot contain three consecutive backticks (per grammar), so a line
+    -- starting with ``` must be the closing fence, regardless of what follows.
     isClosingFence :: String -> Bool
     isClosingFence s = 
       let trimmed = dropWhile isWhitespace s
-      in take 3 trimmed == "```" && all isWhitespace (drop 3 trimmed)
+      in take 3 trimmed == "```"
+    
+    -- Process a closing fence line: preserve the fence, strip comments from the rest.
+    -- For a line like "``` }) // comment", returns "``` })"
+    processClosingFenceLine :: String -> String
+    processClosingFenceLine line =
+      let leading = takeWhile isWhitespace line
+          afterLeading = dropWhile isWhitespace line
+          fence = take 3 afterLeading  -- The "```"
+          remainder = drop 3 afterLeading  -- Everything after the fence
+          strippedRemainder = stripLineComment remainder
+      in leading ++ fence ++ strippedRemainder
     
     -- Process a line when outside codefence, returns (processed line, entering codefence?)
     processLineOutsideCodefence :: String -> (String, Bool)

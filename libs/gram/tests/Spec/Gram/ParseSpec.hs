@@ -567,3 +567,31 @@ spec = do
                   content `shouldContain` "var x = 1"
                 _ -> expectationFailure "Expected VTaggedString"
             Left err -> expectationFailure $ "Parse failed: " ++ show err
+
+        it "strips comments after codefence closes with gram syntax on same line" $ do
+          -- CRITICAL: Tests fix for isClosingFence recognizing ``` })" as closing fence
+          -- The closing fence followed by }) should properly exit codefence mode
+          -- so that // comments on same line are stripped
+          let gramWithComment = "({ content: ```\ntext\n``` }) // This comment should be stripped"
+          case fromGram gramWithComment of
+            Right p -> do
+              let props = properties (value p)
+              Map.lookup "content" props `shouldBe` Just (VString "text")
+            Left err -> expectationFailure $ "Parse failed (comment not stripped after codefence): " ++ show err
+
+        it "strips comments after codefence on following line" $ do
+          -- Verify normal comments after codefence block work
+          -- Single pattern with comment on following line
+          let gramWithComment = "({ a: ```\nvalue\n``` }) // trailing comment"
+          case fromGram gramWithComment of
+            Right p -> do
+              let props = properties (value p)
+              Map.lookup "a" props `shouldBe` Just (VString "value")
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+
+        it "strips comments between multiple patterns after codefence" $ do
+          -- Multiple patterns with comment between them - tests codefence mode exit
+          let gramMulti = "({ x: ```\ndata\n``` })\n// This comment should be stripped\n(:Next)"
+          case fromGram gramMulti of
+            Right _ -> return ()  -- Parsing succeeds if comment was stripped
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
