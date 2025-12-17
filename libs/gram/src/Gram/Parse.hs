@@ -138,14 +138,17 @@ stripComments input = unlines $ filter (not . null) $ processLines False (lines 
       let rev = reverse s
           -- Remove trailing whitespace
           trimmed = dropWhile isWhitespace rev
-      in case trimmed of
-           -- Check for ``` at end (plain codefence) or ```tag (tagged codefence)
+          -- For tagged codefence, the tag appears first in reversed string
+          -- e.g., "```md" reversed is "dm```", so skip tag chars to reach ```
+          afterTag = dropWhile isTagChar trimmed
+      in case afterTag of
+           -- Now check for the ``` backticks
            ('`':'`':'`':rest) -> 
-             -- After ```, we should have either end of meaningful content
-             -- or a tag (alphanumeric) followed by content
+             -- Valid if not followed by more backticks (avoid matching ````)
              case rest of
-               [] -> True  -- Just ``` at end
-               (c:_) -> isWhitespace c || isTagChar c
+               [] -> True  -- Just ``` (possibly with tag) at end
+               ('`':_) -> False  -- More than 3 backticks, not a codefence
+               _ -> True  -- Valid codefence opening
            _ -> False
     
     isWhitespace :: Char -> Bool

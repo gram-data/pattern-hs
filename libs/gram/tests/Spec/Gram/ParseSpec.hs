@@ -538,6 +538,23 @@ spec = do
               let props = properties (value p)
               Map.lookup "code" props `shouldBe` Just (VString "// This is a comment\nlet x = 1; // inline")
             Left err -> expectationFailure $ "Parse failed: " ++ show err
+
+        it "preserves // sequences inside TAGGED codefence content" $ do
+          -- CRITICAL: // inside tagged codefence should NOT be treated as comment
+          -- This tests the fix for endsWithCodefenceOpen detecting ```tag patterns
+          case fromGram "({ url: ```md\nhttps://example.com\n``` })" of
+            Right p -> do
+              let props = properties (value p)
+              Map.lookup "url" props `shouldBe` Just (VTaggedString "md" "https://example.com")
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+
+        it "preserves comment-like content inside TAGGED codefence" $ do
+          -- Code with // comments should be preserved in tagged codefence
+          case fromGram "({ code: ```js\n// This is a comment\nlet x = 1; // inline\n``` })" of
+            Right p -> do
+              let props = properties (value p)
+              Map.lookup "code" props `shouldBe` Just (VTaggedString "js" "// This is a comment\nlet x = 1; // inline")
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
         
         it "parses codefence with code block syntax in content" $ do
           -- Simulating markdown code block inside codefence
