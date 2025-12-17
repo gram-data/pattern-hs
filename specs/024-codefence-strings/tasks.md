@@ -153,29 +153,29 @@
 
 ### Round-Trip Property Tests
 
-- [ ] T043 [P] Add property test: round-trip VString through parse/serialize in `libs/gram/tests/Spec/Gram/SerializeSpec.hs`
-- [ ] T044 [P] Add property test: round-trip VTaggedString through parse/serialize in `libs/gram/tests/Spec/Gram/SerializeSpec.hs`
+- [x] T043 [P] Add property test: round-trip VString through parse/serialize in `libs/gram/tests/Spec/Gram/SerializeSpec.hs`
+- [x] T044 [P] Add property test: round-trip VTaggedString through parse/serialize in `libs/gram/tests/Spec/Gram/SerializeSpec.hs`
 
 ### Edge Case Coverage
 
-- [ ] T045 [P] Add test: codefence with exactly two consecutive backticks in content in `libs/gram/tests/Spec/Gram/ParseSpec.hs`
-- [ ] T046 [P] Add test: serializer escapes newlines in short strings correctly in `libs/gram/tests/Spec/Gram/SerializeSpec.hs`
+- [x] T045 [P] Add test: codefence with exactly two consecutive backticks in content in `libs/gram/tests/Spec/Gram/ParseSpec.hs`
+- [x] T046 [P] Add test: serializer escapes newlines in short strings correctly in `libs/gram/tests/Spec/Gram/SerializeSpec.hs`
 
 ### Backward Compatibility Verification
 
-- [ ] T047 Run full existing test suite to verify no regressions: `timeout 60 cabal test all --test-show-details=always`
-- [ ] T048 Verify examples/markdown.gram parses and round-trips correctly
+- [x] T047 Run full existing test suite to verify no regressions: `timeout 60 cabal test all --test-show-details=always`
+- [x] T048 Verify examples/markdown.gram parses and round-trips correctly
 
 ### Documentation
 
-- [ ] T049 Update Gram.Parse module header documentation with codefence syntax in `libs/gram/src/Gram/Parse.hs`
-- [ ] T050 Update Gram.Serialize module header documentation with threshold behavior in `libs/gram/src/Gram/Serialize.hs`
+- [x] T049 Update Gram.Parse module header documentation with codefence syntax in `libs/gram/src/Gram/Parse.hs`
+- [x] T050 Update Gram.Serialize module header documentation with threshold behavior in `libs/gram/src/Gram/Serialize.hs`
 
 ### Final Validation
 
-- [ ] T051 Run full test suite with timeout: `timeout 60 cabal test all --test-show-details=always`
-- [ ] T052 Validate quickstart.md examples work correctly
-- [ ] T053 Git commit: "docs(gram): finalize codefence strings feature documentation"
+- [x] T051 Run full test suite with timeout: `timeout 60 cabal test all --test-show-details=always`
+- [x] T052 Validate quickstart.md examples work correctly
+- [x] T053 Git commit: "docs(gram): finalize codefence strings feature documentation"
 
 ---
 
