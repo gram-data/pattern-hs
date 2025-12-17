@@ -379,3 +379,219 @@ spec = do
               -- Ensure they are distinct
               id1 `shouldNotBe` id2
             Left err -> expectationFailure $ "Parse failed: " ++ show err
+
+      -- US1: Plain Codefence String Parsing
+      describe "codefence string parsing (US1)" $ do
+        
+        it "parses plain codefence basic" $ do
+          -- Basic codefence: ```\nHello World\n```
+          case fromGram "({ content: ```\nHello World\n``` })" of
+            Right p -> do
+              let props = properties (value p)
+              Map.lookup "content" props `shouldBe` Just (VString "Hello World")
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+        
+        it "parses plain codefence with multiline content" $ do
+          case fromGram "({ text: ```\nLine 1\nLine 2\nLine 3\n``` })" of
+            Right p -> do
+              let props = properties (value p)
+              Map.lookup "text" props `shouldBe` Just (VString "Line 1\nLine 2\nLine 3")
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+        
+        it "parses plain codefence empty content" $ do
+          case fromGram "({ empty: ```\n``` })" of
+            Right p -> do
+              let props = properties (value p)
+              Map.lookup "empty" props `shouldBe` Just (VString "")
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+        
+        it "parses plain codefence with backticks in content" $ do
+          -- Content containing single and double backticks
+          case fromGram "({ code: ```\nconst x = `hello`;\nconst y = ``template``;\n``` })" of
+            Right p -> do
+              let props = properties (value p)
+              Map.lookup "code" props `shouldBe` Just (VString "const x = `hello`;\nconst y = ``template``;")
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+        
+        it "fails on unclosed codefence" $ do
+          -- Unclosed codefence should fail parsing
+          case fromGram "({ bad: ```\nno closing fence here" of
+            Right _ -> expectationFailure "Should have failed on unclosed codefence"
+            Left (ParseError _) -> return ()  -- Any parse error is acceptable
+
+      -- US2: Tagged Codefence String Parsing
+      describe "tagged codefence string parsing (US2)" $ do
+        
+        it "parses tagged codefence basic" $ do
+          -- Tagged codefence: ```md\n# Title\n```
+          case fromGram "({ content: ```md\n# Title\n``` })" of
+            Right p -> do
+              let props = properties (value p)
+              Map.lookup "content" props `shouldBe` Just (VTaggedString "md" "# Title")
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+        
+        it "parses tagged codefence empty content" $ do
+          case fromGram "({ empty: ```json\n``` })" of
+            Right p -> do
+              let props = properties (value p)
+              Map.lookup "empty" props `shouldBe` Just (VTaggedString "json" "")
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+        
+        it "parses tagged codefence various tags" $ do
+          -- Test with html tag
+          case fromGram "({ html: ```html\n<div>test</div>\n``` })" of
+            Right p -> do
+              let props = properties (value p)
+              Map.lookup "html" props `shouldBe` Just (VTaggedString "html" "<div>test</div>")
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+        
+        it "parses tagged codefence with multiline content" $ do
+          case fromGram "({ code: ```cypher\nMATCH (n)\nWHERE n.name = 'test'\nRETURN n\n``` })" of
+            Right p -> do
+              let props = properties (value p)
+              Map.lookup "code" props `shouldBe` Just (VTaggedString "cypher" "MATCH (n)\nWHERE n.name = 'test'\nRETURN n")
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+        
+        it "distinguishes between plain and tagged codefence" $ do
+          -- Plain codefence should be VString, tagged should be VTaggedString
+          case fromGram "({ plain: ```\ntext\n```, tagged: ```md\ntext\n``` })" of
+            Right p -> do
+              let props = properties (value p)
+              Map.lookup "plain" props `shouldBe` Just (VString "text")
+              Map.lookup "tagged" props `shouldBe` Just (VTaggedString "md" "text")
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+
+      -- US3: Integration with Property Records
+      describe "codefence integration with property records (US3)" $ do
+        
+        it "parses node with codefence property" $ do
+          -- Node with single codefence property
+          case fromGram "(n:Document { content: ```\nDocument content here\n``` })" of
+            Right p -> do
+              let props = properties (value p)
+              Map.lookup "content" props `shouldBe` Just (VString "Document content here")
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+        
+        it "parses node with multiple codefence properties" $ do
+          case fromGram "(:Page { title: ```\nPage Title\n```, body: ```\nPage body content\n``` })" of
+            Right p -> do
+              let props = properties (value p)
+              Map.lookup "title" props `shouldBe` Just (VString "Page Title")
+              Map.lookup "body" props `shouldBe` Just (VString "Page body content")
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+        
+        it "parses node with mixed value types including codefence" $ do
+          -- Mix of integer, string, boolean, and codefence
+          case fromGram "(:Post { views: 42, draft: true, title: \"Short\", content: ```\nLong content here\n``` })" of
+            Right p -> do
+              let props = properties (value p)
+              Map.lookup "views" props `shouldBe` Just (VInteger 42)
+              Map.lookup "draft" props `shouldBe` Just (VBoolean True)
+              Map.lookup "title" props `shouldBe` Just (VString "Short")
+              Map.lookup "content" props `shouldBe` Just (VString "Long content here")
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+        
+        it "parses node with tagged codefence in property record" $ do
+          case fromGram "(:Template { markup: ```html\n<div>Hello</div>\n``` })" of
+            Right p -> do
+              let props = properties (value p)
+              Map.lookup "markup" props `shouldBe` Just (VTaggedString "html" "<div>Hello</div>")
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+        
+        it "parses examples/markdown.gram content successfully" $ do
+          -- Actual content from examples/markdown.gram
+          let gramContent = "(:Example {prompt: ```md\n# Markdown Headline\nThis is a brief example of a tagged codefence that makes it easier\nto support multiline text in a particular format (in this case Markdown).\n```\n})"
+          case fromGram gramContent of
+            Right p -> do
+              let props = properties (value p)
+              case Map.lookup "prompt" props of
+                Just (VTaggedString tag content) -> do
+                  tag `shouldBe` "md"
+                  content `shouldContain` "# Markdown Headline"
+                  content `shouldContain` "tagged codefence"
+                _ -> expectationFailure "Expected VTaggedString for prompt property"
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+
+      -- Phase 7: Edge cases
+      describe "codefence edge cases" $ do
+        
+        it "parses codefence with exactly two consecutive backticks in content" $ do
+          -- Content containing `` (two backticks) - shouldn't confuse the parser
+          case fromGram "({ code: ```\nconst x = ``template``;\n``` })" of
+            Right p -> do
+              let props = properties (value p)
+              Map.lookup "code" props `shouldBe` Just (VString "const x = ``template``;")
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+        
+        it "preserves // sequences inside codefence content (not stripped as comments)" $ do
+          -- CRITICAL: // inside codefence should NOT be treated as comment
+          case fromGram "({ url: ```\nhttps://example.com\n``` })" of
+            Right p -> do
+              let props = properties (value p)
+              Map.lookup "url" props `shouldBe` Just (VString "https://example.com")
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+        
+        it "preserves comment-like content inside codefence" $ do
+          -- Code with // comments should be preserved in codefence
+          case fromGram "({ code: ```\n// This is a comment\nlet x = 1; // inline\n``` })" of
+            Right p -> do
+              let props = properties (value p)
+              Map.lookup "code" props `shouldBe` Just (VString "// This is a comment\nlet x = 1; // inline")
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+
+        it "preserves // sequences inside TAGGED codefence content" $ do
+          -- CRITICAL: // inside tagged codefence should NOT be treated as comment
+          -- This tests the fix for endsWithCodefenceOpen detecting ```tag patterns
+          case fromGram "({ url: ```md\nhttps://example.com\n``` })" of
+            Right p -> do
+              let props = properties (value p)
+              Map.lookup "url" props `shouldBe` Just (VTaggedString "md" "https://example.com")
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+
+        it "preserves comment-like content inside TAGGED codefence" $ do
+          -- Code with // comments should be preserved in tagged codefence
+          case fromGram "({ code: ```js\n// This is a comment\nlet x = 1; // inline\n``` })" of
+            Right p -> do
+              let props = properties (value p)
+              Map.lookup "code" props `shouldBe` Just (VTaggedString "js" "// This is a comment\nlet x = 1; // inline")
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+        
+        it "parses codefence with code block syntax in content" $ do
+          -- Simulating markdown code block inside codefence
+          case fromGram "({ doc: ```md\nHere is code:\n``\nvar x = 1;\n``\n``` })" of
+            Right p -> do
+              let props = properties (value p)
+              case Map.lookup "doc" props of
+                Just (VTaggedString "md" content) -> do
+                  content `shouldContain` "``"
+                  content `shouldContain` "var x = 1"
+                _ -> expectationFailure "Expected VTaggedString"
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+
+        it "strips comments after codefence closes with gram syntax on same line" $ do
+          -- CRITICAL: Tests fix for isClosingFence recognizing ``` })" as closing fence
+          -- The closing fence followed by }) should properly exit codefence mode
+          -- so that // comments on same line are stripped
+          let gramWithComment = "({ content: ```\ntext\n``` }) // This comment should be stripped"
+          case fromGram gramWithComment of
+            Right p -> do
+              let props = properties (value p)
+              Map.lookup "content" props `shouldBe` Just (VString "text")
+            Left err -> expectationFailure $ "Parse failed (comment not stripped after codefence): " ++ show err
+
+        it "strips comments after codefence on following line" $ do
+          -- Verify normal comments after codefence block work
+          -- Single pattern with comment on following line
+          let gramWithComment = "({ a: ```\nvalue\n``` }) // trailing comment"
+          case fromGram gramWithComment of
+            Right p -> do
+              let props = properties (value p)
+              Map.lookup "a" props `shouldBe` Just (VString "value")
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+
+        it "strips comments between multiple patterns after codefence" $ do
+          -- Multiple patterns with comment between them - tests codefence mode exit
+          let gramMulti = "({ x: ```\ndata\n``` })\n// This comment should be stripped\n(:Next)"
+          case fromGram gramMulti of
+            Right _ -> return ()  -- Parsing succeeds if comment was stripped
+            Left err -> expectationFailure $ "Parse failed: " ++ show err

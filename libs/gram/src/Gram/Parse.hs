@@ -1,4 +1,59 @@
 {-# LANGUAGE OverloadedStrings #-}
+-- |
+-- Module      : Gram.Parse
+-- Description : Parser for gram notation
+-- Copyright   : (c) gram-data, 2024
+-- License     : BSD3
+-- Maintainer  : gram-data
+-- Stability   : experimental
+--
+-- This module provides parsers for gram notation, converting text into
+-- Pattern and Subject data structures.
+--
+-- == String Value Syntax
+--
+-- The parser supports multiple string formats:
+--
+-- === Double-quoted strings
+--
+-- Standard strings with escape sequences:
+--
+-- @
+-- { name: \"Alice\" }
+-- @
+--
+-- === Single-quoted strings
+--
+-- Literal strings without escape processing:
+--
+-- @
+-- { pattern: \'[a-z]+\' }
+-- @
+--
+-- === Codefence strings (multiline)
+--
+-- Triple-backtick delimited strings for multiline content:
+--
+-- @
+-- { content: \`\`\`
+-- This content spans
+-- multiple lines.
+-- \`\`\` }
+-- @
+--
+-- === Tagged codefence strings
+--
+-- Codefence with a tag indicating the content type:
+--
+-- @
+-- { doc: \`\`\`md
+-- # Markdown Title
+-- Some **bold** text.
+-- \`\`\` }
+-- @
+--
+-- Tagged codefences are parsed as 'VTaggedString' values with the tag
+-- and content stored separately.
 module Gram.Parse
   ( fromGram
   , parseGram
@@ -37,13 +92,92 @@ convertError :: ParseErrorBundle String Void -> ParseError
 convertError bundle = ParseError (errorBundlePretty bundle)
 
 -- | Strip comments from gram notation string.
+--
+-- Handles line comments starting with @\/\/@. Comments are stripped unless
+-- they appear inside string literals (double-quoted, single-quoted, or
+-- backtick-quoted) or inside codefence blocks.
+--
+-- Codefence blocks span multiple lines and start with @\`\`\`@ (optionally
+-- followed by a tag) and end with @\`\`\`@ on its own line. Content inside
+-- codefences is preserved verbatim, including any @\/\/@ sequences.
 stripComments :: String -> String
-stripComments = unlines . filter (not . null) . map stripLineComment . lines
+stripComments input = unlines $ filter (not . null) $ processLines False (lines input)
   where
+    -- Process lines while tracking codefence state
+    processLines :: Bool -> [String] -> [String]
+    processLines _ [] = []
+    processLines inCodefence (line:rest)
+      | inCodefence = 
+          -- Inside codefence content
+          if isClosingFence line
+            then processClosingFenceLine line : processLines False rest  -- Closing fence, exit codefence
+            else line : processLines True rest   -- Keep content verbatim
+      | otherwise =
+          -- Outside codefence, check for opening fence and strip comments
+          let (processed, nowInCodefence) = processLineOutsideCodefence line
+          in processed : processLines nowInCodefence rest
+    
+    -- Check if line contains a closing fence (``` at start of line).
+    -- The closing fence may be followed by gram syntax like }) on the same line.
+    -- Content cannot contain three consecutive backticks (per grammar), so a line
+    -- starting with ``` must be the closing fence, regardless of what follows.
+    isClosingFence :: String -> Bool
+    isClosingFence s = 
+      let trimmed = dropWhile isWhitespace s
+      in take 3 trimmed == "```"
+    
+    -- Process a closing fence line: preserve the fence, strip comments from the rest.
+    -- For a line like "``` }) // comment", returns "``` })"
+    processClosingFenceLine :: String -> String
+    processClosingFenceLine line =
+      let leading = takeWhile isWhitespace line
+          afterLeading = dropWhile isWhitespace line
+          fence = take 3 afterLeading  -- The "```"
+          remainder = drop 3 afterLeading  -- Everything after the fence
+          strippedRemainder = stripLineComment remainder
+      in leading ++ fence ++ strippedRemainder
+    
+    -- Process a line when outside codefence, returns (processed line, entering codefence?)
+    processLineOutsideCodefence :: String -> (String, Bool)
+    processLineOutsideCodefence line =
+      let stripped = stripLineComment line
+          -- Check if this line opens a codefence (ends with ``` or ```tag)
+          opensCodefence = endsWithCodefenceOpen stripped
+      in (stripped, opensCodefence)
+    
+    -- Check if line ends with opening codefence pattern (``` or ```tag)
+    -- This happens when a property value starts a codefence
+    endsWithCodefenceOpen :: String -> Bool
+    endsWithCodefenceOpen s = 
+      let rev = reverse s
+          -- Remove trailing whitespace
+          trimmed = dropWhile isWhitespace rev
+          -- For tagged codefence, the tag appears first in reversed string
+          -- e.g., "```md" reversed is "dm```", so skip tag chars to reach ```
+          afterTag = dropWhile isTagChar trimmed
+      in case afterTag of
+           -- Now check for the ``` backticks
+           ('`':'`':'`':rest) -> 
+             -- Valid if not followed by more backticks (avoid matching ````)
+             case rest of
+               [] -> True  -- Just ``` (possibly with tag) at end
+               ('`':_) -> False  -- More than 3 backticks, not a codefence
+               _ -> True  -- Valid codefence opening
+           _ -> False
+    
+    isWhitespace :: Char -> Bool
+    isWhitespace c = c == ' ' || c == '\t'
+    
+    isTagChar :: Char -> Bool
+    isTagChar c = isAlphaNum c || c == '_' || c == '-'
+    
+    -- Strip line comment from a single line (handles quotes)
+    stripLineComment :: String -> String
     stripLineComment line = case findComment line of
       Nothing -> line
       Just idx -> take idx line
     
+    findComment :: String -> Maybe Int
     findComment s = findComment' s 0 Nothing
     
     findComment' :: String -> Int -> Maybe Char -> Maybe Int
@@ -135,11 +269,149 @@ parseBacktickedIdentifier = do
   content <- manyTill (escapedChar '`') (char '`')
   return content
 
+-- | Parse the content of a fenced string (codefence).
+--
+-- Captures all characters between the opening fence (after newline)
+-- and the closing fence. The closing fence must be three backticks
+-- at the start of a line (preceded by newline).
+--
+-- Content may contain:
+--
+-- * Newlines
+-- * Single backticks
+-- * Double backticks
+-- * Any other characters
+--
+-- Content may NOT contain three consecutive backticks at line start.
+--
+-- === Examples
+--
+-- The content between fences is captured verbatim:
+--
+-- @
+-- \`\`\`
+-- Hello World
+-- \`\`\`
+-- @
+--
+-- Produces: @"Hello World\\n"@
+--
+-- === Implementation
+--
+-- Uses character-by-character parsing to detect the closing fence pattern
+-- (newline followed by three backticks). This allows backticks within
+-- the content as long as they don't form the closing pattern.
+parseFencedContent :: Parser String
+parseFencedContent = do
+  -- Check if closing fence appears immediately (empty content case)
+  closingAtStart <- optional (try (string "```"))
+  case closingAtStart of
+    Just _ -> return ""  -- Empty content
+    Nothing -> go []
+  where
+    go :: [Char] -> Parser String
+    go acc = do
+      -- Try to match the closing fence: newline followed by ```
+      closingFence <- optional (try (char '\n' >> string "```"))
+      case closingFence of
+        Just _ -> return (reverse acc)  -- Found closing, return accumulated content
+        Nothing -> do
+          -- Check for EOF (unclosed fence)
+          isEnd <- optional eof
+          case isEnd of
+            Just _ -> fail "Unclosed codefence: expected closing ```"
+            Nothing -> do
+              -- Consume one character and continue
+              c <- satisfy (const True)
+              go (c : acc)
+
+-- | Parse a plain fenced string (codefence without tag).
+--
+-- Recognizes the syntax:
+--
+-- @
+-- \`\`\`
+-- content here
+-- can span multiple lines
+-- \`\`\`
+-- @
+--
+-- Returns the content between the opening and closing fences as a VString.
+-- The opening fence must be immediately followed by a newline.
+-- Content may be empty.
+--
+-- === Examples
+--
+-- >>> parse parseFencedString "" "```\\nHello World\\n```"
+-- Right (VString "Hello World")
+--
+-- >>> parse parseFencedString "" "```\\n```"
+-- Right (VString "")
+--
+-- === Errors
+--
+-- Fails if:
+--
+-- * Opening fence is not followed by newline
+-- * Closing fence is missing
+parseFencedString :: Parser Value
+parseFencedString = do
+  -- Match opening fence: ```
+  void $ string "```"
+  -- Require newline after opening fence (plain codefence has no tag)
+  void $ char '\n'
+  -- Parse content until closing fence
+  content <- parseFencedContent
+  return $ V.VString content
+
+-- | Parse a tagged fenced string (codefence with tag).
+--
+-- Recognizes the syntax:
+--
+-- @
+-- \`\`\`tag
+-- content here
+-- can span multiple lines
+-- \`\`\`
+-- @
+--
+-- The tag must be a valid symbol immediately following the opening fence.
+-- Returns a VTaggedString with the tag and content.
+--
+-- === Examples
+--
+-- >>> parse parseTaggedFencedString "" "```md\\n# Title\\n```"
+-- Right (VTaggedString "md" "# Title")
+--
+-- >>> parse parseTaggedFencedString "" "```json\\n{}\\n```"
+-- Right (VTaggedString "json" "{}")
+--
+-- === Errors
+--
+-- Fails if:
+--
+-- * No valid symbol follows opening fence
+-- * Tag is not followed by newline
+-- * Closing fence is missing
+parseTaggedFencedString :: Parser Value
+parseTaggedFencedString = do
+  -- Match opening fence: ```
+  void $ string "```"
+  -- Parse the tag (must be a valid symbol)
+  tag <- parseSymbol
+  -- Require newline after tag
+  void $ char '\n'
+  -- Parse content until closing fence
+  content <- parseFencedContent
+  return $ V.VTaggedString (symbolToString tag) content
+  where
+    symbolToString (Symbol s) = s
+
 parseTaggedString :: Parser Value
 parseTaggedString = do
   tag <- parseSymbol
   void $ char '`'
-  content <- manyTill (satisfy (const True)) (char '`')
+  content <- manyTill (escapedChar '`') (char '`')
   return $ V.VTaggedString (quoteSymbol tag) content
   where
     quoteSymbol (Symbol s) = s
@@ -223,7 +495,9 @@ parseScalarValue =
   try (V.VDecimal <$> parseDecimal) <|>
   try (V.VInteger <$> parseInteger) <|>
   try (V.VBoolean <$> parseBoolean) <|>
-  try parseTaggedString <|>
+  try parseFencedString <|>        -- Plain codefence (US1)
+  try parseTaggedFencedString <|>  -- Tagged codefence (US2)
+  try parseTaggedString <|>        -- Inline tagged string
   try (V.VString <$> parseString) <|>
   (V.VSymbol . quoteSymbol <$> parseSymbol)
   where
@@ -236,7 +510,9 @@ parseValue =
   try (V.VDecimal <$> parseDecimal) <|>
   try (V.VInteger <$> parseInteger) <|>
   try (V.VBoolean <$> parseBoolean) <|>
-  try parseTaggedString <|>
+  try parseFencedString <|>        -- Plain codefence (US1)
+  try parseTaggedFencedString <|>  -- Tagged codefence (US2)
+  try parseTaggedString <|>        -- Inline tagged string
   try (V.VString <$> parseString) <|>
   try parseArray <|>
   try parseMap <|>

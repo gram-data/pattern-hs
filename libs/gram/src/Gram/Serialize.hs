@@ -17,6 +17,20 @@
 -- * @Subject@ → gram attributes notation (identity, labels, properties)
 -- * @Value@ types → gram value notation
 --
+-- == String Value Serialization
+--
+-- String values use different formats based on length:
+--
+-- * __Short strings__ (≤120 characters): Double-quoted with escapes
+-- * __Long strings__ (>120 characters): Codefence format (triple-backtick)
+--
+-- Tagged strings follow the same threshold for inline vs codefence:
+--
+-- * __Short tagged__: @tag\`content\`@
+-- * __Long tagged__: @\`\`\`tag\\ncontent\\n\`\`\`@
+--
+-- The threshold is defined by 'codefenceThreshold' (120 characters).
+--
 -- == Examples
 --
 -- Serializing a simple subject:
@@ -40,6 +54,7 @@
 -- "(n:Person {name:\"Alice\"})"
 module Gram.Serialize
   ( toGram
+  , codefenceThreshold
   ) where
 
 import Pattern.Core (Pattern(..))
@@ -50,6 +65,24 @@ import qualified Data.Map as Map
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.Char (isAlpha, isAlphaNum)
+
+-- | Character threshold for codefence serialization.
+--
+-- Strings with length greater than this value will be serialized
+-- using codefence format (triple-backticks). Length is measured as 
+-- total character count including newline characters.
+--
+-- Strings of this length or fewer use standard quote-delimited format.
+--
+-- === Examples
+--
+-- >>> codefenceThreshold
+-- 120
+--
+-- >>> length "short string" <= codefenceThreshold
+-- True
+codefenceThreshold :: Int
+codefenceThreshold = 120
 
 -- | Escape special characters in strings for gram notation.
 --
@@ -75,6 +108,81 @@ escapeString = concatMap escapeChar
     escapeChar '\r' = "\\r"
     escapeChar '\t' = "\\t"
     escapeChar c = [c]
+
+-- | Check if a string can safely use codefence format.
+--
+-- A string can use codefence format if:
+--
+-- 1. It exceeds the length threshold (120 characters)
+-- 2. It does NOT contain the closing fence pattern (@\\n\`\`\`@)
+--
+-- If the string contains the closing fence pattern, using codefence
+-- format would cause the parser to truncate content at that point,
+-- violating round-trip preservation.
+--
+-- === Examples
+--
+-- >>> canUseCodefence (replicate 121 'x')
+-- True
+--
+-- >>> canUseCodefence (replicate 100 'x' ++ "\n```" ++ replicate 50 'y')
+-- False
+canUseCodefence :: String -> Bool
+canUseCodefence s = 
+  length s > codefenceThreshold && not (containsClosingFence s)
+  where
+    containsClosingFence str = "\n```" `isInfixOf` str
+    isInfixOf needle haystack = any (isPrefixOf needle) (tails haystack)
+    isPrefixOf [] _ = True
+    isPrefixOf _ [] = False
+    isPrefixOf (x:xs) (y:ys) = x == y && isPrefixOf xs ys
+    tails [] = [[]]
+    tails xs@(_:xs') = xs : tails xs'
+
+-- | Escape content for backtick-delimited strings.
+--
+-- Escapes backticks and newlines in content that will be placed
+-- inside a single-backtick delimited string (tag\`content\`).
+--
+-- === Examples
+--
+-- >>> escapeBacktickedContent "hello"
+-- "hello"
+--
+-- >>> escapeBacktickedContent "a`b"
+-- "a\\`b"
+escapeBacktickedContent :: String -> String
+escapeBacktickedContent = concatMap escapeChar
+  where
+    escapeChar '`' = "\\`"
+    escapeChar '\n' = "\\n"
+    escapeChar '\r' = "\\r"
+    escapeChar '\\' = "\\\\"
+    escapeChar c = [c]
+
+-- | Serialize a string using codefence format for long strings.
+--
+-- Uses triple-backtick codefence format for strings exceeding the
+-- threshold length. Content is preserved without escaping.
+--
+-- === Examples
+--
+-- >>> serializeCodefenceString "Long content..."
+-- "```\nLong content...\n```"
+serializeCodefenceString :: String -> String
+serializeCodefenceString s = "```\n" ++ s ++ "\n```"
+
+-- | Serialize a tagged string using codefence format for long content.
+--
+-- Uses triple-backtick codefence format with tag for tagged strings
+-- whose content exceeds the threshold length.
+--
+-- === Examples
+--
+-- >>> serializeTaggedCodefenceString "md" "Long markdown..."
+-- "```md\nLong markdown...\n```"
+serializeTaggedCodefenceString :: String -> String -> String
+serializeTaggedCodefenceString tag content = "```" ++ tag ++ "\n" ++ content ++ "\n```"
 
 -- | Format a Symbol for gram notation.
 --
@@ -126,9 +234,13 @@ serializeValue (VInteger i) = show i
 serializeValue (VDecimal d) = show d
 serializeValue (VBoolean True) = "true"
 serializeValue (VBoolean False) = "false"
-serializeValue (VString s) = "\"" ++ escapeString s ++ "\""
+serializeValue (VString s)
+  | canUseCodefence s = serializeCodefenceString s
+  | otherwise = "\"" ++ escapeString s ++ "\""
 serializeValue (VSymbol sym) = sym
-serializeValue (VTaggedString tag content) = tag ++ "`" ++ content ++ "`"
+serializeValue (VTaggedString tag content)
+  | canUseCodefence content = serializeTaggedCodefenceString tag content
+  | otherwise = tag ++ "`" ++ escapeBacktickedContent content ++ "`"
 serializeValue (VArray vs) = "[" ++ intercalate "," (map serializeValue vs) ++ "]"
 serializeValue (VMap m) = "{" ++ intercalate "," (map serializeProperty (Map.toList m)) ++ "}"
   where

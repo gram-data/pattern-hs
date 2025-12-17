@@ -1,0 +1,6 @@
+(:Example {prompt: ```md
+# Markdown Headline
+This is a brief example of a tagged codefence that makes it easier
+to support multiline text in a particular format (in this case Markdown).
+```
+})

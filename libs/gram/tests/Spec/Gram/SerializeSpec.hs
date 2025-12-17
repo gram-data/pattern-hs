@@ -389,6 +389,120 @@ spec = do
             let parsed = fromGram serialized
             parsed `shouldBe` Right p
 
+      -- US4: Automatic Codefence Serialization
+      describe "codefence string serialization (US4)" $ do
+        
+        it "serializes short VString (<=120 chars) using quotes" $ do
+          let shortStr = "This is a short string"  -- 22 chars
+          let s = Subject (Symbol "n") Set.empty (fromList [("text", VString shortStr)])
+          let p = Pattern { value = s, elements = [] }
+          let result = toGram p
+          -- Should use double quotes, not codefence
+          result `shouldContain` "\"This is a short string\""
+          result `shouldNotContain` "```"
+        
+        it "serializes long VString (>120 chars) using codefence" $ do
+          -- Create a string of 121 characters
+          let longStr = replicate 121 'x'
+          let s = Subject (Symbol "n") Set.empty (fromList [("content", VString longStr)])
+          let p = Pattern { value = s, elements = [] }
+          let result = toGram p
+          -- Should use codefence format
+          result `shouldContain` "```"
+          result `shouldContain` longStr
+        
+        it "serializes VString exactly 120 chars using quotes" $ do
+          -- Exactly 120 characters - should use quotes (threshold is >120)
+          let exactStr = replicate 120 'y'
+          let s = Subject (Symbol "n") Set.empty (fromList [("text", VString exactStr)])
+          let p = Pattern { value = s, elements = [] }
+          let result = toGram p
+          -- Should use double quotes, not codefence
+          result `shouldNotContain` "```\n"
+          result `shouldContain` "\""
+        
+        it "serializes short VTaggedString using inline format" $ do
+          let shortContent = "Short content"  -- 13 chars
+          let s = Subject (Symbol "n") Set.empty (fromList [("code", VTaggedString "md" shortContent)])
+          let p = Pattern { value = s, elements = [] }
+          let result = toGram p
+          -- Should use inline tagged format: md`Short content`
+          result `shouldContain` "md`Short content`"
+          result `shouldNotContain` "```"
+        
+        it "serializes long VTaggedString using codefence format" $ do
+          -- Create a string of 121 characters
+          let longContent = replicate 121 'z'
+          let s = Subject (Symbol "n") Set.empty (fromList [("doc", VTaggedString "markdown" longContent)])
+          let p = Pattern { value = s, elements = [] }
+          let result = toGram p
+          -- Should use tagged codefence format: ```markdown\ncontent\n```
+          result `shouldContain` "```markdown"
+          result `shouldContain` longContent
+
+      -- Phase 7: Round-trip property tests
+      describe "codefence round-trip tests" $ do
+        
+        prop "round-trip VString through parse/serialize" $ 
+          forAll genShortString $ \str -> do
+            let s = Subject (Symbol "test") Set.empty (fromList [("content", VString str)])
+            let p = Pattern { value = s, elements = [] }
+            let serialized = toGram p
+            let parsed = fromGram serialized
+            case parsed of
+              Right p' -> properties (value p') `shouldBe` properties (value p)
+              Left err -> expectationFailure $ "Round-trip failed: " ++ show err
+        
+        prop "round-trip VTaggedString through parse/serialize" $ 
+          forAll genTaggedPair $ \(tag, content) -> do
+            let s = Subject (Symbol "test") Set.empty (fromList [("doc", VTaggedString tag content)])
+            let p = Pattern { value = s, elements = [] }
+            let serialized = toGram p
+            let parsed = fromGram serialized
+            case parsed of
+              Right p' -> properties (value p') `shouldBe` properties (value p)
+              Left err -> expectationFailure $ "Round-trip failed: " ++ show err
+        
+        it "serializer escapes newlines in short strings correctly" $ do
+          let shortMultiline = "Line 1\nLine 2"  -- 14 chars, short
+          let s = Subject (Symbol "n") Set.empty (fromList [("text", VString shortMultiline)])
+          let p = Pattern { value = s, elements = [] }
+          let result = toGram p
+          -- Should use escaped newline in quoted string, not codefence
+          result `shouldContain` "\\n"
+          result `shouldNotContain` "```"
+        
+        it "falls back to quoted format when long string contains closing fence pattern" $ do
+          -- Long string (>120 chars) containing \n``` which would break codefence parsing
+          let problematic = replicate 100 'x' ++ "\n```" ++ replicate 50 'y'
+          length problematic `shouldSatisfy` (> 120)  -- Verify it's long enough
+          let s = Subject (Symbol "n") Set.empty (fromList [("content", VString problematic)])
+          let p = Pattern { value = s, elements = [] }
+          let serialized = toGram p
+          -- Should NOT use codefence format due to closing fence pattern in content
+          -- Instead should use quoted format with escaped newline
+          serialized `shouldNotContain` "```\n"  -- No opening codefence
+          -- Verify round-trip works
+          let parsed = fromGram serialized
+          case parsed of
+            Right p' -> properties (value p') `shouldBe` properties (value p)
+            Left err -> expectationFailure $ "Round-trip failed: " ++ show err
+        
+        it "falls back to quoted format when long tagged string contains closing fence pattern" $ do
+          -- Long tagged string content containing \n``` which would break codefence parsing
+          let problematic = replicate 100 'a' ++ "\n```" ++ replicate 50 'b'
+          length problematic `shouldSatisfy` (> 120)
+          let s = Subject (Symbol "n") Set.empty (fromList [("doc", VTaggedString "md" problematic)])
+          let p = Pattern { value = s, elements = [] }
+          let serialized = toGram p
+          -- Should NOT use tagged codefence format
+          serialized `shouldNotContain` "```md"
+          -- Verify round-trip works
+          let parsed = fromGram serialized
+          case parsed of
+            Right p' -> properties (value p') `shouldBe` properties (value p)
+            Left err -> expectationFailure $ "Round-trip failed: " ++ show err
+
 -- Generators for Property Tests
 genPattern :: Gen (Pattern Subject)
 genPattern = do
@@ -405,4 +519,20 @@ genSubject = do
   v <- listOf1 (QC.elements ['a'..'z'])
   let props = Map.fromList [(k, VString v)]
   return $ Subject (Symbol idStr) (Set.fromList lbls) props
+
+-- | Generate short strings (avoiding special chars that need escaping)
+genShortString :: Gen String
+genShortString = do
+  len <- QC.choose (1, 50)
+  listOf1 (QC.elements $ ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ " .,!?")
+    >>= return . take len
+
+-- | Generate tag and content pair for tagged strings
+genTaggedPair :: Gen (String, String)
+genTaggedPair = do
+  tag <- listOf1 (QC.elements ['a'..'z'])  -- Simple tag like "md", "json"
+  len <- QC.choose (1, 50)
+  content <- listOf1 (QC.elements $ ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ " .,!?")
+    >>= return . take len
+  return (tag, content)
 
