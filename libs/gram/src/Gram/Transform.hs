@@ -1,6 +1,44 @@
 {-# LANGUAGE FlexibleContexts #-}
+-- | Transformation of CST (Concrete Syntax Tree) to Pattern Subject.
+--
+-- This module provides functions to transform parsed gram notation (CST)
+-- into the core Pattern Subject representation. The default behavior
+-- preserves anonymous subjects as 'Symbol ""' to enable round-trip
+-- compatibility, while optional functions are available for explicit
+-- ID assignment when needed.
+--
+-- == Design Decision: Anonymity Preservation by Default
+--
+-- The default 'transformGram' function preserves anonymous subjects
+-- (represented as 'Symbol ""') rather than assigning generated IDs.
+-- This enables true round-trip compatibility: parsing and serializing
+-- anonymous patterns preserves their anonymous nature.
+--
+-- == When to Use ID Assignment
+--
+-- Use 'transformGramWithIds' or 'assignIdentities' when:
+--
+-- * You need unique identifiers for graph algorithms
+-- * You need to distinguish between anonymous instances
+-- * You're working with external systems that require explicit IDs
+--
+-- Use 'transformGram' (default) when:
+--
+-- * You need round-trip compatibility
+-- * You want to preserve the original gram notation structure
+-- * Anonymous subjects should remain anonymous
+--
+-- == Examples
+--
+-- >>> transformGram (parseGram "()")
+-- Pattern with Subject {identity = Symbol "", ...}
+--
+-- >>> transformGramWithIds (parseGram "() ()")
+-- Pattern with two subjects having identities Symbol "#1" and Symbol "#2"
 module Gram.Transform
   ( transformGram
+  , transformGramWithIds
+  , assignIdentities
   ) where
 
 import qualified Gram.CST as CST
@@ -16,9 +54,16 @@ import Data.Char (isDigit)
 
 type Transform = State Int
 
--- | Transform a CST Gram into a Core Pattern Subject
+-- | Transform a CST Gram into a Core Pattern Subject.
+--
+-- This function preserves anonymous subjects as 'Symbol ""' to enable
+-- round-trip compatibility. Anonymous subjects in the gram notation
+-- (e.g., @()@, @()-[]->()@) will be represented with empty identity.
+--
+-- If you need unique IDs assigned to anonymous subjects, use
+-- 'transformGramWithIds' instead.
 transformGram :: CST.Gram -> P.Pattern S.Subject
-transformGram gram = evalState (transformGram' gram) (findMaxId gram + 1)
+transformGram gram = evalState (transformGram' gram) 0
 
 -- | Find the maximum numeric suffix of IDs matching "#<N>" in the CST
 findMaxId :: CST.Gram -> Int
@@ -88,12 +133,11 @@ transformPattern (CST.AnnotatedPattern annotations elements) = do
       -- Annotations become properties of a wrapper subject pattern.
       -- The single element from annotated_pattern becomes the content.
       
-      -- Generate a fresh ID for the wrapper subject if needed
+      -- Preserve anonymity for annotation wrapper subjects
       -- Note: In the semantic mapping, the annotations become properties of the "subject"
       -- that wraps the content.
       
-      sym <- generateId
-      let wrapperSubject = S.Subject sym Set.empty annProps
+      let wrapperSubject = S.Subject (S.Symbol "") Set.empty annProps
       
       return $ P.Pattern wrapperSubject transformedElements
 
@@ -172,18 +216,67 @@ transformSubjectData (CST.SubjectData ident labels props) = do
     props
 
 transformIdentifier :: Maybe CST.Identifier -> Transform S.Symbol
-transformIdentifier Nothing = generateId
+transformIdentifier Nothing = return (S.Symbol "")  -- Preserve anonymity
 transformIdentifier (Just (CST.IdentSymbol (CST.Symbol s))) = return $ S.Symbol s
 transformIdentifier (Just (CST.IdentString s)) = return $ S.Symbol s
 transformIdentifier (Just (CST.IdentInteger i)) = return $ S.Symbol (show i)
 
 transformEmptySubject :: Transform S.Subject
-transformEmptySubject = do
-  sym <- generateId
-  return $ S.Subject sym Set.empty Map.empty
+transformEmptySubject = return $ S.Subject (S.Symbol "") Set.empty Map.empty
 
 generateId :: Transform S.Symbol
 generateId = do
   i <- get
   put (i + 1)
   return $ S.Symbol ("#" ++ show i)
+
+-- | Find the maximum numeric suffix of IDs matching "#<N>" in a Pattern.
+--
+-- Used by 'assignIdentities' to determine the starting counter value
+-- to avoid collisions with existing generated IDs.
+findMaxIdInPattern :: P.Pattern S.Subject -> Int
+findMaxIdInPattern (P.Pattern subj elems) =
+  maximum (0 : scanSubject subj : map findMaxIdInPattern elems)
+  where
+    scanSubject (S.Subject (S.Symbol s) _ _) = case parseGeneratedId s of
+      Just n -> n
+      Nothing -> 0
+    parseGeneratedId ('#':rest) | all isDigit rest && not (null rest) = Just (read rest)
+    parseGeneratedId _ = Nothing
+
+-- | Assign unique sequential IDs to anonymous subjects in a Pattern.
+--
+-- This function recursively traverses a pattern and assigns IDs of the form
+-- @#N@ to all subjects with empty identity ('Symbol ""'). The counter starts
+-- from the maximum existing @#N@-style ID found in the pattern plus one,
+-- ensuring no collisions.
+--
+-- Named subjects (non-empty identity) are left unchanged.
+assignIdentities :: P.Pattern S.Subject -> P.Pattern S.Subject
+assignIdentities pattern = evalState (assignIdentities' pattern) (findMaxIdInPattern pattern + 1)
+
+assignIdentities' :: P.Pattern S.Subject -> Transform (P.Pattern S.Subject)
+assignIdentities' (P.Pattern subj elems) = do
+  newSubj <- if identity subj == S.Symbol ""
+    then do
+      i <- get
+      put (i + 1)
+      return $ subj { identity = S.Symbol ("#" ++ show i) }
+    else return subj
+  newElems <- mapM assignIdentities' elems
+  return $ P.Pattern newSubj newElems
+
+-- | Transform a CST Gram into a Core Pattern Subject with ID assignment.
+--
+-- This function is equivalent to applying 'assignIdentities' to the result
+-- of 'transformGram'. It assigns unique sequential IDs (e.g., @#1@, @#2@)
+-- to all anonymous subjects in the parsed pattern.
+--
+-- Use this function when you need unique identifiers for anonymous subjects,
+-- such as for graph algorithms or when distinguishing between anonymous
+-- instances is important.
+--
+-- For round-trip compatibility, use 'transformGram' instead, which preserves
+-- anonymity.
+transformGramWithIds :: CST.Gram -> P.Pattern S.Subject
+transformGramWithIds = assignIdentities . transformGram

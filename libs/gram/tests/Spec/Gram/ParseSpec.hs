@@ -3,7 +3,8 @@
 module Spec.Gram.ParseSpec where
 
 import Test.Hspec
-import Gram.Parse (fromGram, ParseError(..))
+import Gram.Parse (fromGram, fromGramWithIds, ParseError(..))
+import qualified Gram.Transform as Transform
 import Pattern.Core (Pattern(..))
 import Subject.Core (Subject(..), Symbol(..))
 import Subject.Value (Value(..), RangeValue(..))
@@ -22,9 +23,9 @@ spec = do
         it "parses empty node" $ do
           case fromGram "()" of
             Right p -> do
-              -- Empty node should have generated ID
+              -- Empty node should preserve anonymity (Symbol "")
               let Symbol id = identity (value p)
-              take 1 id `shouldBe` "#"
+              id `shouldBe` ""
               labels (value p) `shouldBe` Set.empty
               properties (value p) `shouldBe` empty
               elements p `shouldBe` []
@@ -145,7 +146,7 @@ spec = do
           case fromGram "()" of
             Right p -> do
               let Symbol id = identity (value p)
-              take 1 id `shouldBe` "#"
+              id `shouldBe` ""  -- Preserves anonymity
               labels (value p) `shouldBe` Set.empty
               properties (value p) `shouldBe` empty
               elements p `shouldBe` []
@@ -159,8 +160,8 @@ spec = do
               let [e1, e2] = elements p
               let Symbol id1 = identity (value e1)
               let Symbol id2 = identity (value e2)
-              take 1 id1 `shouldBe` "#"
-              take 1 id2 `shouldBe` "#"
+              id1 `shouldBe` ""  -- Preserves anonymity
+              id2 `shouldBe` ""  -- Preserves anonymity
             Left err -> expectationFailure $ "Parse failed: " ++ show err
         
         it "parses one relationship" $ do
@@ -213,7 +214,7 @@ spec = do
             Right p -> do
               let props = fromList [("n", VInteger 1)]
               let Symbol id = identity (value p)
-              take 1 id `shouldBe` "#"
+              id `shouldBe` ""  -- Preserves anonymity
               properties (value p) `shouldBe` props
             Left err -> expectationFailure $ "Parse failed: " ++ show err
         
@@ -222,7 +223,7 @@ spec = do
             Right p -> do
               let props = fromList [("s", VString "a")]
               let Symbol id = identity (value p)
-              take 1 id `shouldBe` "#"
+              id `shouldBe` ""  -- Preserves anonymity
               properties (value p) `shouldBe` props
             Left err -> expectationFailure $ "Parse failed: " ++ show err
         
@@ -231,7 +232,7 @@ spec = do
             Right p -> do
               let props = fromList [("i", VRange (RangeValue (Just 1) (Just 10)))]
               let Symbol id = identity (value p)
-              take 1 id `shouldBe` "#"
+              id `shouldBe` ""  -- Preserves anonymity
               properties (value p) `shouldBe` props
             Left err -> expectationFailure $ "Parse failed: " ++ show err
         
@@ -240,7 +241,7 @@ spec = do
             Right p -> do
               let props = fromList [("i", VRange (RangeValue (Just 1) Nothing))]
               let Symbol id = identity (value p)
-              take 1 id `shouldBe` "#"
+              id `shouldBe` ""  -- Preserves anonymity
               properties (value p) `shouldBe` props
             Left err -> expectationFailure $ "Parse failed: " ++ show err
         
@@ -249,7 +250,7 @@ spec = do
             Right p -> do
               let props = fromList [("i", VRange (RangeValue Nothing (Just 100)))]
               let Symbol id = identity (value p)
-              take 1 id `shouldBe` "#"
+              id `shouldBe` ""  -- Preserves anonymity
               properties (value p) `shouldBe` props
             Left err -> expectationFailure $ "Parse failed: " ++ show err
         
@@ -304,11 +305,12 @@ spec = do
             Right _ -> expectationFailure "Should have failed - nodes cannot nest"
             Left (ParseError _) -> return ()  -- Expected to fail
 
-      describe "User Story 2: Anonymous Subject Handling" $ do
+      describe "User Story 2: Anonymous Subject Handling (with ID assignment)" $ do
         
         it "assigns unique IDs to anonymous nodes" $ do
           -- Two anonymous nodes separated by space (parsed as 2 top-level patterns)
-          case fromGram "() ()" of
+          -- This test uses explicit ID assignment via fromGramWithIds
+          case fromGramWithIds "() ()" of
             Right p -> do
               let elems = elements p
               length elems `shouldBe` 2
@@ -329,7 +331,8 @@ spec = do
             
         it "assigns unique IDs to anonymous path elements" $ do
           -- Path with anonymous nodes and relationship: ()-[]->()
-          case fromGram "()-[]->()" of
+          -- This test uses explicit ID assignment via fromGramWithIds
+          case fromGramWithIds "()-[]->()" of
             Right p -> do
               -- Pattern is relationship: [rel | left, right]
               let relSubject = value p
@@ -353,7 +356,8 @@ spec = do
 
         it "avoids collision with existing generated-style IDs" $ do
           -- Input has explicit #1. Generator should skip it and use #2 (or higher).
-          case fromGram "(`#1`) ()" of
+          -- This test uses explicit ID assignment via fromGramWithIds
+          case fromGramWithIds "(`#1`) ()" of
             Right p -> do
               let elems = elements p
               length elems `shouldBe` 2
@@ -369,7 +373,8 @@ spec = do
         it "re-round-trips generated IDs safely (US3 Collision Prevention)" $ do
           -- () -> #1 -> (#1)
           -- (#1), () -> #1, #2 -> (#1), (#2)
-          case fromGram "(`#1`) ()" of
+          -- This test uses explicit ID assignment via fromGramWithIds
+          case fromGramWithIds "(`#1`) ()" of
             Right p -> do
               let elems = elements p
               let [e1, e2] = elems
@@ -379,6 +384,211 @@ spec = do
               -- Ensure they are distinct
               id1 `shouldNotBe` id2
             Left err -> expectationFailure $ "Parse failed: " ++ show err
+
+      describe "Anonymous Subject Preservation (default behavior)" $ do
+        
+        it "preserves anonymous nodes as empty Symbol" $ do
+          -- Two anonymous nodes should both have Symbol ""
+          case fromGram "() ()" of
+            Right p -> do
+              let elems = elements p
+              length elems `shouldBe` 2
+              let [n1, n2] = elems
+              -- Both should have empty Symbol
+              let Symbol id1 = identity (value n1)
+              let Symbol id2 = identity (value n2)
+              
+              id1 `shouldBe` ""
+              id2 `shouldBe` ""
+              
+              -- They should be distinct patterns (structural equality, not identity-based)
+              -- Verify they are separate pattern instances
+              n1 `shouldNotBe` n2  -- Different pattern instances
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+            
+        it "preserves anonymous path elements as empty Symbol" $ do
+          -- Path with anonymous nodes and relationship: ()-[]->()
+          case fromGram "()-[]->()" of
+            Right p -> do
+              -- Pattern is relationship: [rel | left, right]
+              let relSubject = value p
+              let [left, right] = elements p
+              
+              let Symbol relId = identity relSubject
+              let Symbol leftId = identity (value left)
+              let Symbol rightId = identity (value right)
+              
+              -- All should have empty Symbol
+              relId `shouldBe` ""
+              leftId `shouldBe` ""
+              rightId `shouldBe` ""
+              
+              -- Verify structure is preserved correctly
+              length (elements p) `shouldBe` 2
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+
+        it "preserves anonymous in nested patterns" $ do
+          -- Nested pattern with anonymous subjects
+          case fromGram "[ () | () ]" of
+            Right p -> do
+              -- Outer pattern should have empty Symbol
+              let Symbol outerId = identity (value p)
+              outerId `shouldBe` ""
+              
+              -- Inner patterns should also have empty Symbol
+              let elems = elements p
+              length elems `shouldBe` 2
+              let [e1, e2] = elems
+              let Symbol id1 = identity (value e1)
+              let Symbol id2 = identity (value e2)
+              
+              id1 `shouldBe` ""
+              id2 `shouldBe` ""
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+
+        it "preserves anonymous alongside named subjects" $ do
+          -- Mix of named and anonymous subjects
+          case fromGram "(a) () (b)" of
+            Right p -> do
+              let elems = elements p
+              length elems `shouldBe` 3
+              let [e1, e2, e3] = elems
+              
+              -- Named subjects keep their IDs
+              let Symbol id1 = identity (value e1)
+              let Symbol id2 = identity (value e2)
+              let Symbol id3 = identity (value e3)
+              
+              id1 `shouldBe` "a"
+              id2 `shouldBe` ""  -- Anonymous
+              id3 `shouldBe` "b"
+              
+              -- All three should be distinct
+              e1 `shouldNotBe` e2
+              e2 `shouldNotBe` e3
+              e1 `shouldNotBe` e3
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+
+        it "assignIdentities assigns IDs to anonymous only" $ do
+          -- Create pattern with mix of named and anonymous subjects
+          let named = Pattern (Subject (Symbol "a") Set.empty empty) []
+          let anonymous1 = Pattern (Subject (Symbol "") Set.empty empty) []
+          let anonymous2 = Pattern (Subject (Symbol "") Set.empty empty) []
+          let root = Pattern (Subject (Symbol "") (Set.singleton "Gram.Root") empty) [named, anonymous1, anonymous2]
+          
+          -- Apply assignIdentities
+          let assigned = Transform.assignIdentities root
+          
+          -- Root should get ID
+          let Symbol rootId = identity (value assigned)
+          rootId `shouldNotBe` ""
+          take 1 rootId `shouldBe` "#"
+          
+          -- Named subject should remain unchanged
+          let [e1, e2, e3] = elements assigned
+          let Symbol id1 = identity (value e1)
+          let Symbol id2 = identity (value e2)
+          let Symbol id3 = identity (value e3)
+          
+          id1 `shouldBe` "a"  -- Named unchanged
+          id2 `shouldNotBe` ""  -- Anonymous gets ID
+          id3 `shouldNotBe` ""  -- Anonymous gets ID
+          take 1 id2 `shouldBe` "#"
+          take 1 id3 `shouldBe` "#"
+          
+          -- IDs should be distinct
+          id2 `shouldNotBe` id3
+
+        it "assignIdentities avoids collisions with existing IDs" $ do
+          -- Create pattern with #1 and anonymous subjects
+          let existing = Pattern (Subject (Symbol "#1") Set.empty empty) []
+          let anonymous1 = Pattern (Subject (Symbol "") Set.empty empty) []
+          let anonymous2 = Pattern (Subject (Symbol "") Set.empty empty) []
+          let root = Pattern (Subject (Symbol "") (Set.singleton "Gram.Root") empty) [existing, anonymous1, anonymous2]
+          
+          -- Apply assignIdentities
+          let assigned = Transform.assignIdentities root
+          
+          -- Root should get ID starting after #1
+          let Symbol rootId = identity (value assigned)
+          rootId `shouldNotBe` ""
+          take 1 rootId `shouldBe` "#"
+          
+          -- Check elements
+          let [e1, e2, e3] = elements assigned
+          let Symbol id1 = identity (value e1)
+          let Symbol id2 = identity (value e2)
+          let Symbol id3 = identity (value e3)
+          
+          id1 `shouldBe` "#1"  -- Existing unchanged
+          id2 `shouldNotBe` "#1"  -- Should be #2 or higher
+          id3 `shouldNotBe` "#1"  -- Should be #3 or higher
+          take 1 id2 `shouldBe` "#"
+          take 1 id3 `shouldBe` "#"
+          
+          -- All IDs should be distinct
+          id2 `shouldNotBe` id3
+
+      describe "Integration: End-to-end anonymous preservation workflow" $ do
+        
+        it "end-to-end anonymous preservation workflow" $ do
+          -- Parse anonymous pattern
+          case fromGram "()" of
+            Right parsed -> do
+              -- Verify anonymity preserved
+              let Symbol id = identity (value parsed)
+              id `shouldBe` ""
+              
+              -- Serialize to gram
+              let serialized = toGram parsed
+              serialized `shouldBe` "()"
+              
+              -- Re-parse
+              case fromGram serialized of
+                Right reparsed -> do
+                  -- Verify structural equality
+                  let Symbol id2 = identity (value reparsed)
+                  id2 `shouldBe` ""
+                  value parsed `shouldBe` value reparsed
+                  
+                  -- Apply assignIdentities if needed
+                  let assigned = Transform.assignIdentities reparsed
+                  let Symbol id3 = identity (value assigned)
+                  id3 `shouldNotBe` ""
+                  take 1 id3 `shouldBe` "#"
+                  
+                  -- Verify IDs assigned correctly
+                  let serialized2 = toGram assigned
+                  serialized2 `shouldContain` "#"
+                Left err -> expectationFailure $ "Re-parse failed: " ++ show err
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+
+        it "mixed workflow with explicit ID assignment" $ do
+          -- Use fromGramWithIds for patterns needing IDs
+          case fromGramWithIds "() ()" of
+            Right parsedWithIds -> do
+              let [e1, e2] = elements parsedWithIds
+              let Symbol id1 = identity (value e1)
+              let Symbol id2 = identity (value e2)
+              id1 `shouldNotBe` ""
+              id2 `shouldNotBe` ""
+              take 1 id1 `shouldBe` "#"
+              take 1 id2 `shouldBe` "#"
+              
+              -- Use fromGram for round-trip preservation
+              case fromGram "() ()" of
+                Right parsedAnonymous -> do
+                  let [e3, e4] = elements parsedAnonymous
+                  let Symbol id3 = identity (value e3)
+                  let Symbol id4 = identity (value e4)
+                  id3 `shouldBe` ""
+                  id4 `shouldBe` ""
+                  
+                  -- Verify both workflows work independently
+                  length (elements parsedWithIds) `shouldBe` 2
+                  length (elements parsedAnonymous) `shouldBe` 2
+                Left err -> expectationFailure $ "fromGram failed: " ++ show err
+            Left err -> expectationFailure $ "fromGramWithIds failed: " ++ show err
 
       -- US1: Plain Codefence String Parsing
       describe "codefence string parsing (US1)" $ do

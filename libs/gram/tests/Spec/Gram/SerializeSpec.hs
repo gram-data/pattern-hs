@@ -7,6 +7,7 @@ import qualified Test.QuickCheck as QC
 import Test.QuickCheck (forAll, listOf, listOf1, Gen)
 import Gram.Serialize (toGram)
 import Gram.Parse (fromGram)
+import qualified Gram.Transform as Transform
 import Pattern.Core (Pattern(..))
 import Subject.Core (Subject(..), Symbol(..))
 import Subject.Value (Value(..), RangeValue(..))
@@ -387,7 +388,114 @@ spec = do
           forAll genPattern $ \p -> do
             let serialized = toGram p
             let parsed = fromGram serialized
-            parsed `shouldBe` Right p
+            -- Use structural equality (not identity-based) to handle anonymous subjects
+            case parsed of
+              Right p' -> do
+                -- For anonymous subjects, we check structural equality
+                -- The pattern structure should match even if identities differ
+                value p `shouldBe` value p'  -- Subject equality handles Symbol "" correctly
+                elements p `shouldBe` elements p'
+              Left err -> expectationFailure $ "Round-trip failed: " ++ show err
+
+      describe "Round-trip tests for anonymous subjects" $ do
+        
+        it "round-trip preserves anonymous nodes" $ do
+          case fromGram "()" of
+            Right parsed -> do
+              let serialized = toGram parsed
+              serialized `shouldBe` "()"
+              -- Re-parse and verify structural equality
+              case fromGram serialized of
+                Right reparsed -> do
+                  let Symbol id1 = identity (value parsed)
+                  let Symbol id2 = identity (value reparsed)
+                  id1 `shouldBe` ""
+                  id2 `shouldBe` ""
+                  value parsed `shouldBe` value reparsed
+                Left err -> expectationFailure $ "Re-parse failed: " ++ show err
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+
+        it "round-trip preserves anonymous relationships" $ do
+          case fromGram "()-[]->()" of
+            Right parsed -> do
+              let serialized = toGram parsed
+              -- Re-parse and verify structural equality (not identity-based)
+              case fromGram serialized of
+                Right reparsed -> do
+                  -- Verify structure matches
+                  length (elements parsed) `shouldBe` length (elements reparsed)
+                  length (elements parsed) `shouldBe` 2
+                  -- All identities should be empty
+                  let Symbol relId1 = identity (value parsed)
+                  let Symbol relId2 = identity (value reparsed)
+                  relId1 `shouldBe` ""
+                  relId2 `shouldBe` ""
+                Left err -> expectationFailure $ "Re-parse failed: " ++ show err
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+
+        it "round-trip preserves mixed named and anonymous" $ do
+          case fromGram "(a) () (b)" of
+            Right parsed -> do
+              let serialized = toGram parsed
+              -- Re-parse and verify
+              case fromGram serialized of
+                Right reparsed -> do
+                  let elems = elements reparsed
+                  length elems `shouldBe` 3
+                  let [e1, e2, e3] = elems
+                  -- Named subjects keep IDs, anonymous remain anonymous
+                  let Symbol id1 = identity (value e1)
+                  let Symbol id2 = identity (value e2)
+                  let Symbol id3 = identity (value e3)
+                  id1 `shouldBe` "a"
+                  id2 `shouldBe` ""  -- Anonymous
+                  id3 `shouldBe` "b"
+                Left err -> expectationFailure $ "Re-parse failed: " ++ show err
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+
+        it "round-trip preserves anonymous in nested structures" $ do
+          case fromGram "[ () | () ]" of
+            Right parsed -> do
+              let serialized = toGram parsed
+              -- Re-parse and verify
+              case fromGram serialized of
+                Right reparsed -> do
+                  -- Verify nested anonymous subjects preserved
+                  let Symbol outerId = identity (value reparsed)
+                  outerId `shouldBe` ""
+                  let elems = elements reparsed
+                  length elems `shouldBe` 2
+                  let [e1, e2] = elems
+                  let Symbol id1 = identity (value e1)
+                  let Symbol id2 = identity (value e2)
+                  id1 `shouldBe` ""
+                  id2 `shouldBe` ""
+                Left err -> expectationFailure $ "Re-parse failed: " ++ show err
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
+
+        it "round-trip with assignIdentities preserves structure" $ do
+          case fromGram "() ()" of
+            Right parsed -> do
+              -- Apply assignIdentities
+              let assigned = Transform.assignIdentities parsed
+              let serialized = toGram assigned
+              -- Verify IDs appear in serialized output
+              serialized `shouldContain` "#"
+              -- Re-parse and verify IDs are preserved
+              case fromGram serialized of
+                Right reparsed -> do
+                  let elems = elements reparsed
+                  length elems `shouldBe` 2
+                  let [e1, e2] = elems
+                  let Symbol id1 = identity (value e1)
+                  let Symbol id2 = identity (value e2)
+                  -- IDs should be preserved (they were in the serialized output)
+                  id1 `shouldNotBe` ""
+                  id2 `shouldNotBe` ""
+                  take 1 id1 `shouldBe` "#"
+                  take 1 id2 `shouldBe` "#"
+                Left err -> expectationFailure $ "Re-parse failed: " ++ show err
+            Left err -> expectationFailure $ "Parse failed: " ++ show err
 
       -- US4: Automatic Codefence Serialization
       describe "codefence string serialization (US4)" $ do

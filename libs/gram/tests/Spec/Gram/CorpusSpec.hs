@@ -194,6 +194,7 @@ testRoundTripCorpus = do
                   reparsed = fromGram serialized
               in case reparsed of
                 Right reparsedPattern -> 
+                  -- Use structural equality (Subject has Eq instance that handles Symbol "" correctly)
                   if pattern == reparsedPattern
                     then []
                     else [(file, name, original, "Round-trip structure mismatch\nOriginal: " ++ show pattern ++ "\nReparsed: " ++ show reparsedPattern)]
@@ -263,3 +264,25 @@ spec = do
     
     describe "round-trip conversion" $ do
       testRoundTripCorpus
+      
+      it "round-trip preserves anonymous subjects in corpus examples" $ do
+        -- Test specific anonymous subject patterns from corpus
+        let anonymousExamples = 
+              [ "()"
+              , "() ()"
+              , "()-[]->()"
+              , "[ () | () ]"
+              , "(a) () (b)"
+              ]
+        
+        mapM_ (\example -> do
+          case fromGram example of
+            Right parsed -> do
+              let serialized = toGram parsed
+              case fromGram serialized of
+                Right reparsed -> do
+                  -- Verify structural equality (anonymous subjects preserved)
+                  parsed `shouldBe` reparsed
+                Left err -> expectationFailure $ "Failed to reparse: " ++ show err ++ "\nExample: " ++ example
+            Left err -> expectationFailure $ "Failed to parse: " ++ show err ++ "\nExample: " ++ example
+          ) anonymousExamples

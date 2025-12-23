@@ -10,6 +10,16 @@
 -- This module provides parsers for gram notation, converting text into
 -- Pattern and Subject data structures.
 --
+-- == Anonymous Subject Handling
+--
+-- The default 'fromGram' function preserves anonymous subjects as 'Symbol ""'
+-- to enable round-trip compatibility. Anonymous subjects in gram notation
+-- (e.g., @()@, @()-[]->()@) will be represented with empty identity.
+--
+-- If you need unique IDs assigned to anonymous subjects, use 'fromGramWithIds'
+-- instead, which assigns sequential IDs (e.g., @#1@, @#2@) to all anonymous
+-- subjects.
+--
 -- == String Value Syntax
 --
 -- The parser supports multiple string formats:
@@ -56,6 +66,7 @@
 -- and content stored separately.
 module Gram.Parse
   ( fromGram
+  , fromGramWithIds
   , parseGram
   , ParseError(..)
   ) where
@@ -767,10 +778,36 @@ parseGram = do
   
   return $ Gram rootRecord (firstPatterns ++ additionalPatterns)
 
--- | Main entry point transforming CST to Pattern
+-- | Parse gram notation string into a Pattern Subject.
+--
+-- This function preserves anonymous subjects as 'Symbol ""' to enable
+-- round-trip compatibility. Anonymous subjects in the gram notation
+-- (e.g., @()@, @()-[]->()@) will be represented with empty identity.
+--
+-- If you need unique IDs assigned to anonymous subjects, use
+-- 'fromGramWithIds' instead.
 fromGram :: String -> Either ParseError (Core.Pattern CoreSub.Subject)
 fromGram input = do
   let stripped = stripComments input
   case parse parseGram "gram" stripped of
     Left err -> Left (convertError err)
     Right cst -> Right (Transform.transformGram cst)
+
+-- | Parse gram notation string into a Pattern Subject with ID assignment.
+--
+-- This function is equivalent to applying 'Transform.assignIdentities' to the
+-- result of 'fromGram'. It assigns unique sequential IDs (e.g., @#1@, @#2@)
+-- to all anonymous subjects in the parsed pattern.
+--
+-- Use this function when you need unique identifiers for anonymous subjects,
+-- such as for graph algorithms or when distinguishing between anonymous
+-- instances is important.
+--
+-- For round-trip compatibility, use 'fromGram' instead, which preserves
+-- anonymity.
+fromGramWithIds :: String -> Either ParseError (Core.Pattern CoreSub.Subject)
+fromGramWithIds input = do
+  let stripped = stripComments input
+  case parse parseGram "gram" stripped of
+    Left err -> Left (convertError err)
+    Right cst -> Right (Transform.transformGramWithIds cst)
