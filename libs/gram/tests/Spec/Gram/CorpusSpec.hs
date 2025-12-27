@@ -2,6 +2,11 @@
 -- 
 -- This module tests parsing and round-trip conversion using the
 -- tree-sitter-gram test corpus to ensure complete syntax support.
+{-# OPTIONS_GHC -fno-warn-name-shadowing #-}
+{-# OPTIONS_GHC -fno-warn-unused-imports #-}
+{-# OPTIONS_GHC -fno-warn-unused-matches #-}
+{-# OPTIONS_GHC -fno-warn-unused-local-binds #-}
+{-# OPTIONS_GHC -fno-warn-incomplete-uni-patterns #-}
 module Spec.Gram.CorpusSpec where
 
 import Test.Hspec

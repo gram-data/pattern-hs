@@ -6,7 +6,7 @@ module GramHs.CLI.Commands.Transform
   ) where
 
 import Options.Applicative
-import GramHs.CLI.Types (OutputFormat(..))
+import GramHs.CLI.Types (OutputFormat(..), OutputOptions(..), outputOptionsParser, enforceDeterministicCanonical)
 import qualified GramHs.CLI.Output as Output
 import qualified Gram.Parse as Gram
 import qualified Pattern.Core as Pattern
@@ -27,6 +27,7 @@ data TransformOptions = TransformOptions
   { transformOperation :: TransformOperation
   , transformInputFile :: FilePath
   , transformFormat :: OutputFormat
+  , transformOutputOptions :: OutputOptions
   } deriving (Show)
 
 transformOptions :: Parser TransformOptions
@@ -34,6 +35,7 @@ transformOptions = TransformOptions
   <$> operationOption
   <*> strArgument (metavar "INPUT-FILE" <> help "Input file in gram notation")
   <*> formatOption
+  <*> outputOptionsParser
 
 operationOption :: Parser TransformOperation
 operationOption = option (maybeReader parseOperation)
@@ -71,13 +73,15 @@ runTransform :: TransformOptions -> IO ExitCode
 runTransform opts = do
   input <- readFile (transformInputFile opts)
   
+  let outputOpts = enforceDeterministicCanonical (transformOutputOptions opts)
+  
   case Gram.fromGram input of
     Left err -> do
-      Output.formatError (transformFormat opts) (show err)
+      Output.formatError (transformFormat opts) outputOpts (show err)
       return (ExitFailure 1)
     Right pattern -> do
       let transformed = applyTransform (transformOperation opts) pattern
-      Output.formatOutput (transformFormat opts) transformed
+      Output.formatOutput (transformFormat opts) outputOpts transformed
       return ExitSuccess
 
 applyTransform :: TransformOperation -> Pattern.Pattern Subject.Subject -> Pattern.Pattern Subject.Subject

@@ -2,16 +2,14 @@
 module Spec.Subject.CoreSpec where
 
 import Data.Hashable (hash, hashWithSalt)
-import Data.Map (Map, empty, fromList, toList, (!?))
-import Data.Monoid (mconcat, mempty)
-import Data.Semigroup (sconcat, stimes)
-import Data.Set (Set)
+import Data.Map (fromList, toList, (!?))
+import qualified Data.Map as Map
+import Data.Monoid ()
 import qualified Data.Set as Set
-import Data.List.NonEmpty (NonEmpty ((:|)))
 import Test.Hspec
-import Subject.Core (Symbol (..), PropertyRecord, Subject (..))
+import Subject.Core (Symbol (..), Subject (..))
 import Subject.Construction (addProperty, hasProperty, removeProperty, subject, subjectWith, updateProperty)
-import Subject.Value (Value (..), RangeValue (..))
+import Subject.Value (Value (..))
 
 spec :: Spec
 spec = do
@@ -28,16 +26,16 @@ spec = do
           properties s `shouldBe` fromList [("name", VString "Alice")]
         
         it "creates a subject with only identity" $ do
-          let s = Subject (Symbol "n") Set.empty empty
+          let s = Subject (Symbol "n") Set.empty Map.empty
           identity s `shouldBe` Symbol "n"
           labels s `shouldBe` Set.empty
-          properties s `shouldBe` empty
+          properties s `shouldBe` Map.empty
         
         it "creates a subject with only labels" $ do
-          let s = Subject (Symbol "n") (Set.fromList ["Person"]) empty
+          let s = Subject (Symbol "n") (Set.fromList ["Person"]) Map.empty
           identity s `shouldBe` Symbol "n"
           labels s `shouldBe` Set.fromList ["Person"]
-          properties s `shouldBe` empty
+          properties s `shouldBe` Map.empty
         
         it "creates a subject with only properties" $ do
           let s = Subject (Symbol "n") Set.empty (fromList [("name", VString "Alice")])
@@ -45,20 +43,20 @@ spec = do
           labels s `shouldBe` Set.empty
           properties s `shouldBe` fromList [("name", VString "Alice")]
         
-        it "creates an empty subject" $ do
-          let s = Subject (Symbol "") Set.empty empty
+        it "creates an Map.empty subject" $ do
+          let s = Subject (Symbol "") Set.empty Map.empty
           identity s `shouldBe` Symbol ""
           labels s `shouldBe` Set.empty
-          properties s `shouldBe` empty
+          properties s `shouldBe` Map.empty
       
       describe "Field accessors" $ do
         
         it "returns the correct identity" $ do
-          let s = Subject (Symbol "n") Set.empty empty
+          let s = Subject (Symbol "n") Set.empty Map.empty
           identity s `shouldBe` Symbol "n"
         
         it "returns the correct labels" $ do
-          let s = Subject (Symbol "n") (Set.fromList ["Person", "Employee"]) empty
+          let s = Subject (Symbol "n") (Set.fromList ["Person", "Employee"]) Map.empty
           labels s `shouldBe` Set.fromList ["Person", "Employee"]
         
         it "returns the correct properties" $ do
@@ -91,13 +89,13 @@ spec = do
           s1 `shouldBe` s2
         
         it "subjects with different identities are not equal" $ do
-          let s1 = Subject (Symbol "n") (Set.fromList ["Person"]) empty
-          let s2 = Subject (Symbol "m") (Set.fromList ["Person"]) empty
+          let s1 = Subject (Symbol "n") (Set.fromList ["Person"]) Map.empty
+          let s2 = Subject (Symbol "m") (Set.fromList ["Person"]) Map.empty
           s1 `shouldNotBe` s2
         
         it "subjects with different labels are not equal" $ do
-          let s1 = Subject (Symbol "n") (Set.fromList ["Person"]) empty
-          let s2 = Subject (Symbol "n") (Set.fromList ["Employee"]) empty
+          let s1 = Subject (Symbol "n") (Set.fromList ["Person"]) Map.empty
+          let s2 = Subject (Symbol "n") (Set.fromList ["Employee"]) Map.empty
           s1 `shouldNotBe` s2
         
         it "subjects with different properties are not equal" $ do
@@ -108,14 +106,14 @@ spec = do
       describe "Ord instance" $ do
         
         it "orders subjects lexicographically" $ do
-          let s1 = Subject (Symbol "a") Set.empty empty
-          let s2 = Subject (Symbol "b") Set.empty empty
+          let s1 = Subject (Symbol "a") Set.empty Map.empty
+          let s2 = Subject (Symbol "b") Set.empty Map.empty
           s1 `shouldBe` (min s1 s2)
           s2 `shouldBe` (max s1 s2)
         
         it "orders subjects by identity first, then labels, then properties" $ do
-          let s1 = Subject (Symbol "a") (Set.fromList ["A"]) empty
-          let s2 = Subject (Symbol "b") (Set.fromList ["A"]) empty
+          let s1 = Subject (Symbol "a") (Set.fromList ["A"]) Map.empty
+          let s2 = Subject (Symbol "b") (Set.fromList ["A"]) Map.empty
           s1 < s2 `shouldBe` True
       
       describe "Show instance" $ do
@@ -139,7 +137,7 @@ spec = do
           hash s1 `shouldBe` hash s2
         
         it "hashes with custom salt" $ do
-          let s = Subject (Symbol "n") (Set.fromList ["Person"]) empty
+          let s = Subject (Symbol "n") (Set.fromList ["Person"]) Map.empty
           hashWithSalt 42 s `shouldBe` hashWithSalt 42 s
       
       describe "Semigroup instance" $ do
@@ -153,19 +151,19 @@ spec = do
           properties combined `shouldBe` fromList [("name", VString "Alice"), ("age", VInteger 30)]
         
         it "is associative" $ do
-          let s1 = Subject (Symbol "a") (Set.fromList ["A"]) empty
-          let s2 = Subject (Symbol "b") (Set.fromList ["B"]) empty
-          let s3 = Subject (Symbol "c") (Set.fromList ["C"]) empty
+          let s1 = Subject (Symbol "a") (Set.fromList ["A"]) Map.empty
+          let s2 = Subject (Symbol "b") (Set.fromList ["B"]) Map.empty
+          let s3 = Subject (Symbol "c") (Set.fromList ["C"]) Map.empty
           (s1 <> s2) <> s3 `shouldBe` s1 <> (s2 <> s3)
         
         it "takes first identity when combining" $ do
-          let s1 = Subject (Symbol "a") Set.empty empty
-          let s2 = Subject (Symbol "b") Set.empty empty
+          let s1 = Subject (Symbol "a") Set.empty Map.empty
+          let s2 = Subject (Symbol "b") Set.empty Map.empty
           identity (s1 <> s2) `shouldBe` Symbol "a"
       
       describe "Monoid instance" $ do
         
-        it "provides empty subject as identity" $ do
+        it "provides Map.empty subject as identity" $ do
           let s = Subject (Symbol "n") (Set.fromList ["Person"]) (fromList [("name", VString "Alice")])
           mempty <> s `shouldBe` s
           s <> mempty `shouldBe` s
@@ -174,23 +172,23 @@ spec = do
           let emptySubj = mempty :: Subject
           identity emptySubj `shouldBe` Symbol ""
           labels emptySubj `shouldBe` Set.empty
-          properties emptySubj `shouldBe` empty
+          properties emptySubj `shouldBe` Map.empty
         
         it "mconcat combines multiple subjects" $ do
-          let s1 = Subject (Symbol "a") (Set.fromList ["A"]) empty
-          let s2 = Subject (Symbol "b") (Set.fromList ["B"]) empty
-          let s3 = Subject (Symbol "c") (Set.fromList ["C"]) empty
+          let s1 = Subject (Symbol "a") (Set.fromList ["A"]) Map.empty
+          let s2 = Subject (Symbol "b") (Set.fromList ["B"]) Map.empty
+          let s3 = Subject (Symbol "c") (Set.fromList ["C"]) Map.empty
           labels (mconcat [s1, s2, s3]) `shouldBe` Set.fromList ["A", "B", "C"]
     
     describe "Constructor Functions" $ do
       
       describe "subject function" $ do
         
-        it "creates an empty subject" $ do
+        it "creates an Map.empty subject" $ do
           let s = subject
           identity s `shouldBe` Symbol ""
           labels s `shouldBe` Set.empty
-          properties s `shouldBe` empty
+          properties s `shouldBe` Map.empty
         
         it "is equivalent to mempty" $ do
           subject `shouldBe` (mempty :: Subject)
@@ -204,10 +202,10 @@ spec = do
           properties s `shouldBe` fromList [("name", VString "Alice")]
         
         it "creates a subject with only some components" $ do
-          let s = subjectWith (Symbol "n") (Set.fromList ["Person"]) empty
+          let s = subjectWith (Symbol "n") (Set.fromList ["Person"]) Map.empty
           identity s `shouldBe` Symbol "n"
           labels s `shouldBe` Set.fromList ["Person"]
-          properties s `shouldBe` empty
+          properties s `shouldBe` Map.empty
     
     describe "Property Manipulation" $ do
       
@@ -264,27 +262,27 @@ spec = do
       describe "Empty subject" $ do
         
         it "empty subject has default identity" $ do
-          let s = Subject (Symbol "") Set.empty empty
+          let s = Subject (Symbol "") Set.empty Map.empty
           identity s `shouldBe` Symbol ""
           labels s `shouldBe` Set.empty
-          properties s `shouldBe` empty
+          properties s `shouldBe` Map.empty
         
         it "empty subject is equal to mempty" $ do
-          let s = Subject (Symbol "") Set.empty empty
+          let s = Subject (Symbol "") Set.empty Map.empty
           s `shouldBe` (mempty :: Subject)
       
       describe "Subject with only identity" $ do
         
         it "subject with only identity works correctly" $ do
-          let s = Subject (Symbol "n") Set.empty empty
+          let s = Subject (Symbol "n") Set.empty Map.empty
           identity s `shouldBe` Symbol "n"
           labels s `shouldBe` Set.empty
-          properties s `shouldBe` empty
+          properties s `shouldBe` Map.empty
       
       describe "Subject with multiple labels" $ do
         
         it "subject with multiple labels works correctly" $ do
-          let s = Subject (Symbol "n") (Set.fromList ["Person", "Employee", "Manager"]) empty
+          let s = Subject (Symbol "n") (Set.fromList ["Person", "Employee", "Manager"]) Map.empty
           labels s `shouldBe` Set.fromList ["Person", "Employee", "Manager"]
       
       describe "Subject with multiple properties" $ do

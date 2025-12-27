@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# OPTIONS_GHC -fno-warn-unused-top-binds #-}
 -- | Transformation of CST (Concrete Syntax Tree) to Pattern Subject.
 --
 -- This module provides functions to transform parsed gram notation (CST)
@@ -47,7 +48,6 @@ import qualified Subject.Core as S
 import qualified Subject.Value as V
 import Data.Map (Map)
 import qualified Data.Map as Map
-import Data.Set (Set)
 import qualified Data.Set as Set
 import Control.Monad.State (State, evalState, get, put)
 import Data.Char (isDigit)

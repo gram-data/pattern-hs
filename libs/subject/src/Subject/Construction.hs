@@ -46,7 +46,7 @@ module Subject.Construction
   , hasProperty
   ) where
 
-import Data.Map (Map, delete, empty, insert, member, (!?))
+import Data.Map (delete, empty, insert, member)
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Subject.Core (Symbol (..), PropertyRecord, Subject (..))
@@ -149,7 +149,7 @@ addProperty key val (Subject ident lbls props) =
 -- >>> properties s' !? "age"
 -- Nothing
 updateProperty :: String -> Value -> Subject -> Subject
-updateProperty key val s@(Subject ident lbls props) =
+updateProperty key val s@(Subject _ _ props) =
   if member key props
     then addProperty key val s
     else s

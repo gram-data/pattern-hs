@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
+{-# OPTIONS_GHC -fno-warn-unused-top-binds #-}
 
 module Gram.CST
   ( Gram(..)
@@ -12,16 +13,15 @@ module Gram.CST
   , SubjectPattern(..)
   , SubjectData(..)
   , Annotation(..)
-  , Value(..)
-  , RangeValue(..)
   , Identifier(..)
   , Symbol(..)
+  , Value
+  , RangeValue
   ) where
 
 import GHC.Generics (Generic)
 import Data.Map (Map)
 import Data.Set (Set)
-import qualified Subject.Core as Core
 import qualified Subject.Value as CoreVal
 
 -- | Top-level Gram structure
@@ -110,5 +110,7 @@ data Identifier
 
 -- | Values (mirroring Subject.Value but local to CST if needed, 
 -- or we can reuse Core types if they are purely data)
+-- NOTE: These type aliases are kept for potential future use.
+{-# OPTIONS_GHC -fno-warn-unused-top-binds #-}
 type Value = CoreVal.Value
 type RangeValue = CoreVal.RangeValue

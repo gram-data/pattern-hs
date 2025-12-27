@@ -31,16 +31,14 @@ module Pattern.Core
   , indicesAt
   ) where
 
-import Prelude hiding (length, pattern)
+import Prelude hiding (length)
 import qualified Prelude
 import Data.Foldable (toList)
-import Data.Traversable (foldMapDefault, fmapDefault)
 import Data.Semigroup (Semigroup(..), sconcat, stimes)
-import Data.Monoid (Monoid(..), mconcat)
+import Data.Monoid ()
 import Data.Hashable (Hashable(..))
 import Control.Comonad (Comonad(..))
 import Data.List.NonEmpty (NonEmpty(..))
-import qualified Data.List.NonEmpty as NE
 
 -- | Core Pattern data type and basic operations.
 --

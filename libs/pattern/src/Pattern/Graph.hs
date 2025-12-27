@@ -77,10 +77,10 @@ module Pattern.Graph
   , findPath              -- Requires Ord v
   ) where
 
-import Pattern.Core (Pattern(..), pattern, patternWith)
+import Pattern.Core (Pattern(..))
 import Data.Maybe (mapMaybe)
 import qualified Data.Set as Set
-import qualified Data.Map as Map
+import Data.Map ()
 
 -- | A Graph Lens provides an interpretive view of a Pattern as a graph structure.
 -- 
@@ -129,8 +129,8 @@ data GraphLens v = GraphLens
 -- >>> nodes lens
 -- [[a], [b], [c]]
 nodes :: GraphLens v -> [Pattern v]
-nodes lens@(GraphLens (Pattern _ elements) _) = 
-  filter (isNode lens) elements
+nodes lens@(GraphLens (Pattern _ elems) _) = 
+  filter (isNode lens) elems
 
 -- | Determine if a Pattern is a node according to the lens.
 --
@@ -183,8 +183,8 @@ isRelationship lens@(GraphLens _ _) p@(Pattern _ els) =
 -- >>> relationships lens
 -- [[knows | [Alice], [Bob]], [likes | [Bob], [Charlie]]]
 relationships :: GraphLens v -> [Pattern v]
-relationships lens@(GraphLens (Pattern _ elements) _) =
-  filter (isRelationship lens) elements
+relationships lens@(GraphLens (Pattern _ elems) _) =
+  filter (isRelationship lens) elems
 
 -- | Extract the source node from a relationship.
 --
@@ -271,10 +271,10 @@ consecutivelyConnected lens rels =
 -- >>> isWalk lens walk
 -- True
 isWalk :: Eq v => GraphLens v -> Pattern v -> Bool
-isWalk lens@(GraphLens _ _) p@(Pattern _ elements) =
+isWalk lens@(GraphLens _ _) p@(Pattern _ elems) =
   not (isNode lens p) &&
-  all (isRelationship lens) elements &&
-  consecutivelyConnected lens elements
+  all (isRelationship lens) elems &&
+  consecutivelyConnected lens elems
 
 -- | Extract all walks from the graph lens.
 --
@@ -290,8 +290,8 @@ isWalk lens@(GraphLens _ _) p@(Pattern _ elements) =
 -- >>> walks lens
 -- [[path | [rel1], [rel2], [rel3]]]
 walks :: Eq v => GraphLens v -> [Pattern v]
-walks lens@(GraphLens (Pattern _ elements) _) =
-  filter (isWalk lens) elements
+walks lens@(GraphLens (Pattern _ elems) _) =
+  filter (isWalk lens) elems
 
 -- | Extract nodes from a walk in traversal order.
 --
@@ -453,14 +453,14 @@ findPath lens start end
 
 findPathHelper :: Ord v => GraphLens v -> Set.Set (Pattern v) -> [(Pattern v, [Pattern v])] -> Pattern v -> Maybe [Pattern v]
 findPathHelper _ _ [] _ = Nothing
-findPathHelper lens visited ((n, path):queue) target
-  | n == target = Just (reverse path)
-  | Set.member n visited = findPathHelper lens visited queue target
+findPathHelper lens visited ((n, path):queue) targetNode
+  | n == targetNode = Just (reverse path)
+  | Set.member n visited = findPathHelper lens visited queue targetNode
   | otherwise =
       let newVisited = Set.insert n visited
           nodeNeighbors = Pattern.Graph.neighbors lens n
           newPaths = map (\neighbor -> (neighbor, neighbor:path)) nodeNeighbors
           unvisitedPaths = filter (\(neighbor, _) -> not (Set.member neighbor newVisited)) newPaths
           newQueue = queue ++ unvisitedPaths
-      in findPathHelper lens newVisited newQueue target
+      in findPathHelper lens newVisited newQueue targetNode
 

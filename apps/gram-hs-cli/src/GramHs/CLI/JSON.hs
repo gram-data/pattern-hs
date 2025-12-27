@@ -3,6 +3,7 @@
 module GramHs.CLI.JSON
   ( patternToJSON
   , errorToJSON
+  , canonicalizeJSON
   , Meta(..)
   , PatternResult(..)
   , Diagnostics(..)
@@ -12,6 +13,7 @@ module GramHs.CLI.JSON
 import Data.Aeson
 import Data.Aeson.Encode.Pretty
 import Data.Aeson.Key (fromString)
+import qualified Data.Aeson.KeyMap as KeyMap
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import Data.Time.Clock (getCurrentTime)
@@ -23,8 +25,10 @@ import qualified Data.ByteString.Lazy as BSL
 import qualified Pattern.Core as Pattern
 import qualified Subject.Core as Subject
 import qualified Subject.Value as SubjectValue
+import qualified GramHs.CLI.Types as Types
 import qualified Data.Set as Set
 import qualified Data.Map as Map
+import qualified Data.List as List
 import GHC.Generics (Generic)
 
 data Meta = Meta
@@ -90,29 +94,54 @@ instance ToJSON ErrorWrapper where
   toJSON = genericToJSON defaultOptions { fieldLabelModifier = drop 5 }
 
 -- Pattern serialization to JSON
-patternToJSON :: Pattern.Pattern Subject.Subject -> T.Text
-patternToJSON pat = unsafePerformIO $ do
-  now <- getCurrentTime
-  let timestamp = T.pack $ formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S%Q%z" (utcToZonedTime utc now)
+patternToJSON :: Types.OutputOptions -> Pattern.Pattern Subject.Subject -> T.Text
+patternToJSON opts pat = unsafePerformIO $ do
+  let opts' = Types.enforceDeterministicCanonical opts
   let patternVal = patternToValue pat
-  let response = SuccessResponse
-        { successMeta = Meta
-            { metaVersion = "0.1.0"
-            , metaCommand = "parse"
-            , metaTimestamp = timestamp
-            , metaHash = ""  -- Will compute after encoding
+  
+  -- Handle value-only output
+  if Types.valueOnly opts' 
+    then do
+      let jsonVal = if Types.canonical opts' then canonicalizeJSON patternVal else patternVal
+      let jsonBytes = encode jsonVal
+      return $ TE.decodeUtf8 $ BSL.toStrict jsonBytes
+    else do
+      -- Generate metadata
+      timestamp <- if Types.deterministic opts'
+        then return "1970-01-01T00:00:00+0000"
+        else do
+          now <- getCurrentTime
+          return $ T.pack $ formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S%Q%z" (utcToZonedTime utc now)
+      let fixedHash = "0000000000000000000000000000000000000000000000000000000000000000"
+      let response = SuccessResponse
+            { successMeta = Meta
+                { metaVersion = "0.1.0"
+                , metaCommand = "parse"
+                , metaTimestamp = timestamp
+                , metaHash = ""  -- Will compute after encoding
+                }
+            , successResult = PatternResult
+                { resultType = "Pattern"
+                , resultValue = patternVal
+                }
+            , successDiagnostics = Nothing
             }
-        , successResult = PatternResult
-            { resultType = "Pattern"
-            , resultValue = patternVal
-            }
-        , successDiagnostics = Nothing
-        }
-  let jsonBytes = encodePretty response
-  let hash = T.pack $ show $ SHA256.hash $ BSL.toStrict jsonBytes
-  let responseWithHash = response { successMeta = (successMeta response) { metaHash = hash } }
-  let finalJsonBytes = encodePretty responseWithHash
-  return $ TE.decodeUtf8 $ BSL.toStrict finalJsonBytes
+      -- Convert to JSON Value first, then canonicalize if needed before computing hash
+      let responseJson = toJSON response
+      let jsonForHash = if Types.canonical opts'
+            then canonicalizeJSON responseJson
+            else responseJson
+      let jsonBytesForHash = encodePretty jsonForHash
+      let hash' = if Types.deterministic opts'
+            then fixedHash
+            else T.pack $ show $ SHA256.hash $ BSL.toStrict jsonBytesForHash
+      let responseWithHash = response { successMeta = (successMeta response) { metaHash = hash' } }
+      -- Now canonicalize the final output (with hash included) if needed
+      let finalJson = if Types.canonical opts' 
+            then canonicalizeJSON $ toJSON responseWithHash
+            else toJSON responseWithHash
+      let finalJsonBytes = encodePretty finalJson
+      return $ TE.decodeUtf8 $ BSL.toStrict finalJsonBytes
 
 patternToValue :: Pattern.Pattern Subject.Subject -> Value
 patternToValue (Pattern.Pattern v es) = object
@@ -152,16 +181,32 @@ rangeValueToJSON (SubjectValue.RangeValue lower upper) = object
   , "upper" .= toJSON upper
   ]
 
-errorToJSON :: String -> T.Text
-errorToJSON msg = 
-  let wrapper = ErrorWrapper
-        { errorError = ErrorResponse
-            { errorType = "ParseError"
-            , errorMessage = T.pack msg
-            , errorLocation = Nothing
-            , errorSuggestion = Nothing
-            }
+errorToJSON :: Types.OutputOptions -> String -> T.Text
+errorToJSON opts msg = 
+  let opts' = Types.enforceDeterministicCanonical opts
+      errorResp = ErrorResponse
+        { errorType = "ParseError"
+        , errorMessage = T.pack msg
+        , errorLocation = Nothing
+        , errorSuggestion = Nothing
         }
-      jsonBytes = encodePretty wrapper
+      jsonVal = if Types.valueOnly opts'
+        then toJSON errorResp
+        else toJSON $ ErrorWrapper { errorError = errorResp }
+      jsonVal' = if Types.canonical opts' then canonicalizeJSON jsonVal else jsonVal
+      jsonBytes = encodePretty jsonVal'
   in TE.decodeUtf8 $ BSL.toStrict jsonBytes
+
+-- | Recursively sort all object keys alphabetically in a JSON Value
+--
+-- This function ensures that equivalent data structures produce byte-for-byte
+-- identical JSON strings, enabling reliable automated comparison.
+--
+-- @since 0.1.0
+canonicalizeJSON :: Value -> Value
+canonicalizeJSON (Object obj) = Object $ KeyMap.fromList $ List.sort $ map canonicalizePair $ KeyMap.toList obj
+  where
+    canonicalizePair (k, v) = (k, canonicalizeJSON v)
+canonicalizeJSON (Array arr) = Array $ fmap canonicalizeJSON arr
+canonicalizeJSON v = v
 

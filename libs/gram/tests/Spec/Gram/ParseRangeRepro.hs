@@ -3,6 +3,8 @@
 -- This test isolates the range parsing pattern to determine if the issue
 -- is with Megaparsec or our usage, similar to the parsePropertyRecord investigation.
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -fno-warn-unused-matches #-}
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
 module Spec.Gram.ParseRangeRepro where
 
 import Test.Hspec

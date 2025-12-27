@@ -1,5 +1,9 @@
 -- | Unit tests for Gram.Parse module.
 -- Tests are based on tree-sitter-gram test corpus examples.
+{-# OPTIONS_GHC -fno-warn-name-shadowing #-}
+{-# OPTIONS_GHC -fno-warn-unused-imports #-}
+{-# OPTIONS_GHC -fno-warn-unused-local-binds #-}
+{-# OPTIONS_GHC -fno-warn-incomplete-uni-patterns #-}
 module Spec.Gram.ParseSpec where
 
 import Test.Hspec

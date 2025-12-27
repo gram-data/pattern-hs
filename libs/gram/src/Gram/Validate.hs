@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# OPTIONS_GHC -fno-warn-unused-top-binds #-}
+{-# OPTIONS_GHC -fno-warn-name-shadowing #-}
 
 module Gram.Validate 
   ( SymbolTable
@@ -19,7 +21,7 @@ import qualified Data.Set as Set
 import Control.Monad.State
 import Control.Monad (when)
 
-import Gram.CST (Gram(..), AnnotatedPattern(..), PatternElement(..), Path(..), PathSegment(..), Node(..), Relationship(..), SubjectPattern(..), SubjectData(..), Identifier(..), Symbol(..))
+import Gram.CST (Gram(..), AnnotatedPattern(..), PatternElement(..), Path(..), PathSegment(..), Node(..), Relationship(..), SubjectPattern(..), SubjectData(..), Identifier(..))
 
 -- | The internal state used during validation.
 type SymbolTable = Map Identifier SymbolInfo

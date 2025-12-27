@@ -1,4 +1,6 @@
 -- | Unit tests for Gram.Serialize module.
+{-# OPTIONS_GHC -fno-warn-unused-imports #-}
+{-# OPTIONS_GHC -fno-warn-incomplete-uni-patterns #-}
 module Spec.Gram.SerializeSpec where
 
 import Test.Hspec

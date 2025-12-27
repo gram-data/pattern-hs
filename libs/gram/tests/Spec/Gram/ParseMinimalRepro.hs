@@ -3,6 +3,7 @@
 -- This test isolates the pattern: lookAhead + try + parsePropertyRecord
 -- to determine if the issue is with Megaparsec or our usage.
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
 module Spec.Gram.ParseMinimalRepro where
 
 import Test.Hspec

@@ -107,8 +107,8 @@ module Subject.Core
 
 import Data.Hashable (Hashable (..))
 import Data.Map (Map, empty, union)
-import Data.Monoid (Monoid (..))
-import Data.Semigroup (Semigroup (..))
+import Data.Monoid ()
+import Data.Semigroup ()
 import Data.Set (Set)
 import qualified Data.Set as Set
 import GHC.Generics (Generic)

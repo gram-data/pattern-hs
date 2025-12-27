@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -fno-warn-unused-top-binds #-}
 -- |
 -- Module      : Gram.Parse
 -- Description : Parser for gram notation
@@ -71,8 +72,7 @@ module Gram.Parse
   , ParseError(..)
   ) where
 
-import Gram.CST (Gram(..), AnnotatedPattern(..), PatternElement(..), Path(..), PathSegment(..), Node(..), Relationship(..), SubjectPattern(..), SubjectData(..), Identifier(..), Symbol(..), Annotation(..), Value(..), RangeValue(..))
-import qualified Gram.CST as CST
+import Gram.CST (Gram(..), AnnotatedPattern(..), PatternElement(..), Path(..), PathSegment(..), Node(..), Relationship(..), SubjectPattern(..), SubjectData(..), Identifier(..), Symbol(..), Annotation(..), Value)
 import qualified Gram.Transform as Transform
 import qualified Pattern.Core as Core
 import qualified Subject.Core as CoreSub
@@ -83,13 +83,11 @@ import qualified Data.Map as Map
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Text.Megaparsec (Parsec, parse, eof, optional, try, lookAhead, many, manyTill, some, sepBy, sepBy1, (<|>), satisfy, choice)
-import Text.Megaparsec hiding (ParseError)
 import Text.Megaparsec.Char (char, string, digitChar)
-import qualified Text.Megaparsec.Char.Lexer as L
-import Text.Megaparsec.Error (ParseErrorBundle, errorBundlePretty)
-import Data.Void
+import qualified Text.Megaparsec.Error as Error
+import Data.Void (Void)
 import Control.Monad (void)
-import Data.Char (isAlphaNum, isDigit, isAlpha)
+import Data.Char (isAlphaNum, isAlpha)
 
 -- | Parser type for gram notation.
 type Parser = Parsec Void String
@@ -99,8 +97,8 @@ data ParseError = ParseError String
   deriving (Eq, Show)
 
 -- | Convert Megaparsec parse error to ParseError.
-convertError :: ParseErrorBundle String Void -> ParseError
-convertError bundle = ParseError (errorBundlePretty bundle)
+convertError :: Error.ParseErrorBundle String Void -> ParseError
+convertError bundle = ParseError (Error.errorBundlePretty bundle)
 
 -- | Strip comments from gram notation string.
 --
@@ -484,8 +482,8 @@ parseRange = do
           let numWithSign = if sign == Just '-' then -num else num
           return (Just numWithSign)
         else fail "not a range"
-  firstDot <- char '.'
-  secondDot <- char '.'
+  _firstDot <- char '.'
+  _secondDot <- char '.'
   hasThirdDot <- optional (char '.')
   if hasThirdDot == Just '.'
     then do

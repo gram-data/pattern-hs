@@ -1,19 +1,20 @@
 -- | Unit tests for Pattern.Core module.
+{-# OPTIONS_GHC -fno-warn-name-shadowing #-}
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
+{-# OPTIONS_GHC -fno-warn-x-partial #-}
 module Spec.Pattern.CoreSpec where
 
 import Control.Monad.State (State, get, put, runState)
 import Data.Char (toUpper)
-import Data.Either (Either(..))
-import Data.Foldable (foldl, foldMap, toList)
+import Data.Foldable (toList)
 import Data.Functor.Identity (Identity(..))
 import Data.Hashable (hash, hashWithSalt)
 import Data.List (sort)
 import qualified Data.HashMap.Strict as HashMap
 import qualified Data.HashSet as HashSet
 import qualified Data.Map as Map
-import Data.Maybe (fromJust)
 import Data.List.NonEmpty (NonEmpty((:|)))
-import Data.Monoid (All(..), Any(..), Endo(..), Product(..), Sum(..), mconcat)
+import Data.Monoid (All(..), Any(..), Endo(..), Product(..), Sum(..))
 import Data.Semigroup (sconcat, stimes)
 import qualified Data.Set as Set
 import Test.Hspec
@@ -108,7 +109,9 @@ spec = do
           let pattern = Pattern { value = "pattern", elements = [elem] }
           value pattern `shouldBe` "pattern"
           length (elements pattern) `shouldBe` 1
-          head (elements pattern) `shouldBe` elem
+          case elements pattern of
+            [x] -> x `shouldBe` elem
+            _ -> expectationFailure "Expected exactly one element"
         
         it "creates a pattern with multiple elements" $ do
           let elem1 = Pattern { value = "elem1", elements = [] }
@@ -157,7 +160,9 @@ spec = do
           let elem3 = Pattern { value = "third", elements = [] }
           let pattern = Pattern { value = "pattern", elements = [elem1, elem2, elem3] }
           let elems = elements pattern
-          value (head elems) `shouldBe` "first"
+          case elems of
+            (x:_) -> value x `shouldBe` "first"
+            [] -> expectationFailure "Expected at least one element"
           value (elems !! 1) `shouldBe` "second"
           value (elems !! 2) `shouldBe` "third"
       
@@ -177,7 +182,9 @@ spec = do
           let elem2 = Pattern { value = "second", elements = [] }
           let pattern = Pattern { value = "pattern", elements = [elem1, elem2] }
           let elems = elements pattern
-          head elems `shouldBe` elem1
+          case elems of
+            (x:_) -> x `shouldBe` elem1
+            [] -> expectationFailure "Expected at least one element"
           last elems `shouldBe` elem2
       
       describe "Edge cases" $ do
@@ -195,13 +202,21 @@ spec = do
           let pattern = Pattern { value = "pattern", elements = [outer] }
           value pattern `shouldBe` "pattern"
           length (elements pattern) `shouldBe` 1
-          value (head (elements pattern)) `shouldBe` "outer"
-          let outerElems = elements (head (elements pattern))
-          length outerElems `shouldBe` 1
-          value (head outerElems) `shouldBe` "middle"
-          let middleElems = elements (head outerElems)
-          length middleElems `shouldBe` 1
-          value (head middleElems) `shouldBe` "inner"
+          case elements pattern of
+            (outer:_) -> do
+              value outer `shouldBe` "outer"
+              let outerElems = elements outer
+              length outerElems `shouldBe` 1
+              case outerElems of
+                (middle:_) -> do
+                  value middle `shouldBe` "middle"
+                  let middleElems = elements middle
+                  length middleElems `shouldBe` 1
+                  case middleElems of
+                    (inner:_) -> value inner `shouldBe` "inner"
+                    [] -> expectationFailure "Expected at least one element"
+                [] -> expectationFailure "Expected at least one element"
+            [] -> expectationFailure "Expected at least one element"
         
         it "pattern containing pattern containing pattern (arbitrary depth)" $ do
           let innermost = Pattern { value = "innermost", elements = [] }
@@ -652,7 +667,6 @@ spec = do
           let outerA = Pattern { value = "outer", elements = [middleA] }
           let pattern1 = Pattern { value = "pattern", elements = [outerA] }
           
-          let innerB = Pattern { value = "inner", elements = [] }
           let middleB = Pattern { value = "middle", elements = [] }
           let outerB = Pattern { value = "outer", elements = [middleB] }
           let pattern2 = Pattern { value = "pattern", elements = [outerB] }
@@ -2256,11 +2270,13 @@ spec = do
               elem3 = pattern (Just "c")
               p = patternWith (Just "root") [elem1, elem2, elem3]
               result = sequenceA p
-              p' = fromJust result
-          length (elements p') `shouldBe` 3
-          value (elements p' !! 0) `shouldBe` "a"
-          value (elements p' !! 1) `shouldBe` "b"
-          value (elements p' !! 2) `shouldBe` "c"
+          case result of
+            Just p' -> do
+              length (elements p') `shouldBe` 3
+              value (elements p' !! 0) `shouldBe` "a"
+              value (elements p' !! 1) `shouldBe` "b"
+              value (elements p' !! 2) `shouldBe` "c"
+            Nothing -> expectationFailure "Expected Just result"
         
         it "sequenceA collects effects from all values" $ do
           -- T047: Unit test verifying sequenceA collects effects from all values

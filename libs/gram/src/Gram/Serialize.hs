@@ -3,6 +3,7 @@
 -- This module provides functions to convert Pattern Subject data structures
 -- into gram notation text format. The serialization handles all aspects of
 -- gram notation including:
+{-# OPTIONS_GHC -fno-warn-unused-top-binds #-}
 --
 -- * Subject identity (symbols, quoted strings, numbers)
 -- * Labels (single and multiple)
@@ -60,7 +61,7 @@ module Gram.Serialize
 import Pattern.Core (Pattern(..))
 import Subject.Core (Subject(..), Symbol(..))
 import Subject.Value (Value(..), RangeValue(..))
-import Data.Map (Map, empty)
+import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Set (Set)
 import qualified Data.Set as Set
@@ -245,9 +246,9 @@ serializeValue (VArray vs) = "[" ++ intercalate "," (map serializeValue vs) ++ "
 serializeValue (VMap m) = "{" ++ intercalate "," (map serializeProperty (Map.toList m)) ++ "}"
   where
     serializeProperty (k, v) = k ++ ":" ++ serializeValue v
-serializeValue (VRange (RangeValue (Just lower) (Just upper))) = formatRangeDouble lower ++ ".." ++ formatRangeDouble upper
-serializeValue (VRange (RangeValue (Just lower) Nothing)) = formatRangeDouble lower ++ "..."
-serializeValue (VRange (RangeValue Nothing (Just upper))) = "..." ++ formatRangeDouble upper
+serializeValue (VRange (RangeValue (Just lowerVal) (Just upperVal))) = formatRangeDouble lowerVal ++ ".." ++ formatRangeDouble upperVal
+serializeValue (VRange (RangeValue (Just lowerVal) Nothing)) = formatRangeDouble lowerVal ++ "..."
+serializeValue (VRange (RangeValue Nothing (Just upperVal))) = "..." ++ formatRangeDouble upperVal
 serializeValue (VRange (RangeValue Nothing Nothing)) = "..."
 serializeValue (VMeasurement unit val) = show val ++ unit
 
@@ -297,6 +298,8 @@ serializeLabels lbls
 
     -- | Serialize a Subject to gram notation (legacy function, kept for compatibility).
 -- Note: This always uses node syntax. Use toGram for proper syntax selection.
+-- NOTE: This function is currently unused but kept for potential future use.
+{-# WARNING serializeSubject "This function is unused but kept for compatibility" #-}
 serializeSubject :: Subject -> String
 serializeSubject (Subject ident lbls props) =
   "(" ++
@@ -396,9 +399,9 @@ toGram p@(Pattern subj elems)
     -- | Serialize pattern elements for implicit root (record + elements).
     -- Note: We do NOT serialize the "Gram.Root" label itself, as it is implicit in the file structure.
     serializeImplicitElements :: Map String Value -> [Pattern Subject] -> String
-    serializeImplicitElements props elems = 
-      let propsStr = if Map.null props then "" else serializePropertyRecord props
-          elemsStr = intercalate "\n" (map toGram elems)
+    serializeImplicitElements props' elems' = 
+      let propsStr = if Map.null props' then "" else serializePropertyRecord props'
+          elemsStr = intercalate "\n" (map toGram elems')
       in case (null propsStr, null elemsStr) of
            (True, True) -> "{}" -- Empty graph/root
            (False, True) -> trimLeadingSpace propsStr -- Remove leading space from serializePropertyRecord
@@ -428,8 +431,8 @@ toGram p@(Pattern subj elems)
     -- We assume the left node of this edge matches the right node of the previous one,
     -- so we skip serializing the left node.
     serializeConnectedEdge :: Pattern Subject -> String
-    serializeConnectedEdge p = 
-      case isEdgePattern p of
+    serializeConnectedEdge p' = 
+      case isEdgePattern p' of
         Just (rel, _, right) -> "-" ++ serializeRelationship rel ++ "->" ++ toGram right
         Nothing -> " | " ++ toGram p -- Fallback if walk contains non-edge (shouldn't happen in valid walks)
 

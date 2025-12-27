@@ -7,25 +7,24 @@
 -- - Other category-theoretic properties
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Spec.Pattern.Properties where
 
-import Control.Applicative (liftA2)
-import Control.Comonad (extract, extend, duplicate)
+import Control.Comonad (extract, extend)
 import Data.Char (toUpper)
-import Data.Foldable (foldl, foldMap, foldr, toList)
+import Data.Foldable (toList)
 import Data.Functor.Compose (Compose(..))
 import Data.Functor.Identity (Identity(..))
 import Data.Hashable (hash)
-import Data.Monoid (All(..), Product(..), Sum(..))
-import Data.List (nub, sort)
+import Data.Monoid (Product(..), Sum(..))
+import Data.List (nub)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import Pattern.Core (Pattern(..), pattern, patternWith, fromList, flatten, size, depth, values, toTuple, anyValue, allValues, filterPatterns, findPattern, findAllPatterns, matches, contains)
+import Pattern.Core (Pattern(..), pattern, patternWith, fromList, flatten, size, depth, values, toTuple, anyValue, allValues, filterPatterns, findPattern, matches, contains)
 import qualified Pattern.Core as PC
 import Test.Hspec
 import Test.QuickCheck hiding (elements)
 import qualified Test.QuickCheck as QC
-import Test.QuickCheck.Property (Property)
 
 -- | Arbitrary instance for Pattern with String values.
 -- Generates patterns of varying structure: atomic, with elements, and nested.
@@ -239,14 +238,14 @@ spec = do
       it "toList extracts all values for Pattern String" $ do
         -- T047: Property-based test for toList extracting all values correctly as flat list
         quickProperty $ \p -> 
-          let values = toList (p :: Pattern String)
-          in length values == countValues p && all (`elem` values) [value p]
+          let vals = toList (p :: Pattern String)
+          in length vals == countValues p && all (`elem` vals) [value p]
       
       it "toList extracts all values for Pattern Int" $ do
         -- T047: Property-based test for toList extracting all values correctly as flat list
         quickProperty $ \p -> 
-          let values = toList (p :: Pattern Int)
-          in length values == countValues p && all (`elem` values) [value p]
+          let vals = toList (p :: Pattern Int)
+          in length vals == countValues p && all (`elem` vals) [value p]
     
     describe "flatten extracts all values correctly" $ do
       
@@ -254,15 +253,15 @@ spec = do
         -- T048: Property-based test for flatten extracting all values correctly
         -- Note: flatten should be equivalent to toList (both extract flat lists)
         quickProperty $ \p -> 
-          let values = flatten (p :: Pattern String)
-          in length values == countValues p && all (`elem` values) [value p]
+          let vals = flatten (p :: Pattern String)
+          in length vals == countValues p && all (`elem` vals) [value p]
       
       it "flatten extracts all values for Pattern Int" $ do
         -- T048: Property-based test for flatten extracting all values correctly
         -- Note: flatten should be equivalent to toList (both extract flat lists)
         quickProperty $ \p -> 
-          let values = flatten (p :: Pattern Int)
-          in length values == countValues p && all (`elem` values) [value p]
+          let vals = flatten (p :: Pattern Int)
+          in length vals == countValues p && all (`elem` vals) [value p]
     
     describe "foldr processes all values correctly" $ do
       
@@ -453,7 +452,6 @@ spec = do
         -- T067: Property-based test for Naturality law with Identity transformation
         quickProperty $ \p -> 
           let pStr = p :: Pattern String
-              f = Identity
               -- Naturality with Identity: Identity . traverse Identity = traverse (Identity . Identity)
               -- Since Identity . Identity = Identity, this simplifies to:
               -- Identity . traverse Identity = traverse Identity
@@ -559,8 +557,8 @@ spec = do
         quickProperty $ \p -> 
           let pEither = p :: Pattern (Either String Int)
               -- Convert to list and check for Left values
-              values = toList pEither
-              hasLeft = any (\v -> case v of Left _ -> True; Right _ -> False) values
+              vals = toList pEither
+              hasLeft = any (\v -> case v of Left _ -> True; Right _ -> False) vals
               result = sequenceA pEither
           in if hasLeft
              then case result of
@@ -638,7 +636,10 @@ spec = do
         -- Property: first value is the pattern's own value
         quickProperty $ \p -> 
           let pStr = p :: Pattern String
-          in not (null (values pStr)) && head (values pStr) == value pStr
+              vals = values pStr
+          in not (null vals) && case vals of
+                                  (v:_) -> v == value pStr
+                                  [] -> False
       
       it "T038: values p == toList p for all patterns" $ do
         -- Property: values is equivalent to toList from Foldable
@@ -725,7 +726,7 @@ spec = do
         quickProperty $ \ps -> 
           let patterns = ps :: [Pattern String]
               -- Create map with patterns as keys
-              keyValuePairs = zip patterns (map show [1..])
+              keyValuePairs = zip patterns (map show ([1..] :: [Int]))
               m = Map.fromList keyValuePairs
               -- All patterns should be members
               allMembers = all (`Map.member` m) patterns
@@ -885,6 +886,7 @@ spec = do
               -- Helper to count elements recursively
               countElems (Pattern _ els) = length els + sum (map countElems els)
               -- Helper to get depth
+              getDepth :: Pattern String -> Int
               getDepth (Pattern _ els) = case els of
                 [] -> 0
                 _  -> 1 + maximum (map getDepth els)
@@ -1065,6 +1067,7 @@ spec = do
         let testPatterns = take 1000 $ iterate (\p -> patternWith "test" [p]) (pattern "base" :: Pattern String)
             hashes = map hash testPatterns
             uniqueHashes = length (nub hashes)
+            collisionRate :: Double
             collisionRate = 1.0 - (fromIntegral uniqueHashes / fromIntegral (length hashes))
         -- Collision rate should be very low (< 1%)
         collisionRate `shouldSatisfy` (< 0.01)
@@ -1208,8 +1211,8 @@ spec = do
       
       it "T009: anyValue p = not (allValues (not . p))" $ do
         -- Property: anyValue and allValues are complementary for any predicate
-        quickProperty $ \(p :: Pattern Int) (Fun _ pred) -> 
-          let p' = pred :: Int -> Bool
+        quickProperty $ \(p :: Pattern Int) (Fun _ predicate) -> 
+          let p' = predicate :: Int -> Bool
           in anyValue p' p == not (allValues (not . p') p)
       
       it "T010: anyValue (const True) = True" $ do
@@ -1244,12 +1247,14 @@ spec = do
       it "T031: findPattern p returns Just first match from filterPatterns p" $ do
         -- Property: findPattern returns the first match from filterPatterns results
         quickProperty $ \(p :: Pattern Int) -> 
-          let pred = (\pat -> size pat > 0)  -- Always true for non-empty patterns
-              filtered = filterPatterns pred p
-              found = findPattern pred p
+          let predicate = (\pat -> size pat > 0)  -- Always true for non-empty patterns
+              filtered = filterPatterns predicate p
+              found = findPattern predicate p
           in if null filtered
              then found == Nothing
-             else found == Just (head filtered)
+             else case filtered of
+                    [] -> found == Nothing
+                    (x:_) -> found == Just x
   
   describe "Structural Matching Functions Properties (User Story 3)" $ do
     
