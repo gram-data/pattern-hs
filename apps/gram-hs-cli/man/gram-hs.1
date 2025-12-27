@@ -1,0 +1,207 @@
+.TH GRAM-HS 1 "2025-01-27" "gram-hs-cli 0.1.0.0" "User Commands"
+.SH NAME
+gram-hs \- Reference implementation CLI for gram/pattern ecosystem
+.SH SYNOPSIS
+.B gram-hs
+.I COMMAND
+[\fIOPTIONS\fR]
+.br
+.B gram-hs parse
+[\fIINPUT-FILE\fR] [\fB\-\-format\fR \fIFORMAT\fR]
+.br
+.B gram-hs match
+\fIPATTERN-FILE\fR \fIDATA-FILE\fR [\fB\-\-format\fR \fIFORMAT\fR]
+.br
+.B gram-hs transform
+\fB\-\-operation\fR \fIOPERATION\fR \fIINPUT-FILE\fR [\fB\-\-format\fR \fIFORMAT\fR]
+.br
+.B gram-hs generate
+[\fB\-\-type\fR \fITYPE\fR] [\fB\-\-count\fR \fIN\fR] [\fB\-\-seed\fR \fISEED\fR] [\fB\-\-complexity\fR \fILEVEL\fR] [\fB\-\-format\fR \fIFORMAT\fR]
+.br
+.B gram-hs validate
+\fITEST-SUITE\fR [\fB\-\-runner\fR \fICOMMAND\fR]
+.br
+.B gram-hs convert
+\fIINPUT-FILE\fR \fB\-\-from\fR \fIFORMAT\fR \fB\-\-to\fR \fIFORMAT\fR
+.SH DESCRIPTION
+.B gram-hs
+is the reference implementation and conformance testing tool for the
+gram/pattern ecosystem. It provides canonical outputs for pattern operations,
+generates test suites, and enables validation of ports to other languages.
+.PP
+The tool supports parsing gram notation, pattern matching, transformations,
+test data generation, validation, and format conversion.
+.SH COMMANDS
+.SS parse
+Parse gram notation and output canonical representation.
+.PP
+Reads gram notation from a file or stdin and outputs the parsed pattern in
+the specified format. If no input file is provided, reads from stdin.
+.PP
+\fB\-\-format\fR, \fB\-f\fR \fIFORMAT\fR
+.RS 4
+Output format: json (default), gram, or debug
+.RE
+.SS match
+Execute pattern matching and output bindings.
+.PP
+Matches a pattern against data (both in gram notation) and outputs the
+results or match count.
+.PP
+\fB\-\-format\fR, \fB\-f\fR \fIFORMAT\fR
+.RS 4
+Output format: json (default), gram, or debug
+.RE
+.SS transform
+Apply pattern transformations.
+.PP
+Applies various transformations to patterns including reverse, flatten,
+and normalization operations.
+.PP
+\fB\-\-operation\fR, \fB\-o\fR \fIOPERATION\fR
+.RS 4
+Transformation operation: fold, map, filter, reverse, flatten, or normalize
+.RE
+.PP
+\fB\-\-format\fR, \fB\-f\fR \fIFORMAT\fR
+.RS 4
+Output format: json (default), gram, or debug
+.RE
+.SS generate
+Generate test data and patterns.
+.PP
+Generates random test data and patterns for testing purposes. Supports
+deterministic generation with seed values.
+.PP
+\fB\-\-type\fR, \fB\-t\fR \fITYPE\fR
+.RS 4
+Generator type: pattern (default), graph, suite, or property
+.RE
+.PP
+\fB\-\-count\fR, \fB\-c\fR \fIN\fR
+.RS 4
+Number of items to generate (default: 1)
+.RE
+.PP
+\fB\-\-seed\fR, \fB\-s\fR \fISEED\fR
+.RS 4
+Random seed for deterministic generation
+.RE
+.PP
+\fB\-\-complexity\fR \fILEVEL\fR
+.RS 4
+Complexity level: minimal, basic (default), standard, complex, or adversarial
+.RE
+.PP
+\fB\-\-format\fR, \fB\-f\fR \fIFORMAT\fR
+.RS 4
+Output format: json (default), gram, or debug
+.RE
+.SS validate
+Run conformance test suites.
+.PP
+Executes test suites against the reference implementation or an external
+command for comparison.
+.PP
+\fB\-\-runner\fR \fICOMMAND\fR
+.RS 4
+External command to run tests against for comparison
+.RE
+.SS convert
+Convert between different representations.
+.PP
+Converts patterns between different formats including gram notation, JSON,
+Cypher, DOT, and Mermaid.
+.PP
+\fB\-\-from\fR \fIFORMAT\fR
+.RS 4
+Input format: gram (default), json, cypher, dot, or mermaid
+.RE
+.PP
+\fB\-\-to\fR \fIFORMAT\fR
+.RS 4
+Output format: json (default), gram, cypher, dot, or mermaid
+.RE
+.SH OUTPUT FORMATS
+.SS json
+Canonical JSON format with metadata including version, command, timestamp,
+and hash. All JSON output follows strict rules for determinism with sorted
+keys and stable formatting.
+.SS gram
+Pretty-printed gram notation suitable for human reading and editing.
+.SS debug
+Haskell Show instance output for debugging purposes.
+.SH EXIT CODES
+.TP
+.B 0
+Success
+.TP
+.B 1
+Parse error
+.TP
+.B 2
+Validation failure
+.TP
+.B 3
+Invalid arguments
+.TP
+.B 4
+IO error
+.TP
+.B 5
+Timeout/resource limit
+.SH EXAMPLES
+Parse a gram file and output JSON:
+.PP
+.RS 4
+.nf
+gram-hs parse input.gram --format json
+.fi
+.RE
+.PP
+Parse from stdin:
+.PP
+.RS 4
+.nf
+echo '(node1)' | gram-hs parse
+.fi
+.RE
+.PP
+Match a pattern against data:
+.PP
+.RS 4
+.nf
+gram-hs match pattern.gram data.gram
+.fi
+.RE
+.PP
+Reverse the elements of a pattern:
+.PP
+.RS 4
+.nf
+gram-hs transform --operation reverse input.gram
+.fi
+.RE
+.PP
+Generate 10 test patterns with a specific seed:
+.PP
+.RS 4
+.nf
+gram-hs generate --type pattern --count 10 --seed 42
+.fi
+.RE
+.PP
+Convert from gram to JSON:
+.PP
+.RS 4
+.nf
+gram-hs convert input.gram --from gram --to json
+.fi
+.RE
+.SH SEE ALSO
+The gram notation specification and pattern library documentation.
+.SH AUTHOR
+Andreas Kollegger <akollegger@gmail.com>
+.SH COPYRIGHT
+Copyright (c) gram-data, 2024. BSD-3-Clause License.
+

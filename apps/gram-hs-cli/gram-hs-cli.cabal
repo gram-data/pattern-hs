@@ -1,0 +1,57 @@
+cabal-version:      2.4
+name:               gram-hs-cli
+version:            0.1.0.0
+
+synopsis:           CLI tool for gram/pattern reference implementation
+description:        
+    The gram-hs CLI serves as the reference implementation and conformance
+    testing tool for the gram/pattern ecosystem. It provides canonical outputs
+    for pattern operations, generates test suites, and enables validation of
+    ports to other languages.
+
+license:            BSD-3-Clause
+license-file:       LICENSE
+author:             Andreas Kollegger
+maintainer:         akollegger@gmail.com
+category:           CLI
+build-type:         Simple
+
+executable gram-hs
+    main-is:             Main.hs
+    other-modules:
+        GramHs.CLI
+        GramHs.CLI.Types
+        GramHs.CLI.Commands.Parse
+        GramHs.CLI.Commands.Match
+        GramHs.CLI.Commands.Transform
+        GramHs.CLI.Commands.Generate
+        GramHs.CLI.Commands.Validate
+        GramHs.CLI.Commands.Convert
+        GramHs.CLI.Output
+        GramHs.CLI.JSON
+
+    build-depends:
+        base >=4.17.0.0 && <5,
+        gram,
+        pattern,
+        subject,
+        optparse-applicative ^>=0.18,
+        aeson ^>=2.2,
+        aeson-pretty ^>=0.8,
+        bytestring ^>=0.12,
+        text >=2.0,
+        containers ^>=0.7,
+        time ^>=1.12,
+        cryptohash-sha256 ^>=0.11,
+        directory ^>=1.3,
+        filepath ^>=1.4,
+        random ^>=1.2
+
+    hs-source-dirs:   src
+    default-language: Haskell2010
+
+    ghc-options:      -Wall -Werror
+    
+    data-files:
+        man/gram-hs.1
+

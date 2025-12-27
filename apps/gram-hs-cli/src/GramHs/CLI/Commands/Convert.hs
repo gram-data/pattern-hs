@@ -1,0 +1,81 @@
+{-# LANGUAGE OverloadedStrings #-}
+module GramHs.CLI.Commands.Convert
+  ( ConvertOptions(..)
+  , convertOptions
+  , runConvert
+  ) where
+
+import Options.Applicative
+import GramHs.CLI.Types (OutputFormat(..))
+import qualified GramHs.CLI.Output as Output
+import qualified Gram.Parse as Gram
+import qualified Gram.Serialize as Gram
+import System.Exit (ExitCode(..))
+
+data ConvertFormat
+  = ConvertGram
+  | ConvertJSON
+  | ConvertCypher
+  | ConvertDot
+  | ConvertMermaid
+  deriving (Show, Eq)
+
+data ConvertOptions = ConvertOptions
+  { convertInputFile :: FilePath
+  , convertFrom :: ConvertFormat
+  , convertTo :: ConvertFormat
+  } deriving (Show)
+
+convertOptions :: Parser ConvertOptions
+convertOptions = ConvertOptions
+  <$> strArgument (metavar "INPUT-FILE" <> help "Input file")
+  <*> fromOption
+  <*> toOption
+
+fromOption :: Parser ConvertFormat
+fromOption = option (maybeReader parseFormat)
+  ( long "from"
+  <> metavar "FORMAT"
+  <> value ConvertGram
+  <> help "Input format: gram, json, cypher, dot, or mermaid (default: gram)"
+  )
+
+toOption :: Parser ConvertFormat
+toOption = option (maybeReader parseFormat)
+  ( long "to"
+  <> metavar "FORMAT"
+  <> value ConvertJSON
+  <> help "Output format: gram, json, cypher, dot, or mermaid (default: json)"
+  )
+
+parseFormat :: String -> Maybe ConvertFormat
+parseFormat "gram" = Just ConvertGram
+parseFormat "json" = Just ConvertJSON
+parseFormat "cypher" = Just ConvertCypher
+parseFormat "dot" = Just ConvertDot
+parseFormat "mermaid" = Just ConvertMermaid
+parseFormat _ = Nothing
+
+runConvert :: ConvertOptions -> IO ExitCode
+runConvert opts = do
+  input <- readFile (convertInputFile opts)
+  
+  case convertFrom opts of
+    ConvertGram -> case Gram.fromGram input of
+      Left err -> do
+        Output.formatError FormatJSON (show err)
+        return (ExitFailure 1)
+      Right pattern -> case convertTo opts of
+        ConvertGram -> do
+          putStrLn (Gram.toGram pattern)
+          return ExitSuccess
+        ConvertJSON -> do
+          Output.formatOutput FormatJSON pattern
+          return ExitSuccess
+        _ -> do
+          Output.formatError FormatJSON ("Conversion to " ++ show (convertTo opts) ++ " not yet implemented")
+          return (ExitFailure 3)
+    _ -> do
+      Output.formatError FormatJSON ("Conversion from " ++ show (convertFrom opts) ++ " not yet implemented")
+      return (ExitFailure 3)
+

@@ -6,6 +6,7 @@ packages:
   libs/pattern/
   libs/subject/
   libs/gram/
+  apps/gram-hs-cli/
 
 -- Use GHC 9.10.3 (latest stable version with good tooling support)
 with-compiler: ghc-9.10.3
