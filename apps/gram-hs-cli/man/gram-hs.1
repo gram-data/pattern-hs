@@ -7,22 +7,22 @@ gram-hs \- Reference implementation CLI for gram/pattern ecosystem
 [\fIOPTIONS\fR]
 .br
 .B gram-hs parse
-[\fIINPUT-FILE\fR] [\fB\-\-format\fR \fIFORMAT\fR]
+[\fIINPUT-FILE\fR] [\fB\-\-format\fR \fIFORMAT\fR] [\fB\-\-value-only\fR] [\fB\-\-deterministic\fR] [\fB\-\-canonical\fR]
 .br
 .B gram-hs match
-\fIPATTERN-FILE\fR \fIDATA-FILE\fR [\fB\-\-format\fR \fIFORMAT\fR]
+\fIPATTERN-FILE\fR \fIDATA-FILE\fR [\fB\-\-format\fR \fIFORMAT\fR] [\fB\-\-value-only\fR] [\fB\-\-deterministic\fR] [\fB\-\-canonical\fR]
 .br
 .B gram-hs transform
-\fB\-\-operation\fR \fIOPERATION\fR \fIINPUT-FILE\fR [\fB\-\-format\fR \fIFORMAT\fR]
+\fB\-\-operation\fR \fIOPERATION\fR \fIINPUT-FILE\fR [\fB\-\-format\fR \fIFORMAT\fR] [\fB\-\-value-only\fR] [\fB\-\-deterministic\fR] [\fB\-\-canonical\fR]
 .br
 .B gram-hs generate
-[\fB\-\-type\fR \fITYPE\fR] [\fB\-\-count\fR \fIN\fR] [\fB\-\-seed\fR \fISEED\fR] [\fB\-\-complexity\fR \fILEVEL\fR] [\fB\-\-format\fR \fIFORMAT\fR]
+[\fB\-\-type\fR \fITYPE\fR] [\fB\-\-count\fR \fIN\fR] [\fB\-\-seed\fR \fISEED\fR] [\fB\-\-complexity\fR \fILEVEL\fR] [\fB\-\-format\fR \fIFORMAT\fR] [\fB\-\-value-only\fR] [\fB\-\-deterministic\fR] [\fB\-\-canonical\fR]
 .br
 .B gram-hs validate
-\fITEST-SUITE\fR [\fB\-\-runner\fR \fICOMMAND\fR]
+\fITEST-SUITE\fR [\fB\-\-runner\fR \fICOMMAND\fR] [\fB\-\-value-only\fR] [\fB\-\-deterministic\fR] [\fB\-\-canonical\fR]
 .br
 .B gram-hs convert
-\fIINPUT-FILE\fR \fB\-\-from\fR \fIFORMAT\fR \fB\-\-to\fR \fIFORMAT\fR
+\fIINPUT-FILE\fR \fB\-\-from\fR \fIFORMAT\fR \fB\-\-to\fR \fIFORMAT\fR [\fB\-\-value-only\fR] [\fB\-\-deterministic\fR] [\fB\-\-canonical\fR]
 .SH DESCRIPTION
 .B gram-hs
 is the reference implementation and conformance testing tool for the
@@ -41,6 +41,21 @@ the specified format. If no input file is provided, reads from stdin.
 \fB\-\-format\fR, \fB\-f\fR \fIFORMAT\fR
 .RS 4
 Output format: json (default), gram, or debug
+.RE
+.PP
+\fB\-\-value-only\fR
+.RS 4
+Output only the result value without metadata wrapper (Meta, Result, Diagnostics). Useful for direct comparison of pattern values between implementations.
+.RE
+.PP
+\fB\-\-deterministic\fR
+.RS 4
+Ensure deterministic output by using fixed timestamp (1970-01-01T00:00:00+0000) and fixed hash (all zeros). Automatically enables \fB\-\-canonical\fR. Essential for reliable automated testing and comparison.
+.RE
+.PP
+\fB\-\-canonical\fR
+.RS 4
+Produce JSON with sorted keys at all nesting levels. Ensures that equivalent data structures produce byte-for-byte identical JSON strings for reliable automated comparison.
 .RE
 .SS match
 Execute pattern matching and output bindings.
@@ -75,7 +90,7 @@ deterministic generation with seed values.
 .PP
 \fB\-\-type\fR, \fB\-t\fR \fITYPE\fR
 .RS 4
-Generator type: pattern (default), graph, suite, or property
+Generator type: pattern (default), graph, suite, or property. When set to \fIsuite\fR, generates test cases in the test suite format specification.
 .RE
 .PP
 \fB\-\-count\fR, \fB\-c\fR \fIN\fR
@@ -188,6 +203,30 @@ Generate 10 test patterns with a specific seed:
 .RS 4
 .nf
 gram-hs generate --type pattern --count 10 --seed 42
+.fi
+.RE
+.PP
+Generate a test suite with 5 test cases:
+.PP
+.RS 4
+.nf
+gram-hs generate --type suite --count 5 --seed 42 --complexity standard
+.fi
+.RE
+.PP
+Parse with value-only output for comparison:
+.PP
+.RS 4
+.nf
+gram-hs parse input.gram --value-only
+.fi
+.RE
+.PP
+Parse with deterministic and canonical output:
+.PP
+.RS 4
+.nf
+gram-hs parse input.gram --deterministic --canonical
 .fi
 .RE
 .PP

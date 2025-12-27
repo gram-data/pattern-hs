@@ -6,7 +6,7 @@ module GramHs.CLI.Commands.Parse
   ) where
 
 import Options.Applicative
-import GramHs.CLI.Types (OutputFormat(..))
+import GramHs.CLI.Types (OutputFormat(..), OutputOptions(..), outputOptionsParser, enforceDeterministicCanonical)
 import qualified GramHs.CLI.Output as Output
 import qualified Gram.Parse as Gram
 import System.Exit (ExitCode(..))
@@ -15,12 +15,14 @@ import System.IO (stdin, hGetContents)
 data ParseOptions = ParseOptions
   { parseInputFile :: Maybe FilePath
   , parseFormat :: OutputFormat
+  , parseOutputOptions :: OutputOptions
   } deriving (Show)
 
 parseOptions :: Parser ParseOptions
 parseOptions = ParseOptions
   <$> optional (strArgument (metavar "INPUT-FILE" <> help "Input file (or use stdin)"))
   <*> formatOption
+  <*> outputOptionsParser
 
 formatOption :: Parser OutputFormat
 formatOption = option (maybeReader parseFormatStr)
@@ -43,11 +45,13 @@ runParse opts = do
     Nothing -> hGetContents stdin
     Just file -> readFile file
   
+  let outputOpts = enforceDeterministicCanonical (parseOutputOptions opts)
+  
   case Gram.fromGram input of
     Left err -> do
-      Output.formatError (parseFormat opts) (show err)
+      Output.formatError (parseFormat opts) outputOpts (show err)
       return (ExitFailure 1)
     Right pattern -> do
-      Output.formatOutput (parseFormat opts) pattern
+      Output.formatOutput (parseFormat opts) outputOpts pattern
       return ExitSuccess
 

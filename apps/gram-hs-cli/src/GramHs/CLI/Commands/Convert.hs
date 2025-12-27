@@ -6,7 +6,7 @@ module GramHs.CLI.Commands.Convert
   ) where
 
 import Options.Applicative
-import GramHs.CLI.Types (OutputFormat(..))
+import GramHs.CLI.Types (OutputFormat(..), OutputOptions(..), outputOptionsParser, enforceDeterministicCanonical)
 import qualified GramHs.CLI.Output as Output
 import qualified Gram.Parse as Gram
 import qualified Gram.Serialize as Gram
@@ -24,6 +24,7 @@ data ConvertOptions = ConvertOptions
   { convertInputFile :: FilePath
   , convertFrom :: ConvertFormat
   , convertTo :: ConvertFormat
+  , convertOutputOptions :: OutputOptions
   } deriving (Show)
 
 convertOptions :: Parser ConvertOptions
@@ -31,6 +32,7 @@ convertOptions = ConvertOptions
   <$> strArgument (metavar "INPUT-FILE" <> help "Input file")
   <*> fromOption
   <*> toOption
+  <*> outputOptionsParser
 
 fromOption :: Parser ConvertFormat
 fromOption = option (maybeReader parseFormat)
@@ -59,23 +61,24 @@ parseFormat _ = Nothing
 runConvert :: ConvertOptions -> IO ExitCode
 runConvert opts = do
   input <- readFile (convertInputFile opts)
+  let outputOpts = enforceDeterministicCanonical (convertOutputOptions opts)
   
   case convertFrom opts of
     ConvertGram -> case Gram.fromGram input of
       Left err -> do
-        Output.formatError FormatJSON (show err)
+        Output.formatError FormatJSON outputOpts (show err)
         return (ExitFailure 1)
       Right pattern -> case convertTo opts of
         ConvertGram -> do
           putStrLn (Gram.toGram pattern)
           return ExitSuccess
         ConvertJSON -> do
-          Output.formatOutput FormatJSON pattern
+          Output.formatOutput FormatJSON outputOpts pattern
           return ExitSuccess
         _ -> do
-          Output.formatError FormatJSON ("Conversion to " ++ show (convertTo opts) ++ " not yet implemented")
+          Output.formatError FormatJSON outputOpts ("Conversion to " ++ show (convertTo opts) ++ " not yet implemented")
           return (ExitFailure 3)
     _ -> do
-      Output.formatError FormatJSON ("Conversion from " ++ show (convertFrom opts) ++ " not yet implemented")
+      Output.formatError FormatJSON outputOpts ("Conversion from " ++ show (convertFrom opts) ++ " not yet implemented")
       return (ExitFailure 3)
 

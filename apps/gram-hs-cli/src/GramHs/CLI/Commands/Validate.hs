@@ -6,7 +6,7 @@ module GramHs.CLI.Commands.Validate
   ) where
 
 import Options.Applicative
-import GramHs.CLI.Types (OutputFormat(..))
+import GramHs.CLI.Types (OutputFormat(..), OutputOptions(..), outputOptionsParser, enforceDeterministicCanonical)
 import qualified GramHs.CLI.Output as Output
 import System.Exit (ExitCode(..))
 import System.Directory (doesDirectoryExist, listDirectory)
@@ -14,15 +14,18 @@ import System.Directory (doesDirectoryExist, listDirectory)
 data ValidateOptions = ValidateOptions
   { validateTestSuite :: FilePath
   , validateRunner :: Maybe String
+  , validateOutputOptions :: OutputOptions
   } deriving (Show)
 
 validateOptions :: Parser ValidateOptions
 validateOptions = ValidateOptions
   <$> strArgument (metavar "TEST-SUITE" <> help "Test suite directory or file")
   <*> optional (strOption (long "runner" <> metavar "COMMAND" <> help "External command to run tests against"))
+  <*> outputOptionsParser
 
 runValidate :: ValidateOptions -> IO ExitCode
 runValidate opts = do
+  let outputOpts = enforceDeterministicCanonical (validateOutputOptions opts)
   exists <- doesDirectoryExist (validateTestSuite opts)
   if exists
     then do
@@ -31,6 +34,6 @@ runValidate opts = do
       -- TODO: Implement test suite validation
       return ExitSuccess
     else do
-      Output.formatError FormatJSON ("Test suite not found: " ++ validateTestSuite opts)
+      Output.formatError FormatJSON outputOpts ("Test suite not found: " ++ validateTestSuite opts)
       return (ExitFailure 2)
 
