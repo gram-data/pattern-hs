@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Subject designed as self-descriptive object matching gram notation attributes
 - All three components (identity, labels, properties) are optional/flexible
-- Labels are lists to support multiple labels
+- Labels are sets (Set String) to support multiple unique labels with no duplicates
 - Property records use Map for efficient lookups
 - Value type system supports all gram notation value types including nested structures
 - Subject works seamlessly as Pattern value type (Pattern Subject)
